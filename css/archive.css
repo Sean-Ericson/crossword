@@ -1,0 +1,202 @@
+/* archive.css — home/archive page: hero, calendar, special list. */
+
+.archive-main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+.archive-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: var(--color-bg-muted);
+  border-radius: 10px;
+  padding: 22px 26px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.archive-hero h1 {
+  margin: 0 0 4px;
+  font-size: 26px;
+}
+
+.archive-hero .hero-sub {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+/* ---------- calendar ---------- */
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.cal-header h2 {
+  font-size: 20px;
+  margin: 0;
+  min-width: 200px;
+  text-align: center;
+}
+
+.cal-nav {
+  border: none;
+  background: none;
+  font-size: 26px;
+  padding: 4px 14px;
+  border-radius: var(--radius);
+  color: var(--color-text);
+}
+
+.cal-nav:hover:not(:disabled) {
+  background: var(--color-bg-muted);
+}
+
+.cal-nav:disabled {
+  color: #ccc;
+  cursor: default;
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.cal-dow {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+  padding: 4px 0;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 15px;
+  background: var(--color-bg);
+  position: relative;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.cal-day.empty {
+  border: none;
+  background: none;
+}
+
+.cal-day.no-puzzle {
+  color: #c3c3c3;
+  background: none;
+}
+
+.cal-day.has-puzzle {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.cal-day.has-puzzle:hover {
+  border-color: var(--color-link);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+}
+
+.cal-day .day-status {
+  font-size: 15px;
+  line-height: 1;
+  height: 16px;
+}
+
+.cal-day .day-time {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-day.st-solved-clean {
+  background: #fff8e1;
+  border-color: var(--color-gold);
+}
+
+.cal-day.st-solved {
+  background: #eaf3fb;
+  border-color: var(--color-link);
+}
+
+.cal-day.st-in-progress .day-status {
+  color: var(--color-link);
+}
+
+.status-star-gold {
+  color: var(--color-gold);
+}
+
+.status-star-blue {
+  color: var(--color-link);
+}
+
+/* ---------- special (non-dated) puzzles ---------- */
+
+.special-list {
+  margin-top: 34px;
+}
+
+.special-list h2 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.special-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.special-item:hover {
+  border-color: var(--color-link);
+}
+
+.special-item .sp-title {
+  font-weight: 600;
+}
+
+.special-item .sp-meta {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.special-item .sp-status {
+  margin-left: auto;
+  font-size: 15px;
+}
+
+.archive-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 60px 0;
+  line-height: 1.7;
+}
+
+.archive-empty code {
+  background: var(--color-bg-muted);
+  padding: 2px 6px;
+  border-radius: 4px;
+}

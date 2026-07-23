@@ -1,0 +1,596 @@
+{
+ "width": 15,
+ "height": 15,
+ "version": "1.3",
+ "scrambled": false,
+ "title": "Test Fixture ’ 15×15",
+ "author": "make_fixture.py / Crossword Site",
+ "copyright": "© 2026 Test",
+ "notes": "Synthetic fixture with rebus + circles.",
+ "solution": "DKRY.MTAHO.CJQXELSZ.NUBIP.DKRYHMTAHOVCJQXELSZ...BIP..KRYF...HOVCJ.XELS.GNUBIPWD.RYFM.AHOVCJQX.LSZG.UBIPWDKRYFMT.H.VCJQXELSZGNU.IPWD.RYFMTAHO.CJQX.LSZGNUBI.WDKR.FMTAH...JQXE.SZG....PWDKRYFMTAHOVCQQXEL.ZGNUB.PWDKRYFM.AHOVC.QXEL",
+ "fill": "----.-----.--------.-----.-------------------...---..----...-----.----.--------.----.--------.----.------------.-.------------.----.--------.----.--------.----.-----...----.---....-------------------.-----.--------.-----.----",
+ "clues": [
+  "“Fancy” clue… with a dash — right?",
+  "It’s the 2nd clue & more",
+  "Clue 2 Down (len 3)",
+  "Clue 3 Down (len 3)",
+  "Clue 4 Down (len 6)",
+  "Clue 5 Across (len 5)",
+  "Clue 5 Down (len 4)",
+  "Clue 6 Down (len 3)",
+  "Clue 7 Down (len 3)",
+  "Clue 8 Down (len 6)",
+  "Clue 9 Down (len 5)",
+  "Clue 10 Across (len 4)",
+  "Clue 10 Down (len 8)",
+  "Clue 11 Down (len 3)",
+  "Clue 12 Down (len 3)",
+  "Clue 13 Down (len 3)",
+  "Clue 14 Across (len 4)",
+  "Clue 15 Across (len 5)",
+  "Clue 16 Across (len 4)",
+  "Clue 17 Across (len 15)",
+  "Clue 18 Down (len 3)",
+  "Clue 19 Down (len 2)",
+  "Clue 20 Across (len 3)",
+  "Clue 21 Across (len 4)",
+  "Clue 22 Across (len 5)",
+  "Clue 22 Down (len 7)",
+  "Clue 23 Down (len 7)",
+  "Clue 24 Down (len 7)",
+  "Clue 25 Across (len 4)",
+  "Clue 25 Down (len 3)",
+  "Clue 26 Down (len 7)",
+  "Clue 27 Across (len 4)",
+  "Clue 28 Down (len 7)",
+  "Clue 29 Down (len 7)",
+  "Clue 30 Down (len 7)",
+  "Clue 31 Across (len 4)",
+  "Clue 32 Across (len 4)",
+  "Clue 32 Down (len 4)",
+  "Clue 33 Across (len 5)",
+  "Clue 33 Down (len 4)",
+  "Clue 34 Across (len 3)",
+  "Clue 35 Across (len 4)",
+  "Clue 35 Down (len 4)",
+  "Clue 36 Across (len 6)",
+  "Clue 36 Down (len 4)",
+  "Clue 37 Across (len 6)",
+  "Clue 38 Down (len 8)",
+  "Clue 39 Across (len 6)",
+  "Clue 40 Across (len 6)",
+  "Clue 41 Across (len 4)",
+  "Clue 42 Down (len 7)",
+  "Clue 43 Across (len 3)",
+  "Clue 44 Across (len 5)",
+  "Clue 45 Across (len 4)",
+  "Clue 45 Down (len 6)",
+  "Clue 46 Across (len 4)",
+  "Clue 46 Down (len 2)",
+  "Clue 47 Across (len 4)",
+  "Clue 48 Across (len 4)",
+  "Clue 48 Down (len 5)",
+  "Clue 49 Across (len 5)",
+  "Clue 49 Down (len 3)",
+  "Clue 50 Across (len 4)",
+  "Clue 51 Down (len 2)",
+  "Clue 52 Across (len 3)",
+  "Clue 53 Down (len 4)",
+  "Clue 54 Across (len 15)",
+  "Clue 54 Down (len 3)",
+  "Clue 55 Down (len 3)",
+  "Clue 56 Down (len 3)",
+  "Clue 57 Down (len 3)",
+  "Clue 58 Down (len 3)",
+  "Clue 59 Down (len 3)",
+  "Clue 60 Down (len 3)",
+  "Clue 61 Down (len 3)",
+  "Clue 62 Across (len 4)",
+  "Clue 63 Across (len 5)",
+  "Clue 64 Across (len 4)",
+  "Clue 65 Across (len 4)",
+  "Clue 66 Across (len 5)",
+  "Clue 67 Across (len 4)"
+ ],
+ "across": [
+  {
+   "num": 1,
+   "clueIndex": 0,
+   "cell": 0,
+   "len": 4
+  },
+  {
+   "num": 5,
+   "clueIndex": 5,
+   "cell": 5,
+   "len": 5
+  },
+  {
+   "num": 10,
+   "clueIndex": 11,
+   "cell": 11,
+   "len": 4
+  },
+  {
+   "num": 14,
+   "clueIndex": 16,
+   "cell": 15,
+   "len": 4
+  },
+  {
+   "num": 15,
+   "clueIndex": 17,
+   "cell": 20,
+   "len": 5
+  },
+  {
+   "num": 16,
+   "clueIndex": 18,
+   "cell": 26,
+   "len": 4
+  },
+  {
+   "num": 17,
+   "clueIndex": 19,
+   "cell": 30,
+   "len": 15
+  },
+  {
+   "num": 20,
+   "clueIndex": 22,
+   "cell": 48,
+   "len": 3
+  },
+  {
+   "num": 21,
+   "clueIndex": 23,
+   "cell": 53,
+   "len": 4
+  },
+  {
+   "num": 22,
+   "clueIndex": 24,
+   "cell": 60,
+   "len": 5
+  },
+  {
+   "num": 25,
+   "clueIndex": 28,
+   "cell": 66,
+   "len": 4
+  },
+  {
+   "num": 27,
+   "clueIndex": 31,
+   "cell": 71,
+   "len": 4
+  },
+  {
+   "num": 31,
+   "clueIndex": 35,
+   "cell": 75,
+   "len": 4
+  },
+  {
+   "num": 32,
+   "clueIndex": 36,
+   "cell": 80,
+   "len": 4
+  },
+  {
+   "num": 33,
+   "clueIndex": 38,
+   "cell": 85,
+   "len": 5
+  },
+  {
+   "num": 34,
+   "clueIndex": 40,
+   "cell": 90,
+   "len": 3
+  },
+  {
+   "num": 35,
+   "clueIndex": 41,
+   "cell": 94,
+   "len": 4
+  },
+  {
+   "num": 36,
+   "clueIndex": 43,
+   "cell": 99,
+   "len": 6
+  },
+  {
+   "num": 37,
+   "clueIndex": 45,
+   "cell": 105,
+   "len": 6
+  },
+  {
+   "num": 39,
+   "clueIndex": 47,
+   "cell": 114,
+   "len": 6
+  },
+  {
+   "num": 40,
+   "clueIndex": 48,
+   "cell": 120,
+   "len": 6
+  },
+  {
+   "num": 41,
+   "clueIndex": 49,
+   "cell": 127,
+   "len": 4
+  },
+  {
+   "num": 43,
+   "clueIndex": 51,
+   "cell": 132,
+   "len": 3
+  },
+  {
+   "num": 44,
+   "clueIndex": 52,
+   "cell": 135,
+   "len": 5
+  },
+  {
+   "num": 45,
+   "clueIndex": 53,
+   "cell": 141,
+   "len": 4
+  },
+  {
+   "num": 46,
+   "clueIndex": 55,
+   "cell": 146,
+   "len": 4
+  },
+  {
+   "num": 47,
+   "clueIndex": 57,
+   "cell": 150,
+   "len": 4
+  },
+  {
+   "num": 48,
+   "clueIndex": 58,
+   "cell": 155,
+   "len": 4
+  },
+  {
+   "num": 49,
+   "clueIndex": 60,
+   "cell": 160,
+   "len": 5
+  },
+  {
+   "num": 50,
+   "clueIndex": 62,
+   "cell": 168,
+   "len": 4
+  },
+  {
+   "num": 52,
+   "clueIndex": 64,
+   "cell": 173,
+   "len": 3
+  },
+  {
+   "num": 54,
+   "clueIndex": 66,
+   "cell": 180,
+   "len": 15
+  },
+  {
+   "num": 62,
+   "clueIndex": 75,
+   "cell": 195,
+   "len": 4
+  },
+  {
+   "num": 63,
+   "clueIndex": 76,
+   "cell": 200,
+   "len": 5
+  },
+  {
+   "num": 64,
+   "clueIndex": 77,
+   "cell": 206,
+   "len": 4
+  },
+  {
+   "num": 65,
+   "clueIndex": 78,
+   "cell": 210,
+   "len": 4
+  },
+  {
+   "num": 66,
+   "clueIndex": 79,
+   "cell": 215,
+   "len": 5
+  },
+  {
+   "num": 67,
+   "clueIndex": 80,
+   "cell": 221,
+   "len": 4
+  }
+ ],
+ "down": [
+  {
+   "num": 1,
+   "clueIndex": 1,
+   "cell": 0,
+   "len": 3
+  },
+  {
+   "num": 2,
+   "clueIndex": 2,
+   "cell": 1,
+   "len": 3
+  },
+  {
+   "num": 3,
+   "clueIndex": 3,
+   "cell": 2,
+   "len": 3
+  },
+  {
+   "num": 4,
+   "clueIndex": 4,
+   "cell": 3,
+   "len": 6
+  },
+  {
+   "num": 5,
+   "clueIndex": 6,
+   "cell": 5,
+   "len": 4
+  },
+  {
+   "num": 6,
+   "clueIndex": 7,
+   "cell": 6,
+   "len": 3
+  },
+  {
+   "num": 7,
+   "clueIndex": 8,
+   "cell": 7,
+   "len": 3
+  },
+  {
+   "num": 8,
+   "clueIndex": 9,
+   "cell": 8,
+   "len": 6
+  },
+  {
+   "num": 9,
+   "clueIndex": 10,
+   "cell": 9,
+   "len": 5
+  },
+  {
+   "num": 10,
+   "clueIndex": 12,
+   "cell": 11,
+   "len": 8
+  },
+  {
+   "num": 11,
+   "clueIndex": 13,
+   "cell": 12,
+   "len": 3
+  },
+  {
+   "num": 12,
+   "clueIndex": 14,
+   "cell": 13,
+   "len": 3
+  },
+  {
+   "num": 13,
+   "clueIndex": 15,
+   "cell": 14,
+   "len": 3
+  },
+  {
+   "num": 18,
+   "clueIndex": 20,
+   "cell": 34,
+   "len": 3
+  },
+  {
+   "num": 19,
+   "clueIndex": 21,
+   "cell": 40,
+   "len": 2
+  },
+  {
+   "num": 22,
+   "clueIndex": 25,
+   "cell": 60,
+   "len": 7
+  },
+  {
+   "num": 23,
+   "clueIndex": 26,
+   "cell": 61,
+   "len": 7
+  },
+  {
+   "num": 24,
+   "clueIndex": 27,
+   "cell": 62,
+   "len": 7
+  },
+  {
+   "num": 25,
+   "clueIndex": 29,
+   "cell": 66,
+   "len": 3
+  },
+  {
+   "num": 26,
+   "clueIndex": 30,
+   "cell": 67,
+   "len": 7
+  },
+  {
+   "num": 28,
+   "clueIndex": 32,
+   "cell": 72,
+   "len": 7
+  },
+  {
+   "num": 29,
+   "clueIndex": 33,
+   "cell": 73,
+   "len": 7
+  },
+  {
+   "num": 30,
+   "clueIndex": 34,
+   "cell": 74,
+   "len": 7
+  },
+  {
+   "num": 32,
+   "clueIndex": 37,
+   "cell": 80,
+   "len": 4
+  },
+  {
+   "num": 33,
+   "clueIndex": 39,
+   "cell": 85,
+   "len": 4
+  },
+  {
+   "num": 35,
+   "clueIndex": 42,
+   "cell": 94,
+   "len": 4
+  },
+  {
+   "num": 36,
+   "clueIndex": 44,
+   "cell": 99,
+   "len": 4
+  },
+  {
+   "num": 38,
+   "clueIndex": 46,
+   "cell": 108,
+   "len": 8
+  },
+  {
+   "num": 42,
+   "clueIndex": 50,
+   "cell": 128,
+   "len": 7
+  },
+  {
+   "num": 45,
+   "clueIndex": 54,
+   "cell": 141,
+   "len": 6
+  },
+  {
+   "num": 46,
+   "clueIndex": 56,
+   "cell": 146,
+   "len": 2
+  },
+  {
+   "num": 48,
+   "clueIndex": 59,
+   "cell": 155,
+   "len": 5
+  },
+  {
+   "num": 49,
+   "clueIndex": 61,
+   "cell": 160,
+   "len": 3
+  },
+  {
+   "num": 51,
+   "clueIndex": 63,
+   "cell": 169,
+   "len": 2
+  },
+  {
+   "num": 53,
+   "clueIndex": 65,
+   "cell": 174,
+   "len": 4
+  },
+  {
+   "num": 54,
+   "clueIndex": 67,
+   "cell": 180,
+   "len": 3
+  },
+  {
+   "num": 55,
+   "clueIndex": 68,
+   "cell": 181,
+   "len": 3
+  },
+  {
+   "num": 56,
+   "clueIndex": 69,
+   "cell": 182,
+   "len": 3
+  },
+  {
+   "num": 57,
+   "clueIndex": 70,
+   "cell": 187,
+   "len": 3
+  },
+  {
+   "num": 58,
+   "clueIndex": 71,
+   "cell": 191,
+   "len": 3
+  },
+  {
+   "num": 59,
+   "clueIndex": 72,
+   "cell": 192,
+   "len": 3
+  },
+  {
+   "num": 60,
+   "clueIndex": 73,
+   "cell": 193,
+   "len": 3
+  },
+  {
+   "num": 61,
+   "clueIndex": 74,
+   "cell": 194,
+   "len": 3
+  }
+ ],
+ "circled": [
+  32,
+  33,
+  34,
+  100,
+  101
+ ],
+ "rebusSquares": {
+  "30": "HEART",
+  "194": "QUARTZ"
+ }
+}

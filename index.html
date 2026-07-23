@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crossword Archive</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧩</text></svg>">
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/archive.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./index.html">🧩 Crossword</a>
+    <nav>
+      <a href="./index.html">Archive</a>
+      <a href="./stats.html">Stats</a>
+    </nav>
+    <span class="spacer"></span>
+    <span id="sync-badge" class="badge" hidden></span>
+    <span id="profile-chip" class="badge"></span>
+  </header>
+
+  <main class="archive-main">
+    <div class="archive-hero" id="hero" hidden>
+      <div>
+        <h1 id="hero-title"></h1>
+        <div class="hero-sub" id="hero-sub"></div>
+      </div>
+      <a class="btn btn-primary" id="hero-play" href="#">Play</a>
+    </div>
+
+    <div class="cal-header" id="cal-header" hidden>
+      <button class="cal-nav" id="cal-prev" aria-label="Previous month">‹</button>
+      <h2 id="cal-title"></h2>
+      <button class="cal-nav" id="cal-next" aria-label="Next month">›</button>
+    </div>
+    <div class="calendar" id="calendar"></div>
+
+    <div class="special-list" id="special-list" hidden>
+      <h2>Special puzzles</h2>
+      <div id="special-items"></div>
+    </div>
+
+    <div class="archive-empty" id="archive-empty" hidden>
+      <p>No puzzles yet.</p>
+      <p>Drop <code>.puz</code> files (named <code>YYYY-MM-DD.puz</code>) into <code>puzzles/</code><br>
+      and run <code>python tools/build_index.py</code>.</p>
+    </div>
+  </main>
+
+  <script type="module" src="./js/archive-page.js"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crossword</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧩</text></svg>">
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/player.css">
+</head>
+<body class="player-page">
+  <header class="site-header">
+    <a class="brand" href="./index.html">🧩 Crossword</a>
+    <nav>
+      <a href="./index.html">Archive</a>
+      <a href="./stats.html">Stats</a>
+    </nav>
+    <span class="spacer"></span>
+    <span id="sync-badge" class="badge" hidden></span>
+    <span id="profile-chip" class="badge"></span>
+  </header>
+
+  <div class="puzzle-header">
+    <h1 class="puzzle-title">The Crossword</h1>
+    <span class="puzzle-date" id="puzzle-date"></span>
+    <span class="puzzle-byline" id="puzzle-byline"></span>
+  </div>
+
+  <div class="toolbar">
+    <button class="timer-box" id="timer-btn" title="Pause">
+      <span id="timer-display">0:00</span>
+      <span class="pause-icon">⏸</span>
+    </button>
+    <span class="spacer"></span>
+    <button class="tool-btn" id="pencil-btn" title="Pencil mode (entries in gray)">✎ Pencil</button>
+    <button class="tool-btn" id="rebus-btn" title="Enter multiple letters (Esc)">Rebus</button>
+    <div class="menu-host">
+      <button class="tool-btn" id="clear-btn">Clear ▾</button>
+    </div>
+    <div class="menu-host">
+      <button class="tool-btn" id="check-btn">Check ▾</button>
+    </div>
+    <div class="menu-host">
+      <button class="tool-btn" id="reveal-btn">Reveal ▾</button>
+    </div>
+    <button class="tool-btn" id="info-btn" title="Puzzle notes" hidden>ⓘ</button>
+    <button class="tool-btn" id="settings-btn" title="Settings">⚙</button>
+  </div>
+
+  <main class="play-area">
+    <div class="board-col">
+      <div class="clue-bar" id="clue-bar"></div>
+      <div class="board-wrap" id="board-wrap"></div>
+    </div>
+    <div class="clue-lists">
+      <section class="clue-list" id="across-list"></section>
+      <section class="clue-list" id="down-list"></section>
+    </div>
+  </main>
+
+  <script type="module" src="./js/player-page.js"></script>
+</body>
+</html>

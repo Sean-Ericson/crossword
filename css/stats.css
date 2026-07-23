@@ -1,0 +1,252 @@
+/* stats.css — stat tiles, weekday bars, comparison table. */
+
+.stats-main {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+.stats-main h1 {
+  font-size: 26px;
+  margin: 0 0 14px;
+}
+
+/* ---------- user selector ---------- */
+
+.user-select {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  background: var(--color-bg);
+  user-select: none;
+}
+
+.user-chip input {
+  display: none;
+}
+
+.user-chip .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #bbb;
+}
+
+.user-chip.selected {
+  border-color: var(--color-text);
+  background: var(--color-bg-muted);
+  font-weight: 600;
+}
+
+.user-note {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  align-self: center;
+}
+
+/* ---------- stat tiles ---------- */
+
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.stat-tile {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.stat-tile .tile-value {
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.stat-tile .tile-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.stat-tile .tile-sub {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* ---------- weekday bars ---------- */
+
+.weekday-chart {
+  margin-bottom: 34px;
+}
+
+.weekday-chart h2,
+.h2h h2 {
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+
+.chart-sub {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 14px;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.legend .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend .dot,
+.h2h .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.wk-row {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 5px 0;
+}
+
+.wk-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  padding-top: 2px;
+}
+
+.wk-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 2px; /* ≥2px surface gap between adjacent bars */
+}
+
+.wk-bar-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 18px;
+}
+
+.wk-bar {
+  height: 14px;
+  border-radius: 0 4px 4px 0; /* rounded data-end, flat baseline */
+  min-width: 2px;
+  transition: filter 0.1s;
+}
+
+.wk-bar-line:hover .wk-bar {
+  filter: brightness(0.85);
+}
+
+.wk-value {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.wk-best {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.wk-empty {
+  font-size: 12px;
+  color: #c9c9c9;
+  padding-top: 1px;
+}
+
+/* ---------- head-to-head ---------- */
+
+.h2h-wins {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 10px 0 16px;
+}
+
+.win-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.win-chip b {
+  font-size: 18px;
+}
+
+.h2h-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.h2h-table th {
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--color-text-muted);
+  border-bottom: 2px solid var(--color-text);
+  padding: 6px 10px;
+}
+
+.h2h-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
+}
+
+.h2h-table td.fastest {
+  font-weight: 700;
+}
+
+.h2h-table a {
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+.h2h-table a:hover {
+  text-decoration: underline;
+}
+
+.stats-empty {
+  color: var(--color-text-muted);
+  padding: 30px 0;
+  text-align: center;
+}
