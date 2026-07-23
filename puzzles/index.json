@@ -1,7 +1,52 @@
 {
   "schema": 1,
-  "generated_at": "2026-07-23T21:44:56Z",
+  "generated_at": "2026-07-23T22:31:46Z",
   "puzzles": [
+    {
+      "id": "2026-07-23",
+      "file": "puzzles/2026-07-23.puz",
+      "date": "2026-07-23",
+      "title": "NY Times, Thursday, July 23, 2026",
+      "author": "Damon Gulczynski / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2026-07-22",
+      "file": "puzzles/2026-07-22.puz",
+      "date": "2026-07-22",
+      "title": "NY Times, Wednesday, July 22, 2026",
+      "author": "Rebecca Goldstein / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2026-07-21",
+      "file": "puzzles/2026-07-21.puz",
+      "date": "2026-07-21",
+      "title": "NY Times, Tuesday, July 21, 2026",
+      "author": "Kenneth Cortes / Will Shortz",
+      "width": 16,
+      "height": 15
+    },
+    {
+      "id": "2026-07-20",
+      "file": "puzzles/2026-07-20.puz",
+      "date": "2026-07-20",
+      "title": "NY Times, Monday, July 20, 2026",
+      "author": "Eric Rollfing / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2026-07-19",
+      "file": "puzzles/2026-07-19.puz",
+      "date": "2026-07-19",
+      "title": "NY Times, Sunday, July 19, 2026 RAISING CAPITAL",
+      "author": "Michael Lieberman / Will Shortz",
+      "width": 21,
+      "height": 21
+    },
     {
       "id": "sample",
       "file": "puzzles/sample.puz",
