@@ -34,12 +34,23 @@ Puzzles are plain Across Lite `.puz` files in `puzzles/`, named
 `YYYY-MM-DD.puz` (dated puzzles appear in the calendar; any other name shows
 under "Special puzzles").
 
-1. Download NYT puzzles with the companion
-   [nytxw_puz](https://github.com/Q726kbXuN/nytxw_puz) tool, e.g. a range:
-   `python get_range.py chrome 2026-01-01 now ../crossword-site/puzzles`
-2. Rebuild the archive index:
-   `python tools/build_index.py`
-3. Commit and push `puzzles/`.
+**One-shot update** (needs the companion
+[nytxw_puz](https://github.com/Q726kbXuN/nytxw_puz) checkout next to this
+folder, and a browser logged into nytimes.com):
+
+```bash
+python tools/update_puzzles.py            # cookies from Firefox (default)
+python tools/update_puzzles.py Chrome     # ...or another browser
+```
+
+This downloads everything from the newest archived puzzle through today
+(tomorrow's puzzle too, once NYT publishes it at ~10pm ET), rebuilds
+`puzzles/index.json`, and commits + pushes. Re-running is cheap — existing
+files are skipped. On Windows, `update.cmd` does the same. Useful flags:
+`--start YYYY-MM-DD` to backfill a range, `--no-git` to only download.
+
+Manual equivalent: drop `.puz` files into `puzzles/`, run
+`python tools/build_index.py`, commit and push.
 
 > **Copyright note:** NYT puzzles are copyrighted. A GitHub Pages site is
 > public (private-repo Pages needs GitHub Pro), so keep this to personal use
