@@ -1,7 +1,16 @@
 {
   "schema": 1,
-  "generated_at": "2026-07-24T15:48:21Z",
+  "generated_at": "2026-07-25T19:52:02Z",
   "puzzles": [
+    {
+      "id": "2026-07-25",
+      "file": "puzzles/2026-07-25.puz",
+      "date": "2026-07-25",
+      "title": "NY Times, Saturday, July 25, 2026",
+      "author": "Katie Hoody / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "2026-07-24",
       "file": "puzzles/2026-07-24.puz",
