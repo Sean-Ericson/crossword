@@ -1,7 +1,16 @@
 {
   "schema": 1,
-  "generated_at": "2026-07-25T19:52:02Z",
+  "generated_at": "2026-07-26T14:31:04Z",
   "puzzles": [
+    {
+      "id": "2026-07-26",
+      "file": "puzzles/2026-07-26.puz",
+      "date": "2026-07-26",
+      "title": "NY Times, Sunday, July 26, 2026 DOWN THE TUBES",
+      "author": "Kim Alswager / Will Shortz",
+      "width": 21,
+      "height": 21
+    },
     {
       "id": "2026-07-25",
       "file": "puzzles/2026-07-25.puz",
