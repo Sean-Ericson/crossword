@@ -1,7 +1,16 @@
 {
   "schema": 1,
-  "generated_at": "2026-07-26T14:31:04Z",
+  "generated_at": "2026-07-27T19:15:46Z",
   "puzzles": [
+    {
+      "id": "2026-07-27",
+      "file": "puzzles/2026-07-27.puz",
+      "date": "2026-07-27",
+      "title": "NY Times, Monday, July 27, 2026",
+      "author": "Aidan Deshong / Will Shortz",
+      "width": 14,
+      "height": 15
+    },
     {
       "id": "2026-07-26",
       "file": "puzzles/2026-07-26.puz",
