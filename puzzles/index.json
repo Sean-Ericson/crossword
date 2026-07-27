@@ -1,10 +1,31 @@
 {
   "schema": 1,
-  "generated_at": "2026-07-27T19:15:46Z",
+  "generated_at": "2026-07-27T22:55:39Z",
   "puzzles": [
+    {
+      "id": "mini-2026-07-27",
+      "file": "puzzles/mini-2026-07-27.puz",
+      "type": "mini",
+      "date": "2026-07-27",
+      "title": "NY Times, Monday, July 27, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-07-27",
+      "file": "puzzles/midi-2026-07-27.puz",
+      "type": "midi",
+      "date": "2026-07-27",
+      "title": "NY Times, Monday, July 27, 2026 CUTTING BOARD",
+      "author": "Erica Hsiung Wojcik / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
     {
       "id": "2026-07-27",
       "file": "puzzles/2026-07-27.puz",
+      "type": "daily",
       "date": "2026-07-27",
       "title": "NY Times, Monday, July 27, 2026",
       "author": "Aidan Deshong / Will Shortz",
@@ -12,8 +33,29 @@
       "height": 15
     },
     {
+      "id": "mini-2026-07-26",
+      "file": "puzzles/mini-2026-07-26.puz",
+      "type": "mini",
+      "date": "2026-07-26",
+      "title": "NY Times, Sunday, July 26, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-07-26",
+      "file": "puzzles/midi-2026-07-26.puz",
+      "type": "midi",
+      "date": "2026-07-26",
+      "title": "NY Times, Sunday, July 26, 2026 DOING LAPS",
+      "author": "Evan Kalish / Ian Livengood",
+      "width": 11,
+      "height": 11
+    },
+    {
       "id": "2026-07-26",
       "file": "puzzles/2026-07-26.puz",
+      "type": "daily",
       "date": "2026-07-26",
       "title": "NY Times, Sunday, July 26, 2026 DOWN THE TUBES",
       "author": "Kim Alswager / Will Shortz",
@@ -21,8 +63,29 @@
       "height": 21
     },
     {
+      "id": "mini-2026-07-25",
+      "file": "puzzles/mini-2026-07-25.puz",
+      "type": "mini",
+      "date": "2026-07-25",
+      "title": "NY Times, Saturday, July 25, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 7,
+      "height": 7
+    },
+    {
+      "id": "midi-2026-07-25",
+      "file": "puzzles/midi-2026-07-25.puz",
+      "type": "midi",
+      "date": "2026-07-25",
+      "title": "NY Times, Saturday, July 25, 2026 DOUBLE DIGITS",
+      "author": "Zhou Zhang and Kevin Curry / Ian Livengood",
+      "width": 10,
+      "height": 10
+    },
+    {
       "id": "2026-07-25",
       "file": "puzzles/2026-07-25.puz",
+      "type": "daily",
       "date": "2026-07-25",
       "title": "NY Times, Saturday, July 25, 2026",
       "author": "Katie Hoody / Will Shortz",
@@ -30,8 +93,29 @@
       "height": 15
     },
     {
+      "id": "mini-2026-07-24",
+      "file": "puzzles/mini-2026-07-24.puz",
+      "type": "mini",
+      "date": "2026-07-24",
+      "title": "NY Times, Friday, July 24, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-07-24",
+      "file": "puzzles/midi-2026-07-24.puz",
+      "type": "midi",
+      "date": "2026-07-24",
+      "title": "NY Times, Friday, July 24, 2026 KINDA SORTA",
+      "author": "Alina Abidi / Ian Livengood",
+      "width": 11,
+      "height": 11
+    },
+    {
       "id": "2026-07-24",
       "file": "puzzles/2026-07-24.puz",
+      "type": "daily",
       "date": "2026-07-24",
       "title": "NY Times, Friday, July 24, 2026",
       "author": "Geoffrey Schorkopf / Will Shortz",
@@ -39,8 +123,29 @@
       "height": 15
     },
     {
+      "id": "mini-2026-07-23",
+      "file": "puzzles/mini-2026-07-23.puz",
+      "type": "mini",
+      "date": "2026-07-23",
+      "title": "NY Times, Thursday, July 23, 2026",
+      "author": "Tracy Bennett / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-07-23",
+      "file": "puzzles/midi-2026-07-23.puz",
+      "type": "midi",
+      "date": "2026-07-23",
+      "title": "NY Times, Thursday, July 23, 2026 MASTER OF SUSPENSE",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
       "id": "2026-07-23",
       "file": "puzzles/2026-07-23.puz",
+      "type": "daily",
       "date": "2026-07-23",
       "title": "NY Times, Thursday, July 23, 2026",
       "author": "Damon Gulczynski / Will Shortz",
@@ -48,8 +153,29 @@
       "height": 15
     },
     {
+      "id": "mini-2026-07-22",
+      "file": "puzzles/mini-2026-07-22.puz",
+      "type": "mini",
+      "date": "2026-07-22",
+      "title": "NY Times, Wednesday, July 22, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-07-22",
+      "file": "puzzles/midi-2026-07-22.puz",
+      "type": "midi",
+      "date": "2026-07-22",
+      "title": "NY Times, Wednesday, July 22, 2026 HIGHER-UPS",
+      "author": "Adrianne Baik / Ian Livengood",
+      "width": 10,
+      "height": 9
+    },
+    {
       "id": "2026-07-22",
       "file": "puzzles/2026-07-22.puz",
+      "type": "daily",
       "date": "2026-07-22",
       "title": "NY Times, Wednesday, July 22, 2026",
       "author": "Rebecca Goldstein / Will Shortz",
@@ -57,8 +183,29 @@
       "height": 15
     },
     {
+      "id": "mini-2026-07-21",
+      "file": "puzzles/mini-2026-07-21.puz",
+      "type": "mini",
+      "date": "2026-07-21",
+      "title": "NY Times, Tuesday, July 21, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-07-21",
+      "file": "puzzles/midi-2026-07-21.puz",
+      "type": "midi",
+      "date": "2026-07-21",
+      "title": "NY Times, Tuesday, July 21, 2026 THREE-FOR-ONE FUN",
+      "author": "Ian Livengood",
+      "width": 10,
+      "height": 10
+    },
+    {
       "id": "2026-07-21",
       "file": "puzzles/2026-07-21.puz",
+      "type": "daily",
       "date": "2026-07-21",
       "title": "NY Times, Tuesday, July 21, 2026",
       "author": "Kenneth Cortes / Will Shortz",
@@ -66,8 +213,29 @@
       "height": 15
     },
     {
+      "id": "mini-2026-07-20",
+      "file": "puzzles/mini-2026-07-20.puz",
+      "type": "mini",
+      "date": "2026-07-20",
+      "title": "NY Times, Monday, July 20, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-07-20",
+      "file": "puzzles/midi-2026-07-20.puz",
+      "type": "midi",
+      "date": "2026-07-20",
+      "title": "NY Times, Monday, July 20, 2026 LOW-HANGING FRUIT",
+      "author": "Tarun Krishnamurthy / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
       "id": "2026-07-20",
       "file": "puzzles/2026-07-20.puz",
+      "type": "daily",
       "date": "2026-07-20",
       "title": "NY Times, Monday, July 20, 2026",
       "author": "Eric Rollfing / Will Shortz",
@@ -75,8 +243,29 @@
       "height": 15
     },
     {
+      "id": "mini-2026-07-19",
+      "file": "puzzles/mini-2026-07-19.puz",
+      "type": "mini",
+      "date": "2026-07-19",
+      "title": "NY Times, Sunday, July 19, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-07-19",
+      "file": "puzzles/midi-2026-07-19.puz",
+      "type": "midi",
+      "date": "2026-07-19",
+      "title": "NY Times, Sunday, July 19, 2026 FA-MOUS LAST WORDS",
+      "author": "Hanh Huynh / Ian Livengood",
+      "width": 10,
+      "height": 9
+    },
+    {
       "id": "2026-07-19",
       "file": "puzzles/2026-07-19.puz",
+      "type": "daily",
       "date": "2026-07-19",
       "title": "NY Times, Sunday, July 19, 2026 RAISING CAPITAL",
       "author": "Michael Lieberman / Will Shortz",
@@ -84,8 +273,39 @@
       "height": 21
     },
     {
+      "id": "bonus-2026-07-01",
+      "file": "puzzles/bonus-2026-07-01.puz",
+      "type": "bonus",
+      "date": "2026-07-01",
+      "title": "NY Times, Wednesday, July 1, 2026 GO-O-O-OAL ORIENTED",
+      "author": "Katie Hale and Adesina O. Koiki / Christina Iverson",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "bonus-2026-06-01",
+      "file": "puzzles/bonus-2026-06-01.puz",
+      "type": "bonus",
+      "date": "2026-06-01",
+      "title": "NY Times, Monday, June 1, 2026 ... AND THE REST IS DRAG",
+      "author": "Christina Iverson and Bianca Del Rio / Christina Iverson",
+      "width": 16,
+      "height": 15
+    },
+    {
+      "id": "bonus-2026-05-01",
+      "file": "puzzles/bonus-2026-05-01.puz",
+      "type": "bonus",
+      "date": "2026-05-01",
+      "title": "NY Times, Friday, May 1, 2026 MY LIFE WAS SAVED BY ROCK 'N' ROLL",
+      "author": "Jeff Tweedy and Christina Iverson / Christina Iverson",
+      "width": 15,
+      "height": 15
+    },
+    {
       "id": "sample",
       "file": "puzzles/sample.puz",
+      "type": "special",
       "date": null,
       "title": "Test Fixture ’ 15×15",
       "author": "make_fixture.py / Crossword Site",
@@ -95,6 +315,7 @@
     {
       "id": "mega2025",
       "file": "puzzles/mega2025.puz",
+      "type": "special",
       "date": null,
       "title": "Super Mega 2025",
       "author": "NY Times",

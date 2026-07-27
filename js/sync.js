@@ -14,7 +14,7 @@
 import { GitHubClient, ConflictError, AuthError } from './github.js';
 import { SITE_CONFIG } from './config.js';
 import { mergeProgress, mergeStats, newStatsDoc } from './state.js';
-import { isoNow, dateFromId } from './util.js';
+import { isoNow, parsePuzzleId } from './util.js';
 
 const GH_KEY = 'xw:site:gh';
 
@@ -44,7 +44,8 @@ export function clearGhToken() {
 }
 
 export function progressPath(user, puzzleId) {
-  const year = dateFromId(puzzleId) ? puzzleId.slice(0, 4) : 'special';
+  const { date } = parsePuzzleId(puzzleId);
+  const year = date ? date.slice(0, 4) : 'special';
   return `users/${user}/progress/${year}/${puzzleId}.json`;
 }
 

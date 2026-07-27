@@ -34,6 +34,11 @@
   box-sizing: border-box;
 }
 
+/* the hidden attribute always wins, even over display:flex/grid rules */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;
@@ -197,6 +202,35 @@ a {
   background: none;
   font-size: 22px;
   color: var(--color-text-muted);
+}
+
+/* ---------- puzzle-type tabs (archive + stats) ---------- */
+
+.type-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 22px;
+}
+
+.type-tab {
+  border: none;
+  background: none;
+  font-size: 15px;
+  padding: 10px 16px;
+  color: var(--color-text-muted);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+}
+
+.type-tab:hover {
+  color: var(--color-text);
+}
+
+.type-tab.active {
+  color: var(--color-text);
+  font-weight: 700;
+  border-bottom-color: var(--color-text);
 }
 
 /* ---------- misc shared ---------- */

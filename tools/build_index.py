@@ -23,6 +23,17 @@ puz.IGNORE_CHECKSUMS = True
 puz.ENCODING = 'cp1252'  # match the browser's windows-1252 decoding
 
 DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+TYPED_RE = re.compile(r'^(mini|midi|bonus)-(\d{4}-\d{2}-\d{2})$')
+
+
+def classify(stem):
+    """-> (type, date|None). Mirrors js/util.js parsePuzzleId."""
+    if DATE_RE.match(stem):
+        return 'daily', stem
+    m = TYPED_RE.match(stem)
+    if m:
+        return m.group(1), m.group(2)
+    return 'special', None
 
 
 def main():
@@ -44,10 +55,12 @@ def main():
             skipped.append(stem)
             print(f'WARNING: skipping {path}: {exc}', file=sys.stderr)
             continue
+        ptype, pdate = classify(stem)
         entries.append({
             'id': stem,
             'file': f'puzzles/{os.path.basename(path)}',
-            'date': stem if DATE_RE.match(stem) else None,
+            'type': ptype,
+            'date': pdate,
             'title': (p.title or '').strip(),
             'author': (p.author or '').strip(),
             'width': p.width,

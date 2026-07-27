@@ -1,9 +1,18 @@
 /*
- * archive-page.js — home page: latest-puzzle hero, month calendar with
- * per-day solve status for the active profile, and special puzzles list.
+ * archive-page.js — home page. Tabs per puzzle type: Daily/Mini/Midi get a
+ * month calendar with per-day solve status for the active profile; Bonus
+ * (monthly) and Special get list views. The Daily tab also shows the
+ * latest-puzzle hero.
  */
 
-import { el, qs, formatTime, formatDateLong } from './util.js';
+import {
+  el,
+  qs,
+  formatTime,
+  formatDateLong,
+  parsePuzzleId,
+  themeTitle,
+} from './util.js';
 import { loadLocal, statusOf } from './state.js';
 import { getActiveUser } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
@@ -12,6 +21,15 @@ import { initSyncBadge } from './sync-ui.js';
 
 const user = getActiveUser();
 const pad = (n) => String(n).padStart(2, '0');
+const TAB_KEY = 'xw:site:archive-tab';
+
+const TABS = [
+  ['daily', 'Daily'],
+  ['mini', 'Mini'],
+  ['midi', 'Midi'],
+  ['bonus', 'Bonus'],
+  ['special', 'Special'],
+];
 
 const STATUS_ICON = {
   'solved-clean': ['★', 'status-star-gold', 'Solved — clean!'],
@@ -32,22 +50,63 @@ async function main() {
     /* fall through to empty state */
   }
 
-  const puzzles = index?.puzzles ?? [];
-  const dated = puzzles.filter((p) => p.date);
-  const special = puzzles.filter((p) => !p.date);
-
+  const puzzles = (index?.puzzles ?? []).map((p) => ({
+    ...p,
+    type: p.type ?? parsePuzzleId(p.id).type,
+  }));
   if (!puzzles.length) {
     qs('#archive-empty').hidden = false;
     return;
   }
 
-  const byDate = new Map(dated.map((p) => [p.date, p]));
+  const byType = new Map(TABS.map(([t]) => [t, []]));
+  for (const p of puzzles) {
+    (byType.get(p.type) ?? byType.get('special')).push(p);
+  }
 
-  // ----- hero: newest dated puzzle -----
-  if (dated.length) {
-    const latest = dated[0]; // index is sorted date-desc
-    const status = statusOf(loadLocal(user, latest.id));
-    qs('#hero').hidden = false;
+  // ----- tabs (only those with content; Daily always) -----
+  const tabsEl = qs('#type-tabs');
+  const available = TABS.filter(([t]) => t === 'daily' || byType.get(t).length);
+  let tab = localStorage.getItem(TAB_KEY);
+  if (!available.some(([t]) => t === tab)) tab = 'daily';
+
+  const monthView = {}; // per-tab current "YYYY-MM"
+
+  function renderTabs() {
+    tabsEl.hidden = available.length <= 1;
+    tabsEl.textContent = '';
+    for (const [t, label] of available) {
+      tabsEl.append(
+        el(
+          'button',
+          {
+            class: 'type-tab' + (t === tab ? ' active' : ''),
+            onclick: () => {
+              tab = t;
+              localStorage.setItem(TAB_KEY, t);
+              renderTabs();
+              renderCurrent();
+            },
+          },
+          label
+        )
+      );
+    }
+  }
+
+  function statusBits(id) {
+    const record = loadLocal(user, id);
+    return { record, status: statusOf(record) };
+  }
+
+  // ----- hero (Daily tab only) -----
+  function renderHero() {
+    const dailies = byType.get('daily');
+    const show = tab === 'daily' && dailies.length > 0;
+    qs('#hero').hidden = !show;
+    if (!show) return;
+    const latest = dailies[0]; // index is sorted date-desc
+    const { status } = statusBits(latest.id);
     qs('#hero-title').textContent = formatDateLong(latest.date);
     qs('#hero-sub').textContent = [
       latest.author && `By ${latest.author}`,
@@ -61,107 +120,136 @@ async function main() {
       status === 'in-progress' ? 'Continue' : status.startsWith('solved') ? 'Review' : 'Play';
   }
 
-  // ----- calendar -----
-  if (dated.length) {
-    qs('#cal-header').hidden = false;
-    const months = [...new Set(dated.map((p) => p.date.slice(0, 7)))].sort();
+  // ----- calendar (Daily / Mini / Midi) -----
+  const calHeader = qs('#cal-header');
+  const calEl = qs('#calendar');
+  const title = qs('#cal-title');
+  const prevBtn = qs('#cal-prev');
+  const nextBtn = qs('#cal-next');
+
+  const shift = (ym, delta) => {
+    const [y, m] = ym.split('-').map(Number);
+    const d = new Date(Date.UTC(y, m - 1 + delta, 1));
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`;
+  };
+
+  function renderCalendar(entries) {
+    calHeader.hidden = false;
+    const byDate = new Map(entries.map((p) => [p.date, p]));
+    const months = [...new Set(entries.map((p) => p.date.slice(0, 7)))].sort();
     const minMonth = months[0];
     const maxMonth = months[months.length - 1];
-    let view = maxMonth; // "YYYY-MM"
+    if (!monthView[tab] || monthView[tab] < minMonth || monthView[tab] > maxMonth) {
+      monthView[tab] = maxMonth;
+    }
+    const view = monthView[tab];
 
-    const title = qs('#cal-title');
-    const prevBtn = qs('#cal-prev');
-    const nextBtn = qs('#cal-next');
-    const calEl = qs('#calendar');
-
-    const shift = (ym, delta) => {
-      const [y, m] = ym.split('-').map(Number);
-      const d = new Date(Date.UTC(y, m - 1 + delta, 1));
-      return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`;
+    const [y, m] = view.split('-').map(Number);
+    title.textContent = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    });
+    prevBtn.disabled = view <= minMonth;
+    nextBtn.disabled = view >= maxMonth;
+    prevBtn.onclick = () => {
+      monthView[tab] = shift(view, -1);
+      renderCurrent();
+    };
+    nextBtn.onclick = () => {
+      monthView[tab] = shift(view, 1);
+      renderCurrent();
     };
 
-    const render = () => {
-      const [y, m] = view.split('-').map(Number);
-      title.textContent = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-US', {
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'UTC',
-      });
-      prevBtn.disabled = view <= minMonth;
-      nextBtn.disabled = view >= maxMonth;
-
-      calEl.textContent = '';
-      for (const dow of ['S', 'M', 'T', 'W', 'T', 'F', 'S']) {
-        calEl.append(el('div', { class: 'cal-dow' }, dow));
+    calEl.textContent = '';
+    for (const dow of ['S', 'M', 'T', 'W', 'T', 'F', 'S']) {
+      calEl.append(el('div', { class: 'cal-dow' }, dow));
+    }
+    const firstDow = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+    const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    for (let i = 0; i < firstDow; i++) calEl.append(el('div', { class: 'cal-day empty' }));
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = `${y}-${pad(m)}-${pad(day)}`;
+      const puzzle = byDate.get(date);
+      if (!puzzle) {
+        calEl.append(el('div', { class: 'cal-day no-puzzle' }, String(day)));
+        continue;
       }
-      const firstDow = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
-      const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
-      for (let i = 0; i < firstDow; i++) calEl.append(el('div', { class: 'cal-day empty' }));
-      for (let day = 1; day <= daysInMonth; day++) {
-        const id = `${y}-${pad(m)}-${pad(day)}`;
-        const puzzle = byDate.get(id);
-        if (!puzzle) {
-          calEl.append(el('div', { class: 'cal-day no-puzzle' }, String(day)));
-          continue;
-        }
-        const record = loadLocal(user, id);
-        const status = statusOf(record);
-        const [icon, iconClass, tooltip] = STATUS_ICON[status];
-        calEl.append(
-          el(
-            'a',
-            {
-              class: `cal-day has-puzzle st-${status}`,
-              href: `./puzzle.html?id=${encodeURIComponent(id)}`,
-              title: tooltip || formatDateLong(id),
-            },
-            [
-              el('span', {}, String(day)),
-              el('span', { class: `day-status ${iconClass}` }, icon),
-              record?.completed
-                ? el('span', { class: 'day-time' }, formatTime(record.elapsed))
-                : el('span', { class: 'day-time' }, ' '),
-            ]
-          )
-        );
-      }
-    };
-
-    prevBtn.addEventListener('click', () => {
-      if (view > minMonth) {
-        view = shift(view, -1);
-        render();
-      }
-    });
-    nextBtn.addEventListener('click', () => {
-      if (view < maxMonth) {
-        view = shift(view, 1);
-        render();
-      }
-    });
-    render();
+      const { record, status } = statusBits(puzzle.id);
+      const [icon, iconClass, tooltip] = STATUS_ICON[status];
+      calEl.append(
+        el(
+          'a',
+          {
+            class: `cal-day has-puzzle st-${status}`,
+            href: `./puzzle.html?id=${encodeURIComponent(puzzle.id)}`,
+            title: tooltip || formatDateLong(date),
+          },
+          [
+            el('span', {}, String(day)),
+            el('span', { class: `day-status ${iconClass}` }, icon),
+            record?.completed
+              ? el('span', { class: 'day-time' }, formatTime(record.elapsed))
+              : el('span', { class: 'day-time' }, ' '),
+          ]
+        )
+      );
+    }
   }
 
-  // ----- special puzzles -----
-  if (special.length) {
+  // ----- list view (Bonus / Special) -----
+  function renderList(entries, heading, labelFor) {
     qs('#special-list').hidden = false;
+    qs('#special-title').textContent = heading;
     const host = qs('#special-items');
-    for (const p of special) {
-      const status = statusOf(loadLocal(user, p.id));
+    host.textContent = '';
+    for (const p of entries) {
+      const { status } = statusBits(p.id);
       const [icon, iconClass] = STATUS_ICON[status];
       host.append(
         el(
           'a',
           { class: 'special-item', href: `./puzzle.html?id=${encodeURIComponent(p.id)}` },
           [
-            el('span', { class: 'sp-title' }, p.title || p.id),
-            el('span', { class: 'sp-meta' }, [p.author, `${p.width}×${p.height}`].filter(Boolean).join(' · ')),
+            el('span', { class: 'sp-title' }, labelFor(p)),
+            el(
+              'span',
+              { class: 'sp-meta' },
+              [p.author, `${p.width}×${p.height}`].filter(Boolean).join(' · ')
+            ),
             el('span', { class: `sp-status ${iconClass}` }, icon),
           ]
         )
       );
     }
   }
+
+  function renderCurrent() {
+    calHeader.hidden = true;
+    calEl.textContent = '';
+    qs('#special-list').hidden = true;
+    renderHero();
+
+    const entries = byType.get(tab);
+    if (tab === 'bonus') {
+      renderList(entries, 'Bonus puzzles', (p) => {
+        const month = new Date(p.date + 'T12:00:00Z').toLocaleDateString('en-US', {
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'UTC',
+        });
+        const theme = themeTitle(p.title);
+        return theme ? `${month} — ${theme}` : month;
+      });
+    } else if (tab === 'special') {
+      renderList(entries, 'Special puzzles', (p) => themeTitle(p.title) || p.title || p.id);
+    } else if (entries.length) {
+      renderCalendar(entries);
+    }
+  }
+
+  renderTabs();
+  renderCurrent();
 }
 
 main();

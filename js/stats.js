@@ -4,7 +4,9 @@
  * timeline, not wall-clock solving days).
  */
 
-import { dateFromId, weekdayOf } from './util.js';
+import { parsePuzzleId, weekdayOf } from './util.js';
+
+const dateOf = (id) => parsePuzzleId(id).date;
 
 const DAY_MS = 86400000;
 
@@ -50,7 +52,7 @@ export function computeUserStats(solves = {}) {
         stats.bestSeconds = e.seconds;
         stats.bestPuzzleId = id;
       }
-      const date = dateFromId(id);
+      const date = dateOf(id);
       if (date) {
         const dow = weekdayOf(date);
         const wk = stats.byWeekday[dow];
@@ -71,7 +73,7 @@ export function computeUserStats(solves = {}) {
   }
 
   // streaks over consecutive puzzle dates
-  const days = [...new Set(entries.map(([id]) => dateFromId(id)).filter(Boolean))]
+  const days = [...new Set(entries.map(([id]) => dateOf(id)).filter(Boolean))]
     .map(dayNumber)
     .sort((a, b) => a - b);
   let run = 0;
@@ -113,7 +115,7 @@ export function compareUsers(users) {
     const fastest = Object.entries(times).filter(([, s]) => s === min);
     const winner = fastest.length === 1 ? fastest[0][0] : null; // tie: no winner
     if (winner) wins[winner]++;
-    common.push({ puzzleId: id, date: dateFromId(id), times, winner });
+    common.push({ puzzleId: id, date: dateOf(id), times, winner });
   }
   common.sort((a, b) => {
     if (!!a.date !== !!b.date) return a.date ? -1 : 1; // dated before special

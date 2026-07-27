@@ -80,6 +80,19 @@ test('compare: common puzzles, winners, ties', () => {
   assert.equal(common[0].puzzleId, '2026-07-20');
 });
 
+test('stats: typed ids (mini-...) get weekdays and streaks too', () => {
+  const st = computeUserStats({
+    'mini-2026-07-20': S(45, true), // Monday
+    'mini-2026-07-21': S(52), // Tuesday
+    'mini-2026-07-23': S(60), // Thursday (gap on the 22nd)
+  });
+  assert.equal(st.solvedCount, 3);
+  assert.equal(st.longestStreak, 2);
+  assert.equal(st.currentStreak, 1);
+  assert.equal(st.byWeekday[1].count, 1); // Monday
+  assert.equal(st.byWeekday[1].bestSeconds, 45);
+});
+
 test('compare: three users, puzzle shared by two still counts', () => {
   const { common } = compareUsers([
     { user: 'a', solves: { p1: S(100) } },

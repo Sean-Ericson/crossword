@@ -6,7 +6,14 @@
  * known users (color follows the entity, not the selection order).
  */
 
-import { el, qs, formatTime, formatDateLong, WEEKDAY_NAMES } from './util.js';
+import {
+  el,
+  qs,
+  formatTime,
+  formatDateLong,
+  WEEKDAY_NAMES,
+  parsePuzzleId,
+} from './util.js';
 import { computeUserStats, compareUsers } from './stats.js';
 import { loadStatsLocal, mergeStats } from './state.js';
 import { getActiveUser, getLocalProfiles } from './profiles.js';
@@ -18,6 +25,14 @@ import { initSyncBadge } from './sync-ui.js';
 // and the comparison ships a table view (contrast relief).
 const USER_COLORS = ['#0072B2', '#E69F00', '#009E73', '#CC79A7', '#56B4E9', '#999999'];
 const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon..Sun, NYT style
+const TYPE_TABS = [
+  ['daily', 'Daily'],
+  ['mini', 'Mini'],
+  ['midi', 'Midi'],
+  ['bonus', 'Bonus'],
+  ['special', 'Special'],
+];
+const TYPE_KEY = 'xw:site:stats-type';
 
 const activeUser = getActiveUser();
 const sync = new Sync(activeUser);
@@ -47,6 +62,38 @@ async function main() {
     USER_COLORS[allUsers.indexOf(user) % USER_COLORS.length];
 
   const selected = new Set([activeUser]);
+  let statsType = localStorage.getItem(TYPE_KEY);
+  if (!TYPE_TABS.some(([t]) => t === statsType)) statsType = 'daily';
+
+  function renderTypeTabs() {
+    const host = qs('#type-tabs');
+    host.textContent = '';
+    for (const [t, label] of TYPE_TABS) {
+      host.append(
+        el(
+          'button',
+          {
+            class: 'type-tab' + (t === statsType ? ' active' : ''),
+            onclick: () => {
+              statsType = t;
+              localStorage.setItem(TYPE_KEY, t);
+              renderTypeTabs();
+              render();
+            },
+          },
+          label
+        )
+      );
+    }
+  }
+
+  function filterByType(solves) {
+    return Object.fromEntries(
+      Object.entries(solves).filter(([id]) => parsePuzzleId(id).type === statsType)
+    );
+  }
+
+  renderTypeTabs();
   renderSelector();
   render();
 
@@ -88,7 +135,7 @@ async function main() {
     const users = [...selected].sort();
     const data = [];
     for (const user of users) {
-      data.push({ user, solves: await getSolves(user) });
+      data.push({ user, solves: filterByType(await getSolves(user)) });
     }
     if (users.length === 1) renderSingle(body, data[0]);
     else renderComparison(body, data);
@@ -106,7 +153,11 @@ async function main() {
     const st = computeUserStats(solves);
     if (!st.solvedCount) {
       body.append(
-        el('div', { class: 'stats-empty' }, `No completed puzzles yet for “${user}”. Go solve one!`)
+        el(
+          'div',
+          { class: 'stats-empty' },
+          `No completed ${statsType} puzzles yet for “${user}”. Go solve one!`
+        )
       );
       return;
     }

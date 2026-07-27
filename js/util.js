@@ -18,9 +18,40 @@ export function isoNow() {
   return new Date().toISOString();
 }
 
-/** "2026-07-21" if the id is a date id, else null. */
+/** "2026-07-21" if the id is a plain daily date id, else null. */
 export function dateFromId(id) {
   return /^\d{4}-\d{2}-\d{2}$/.test(id) ? id : null;
+}
+
+export const PUZZLE_TYPE_LABELS = {
+  daily: 'The Crossword',
+  mini: 'The Mini',
+  midi: 'The Midi',
+  bonus: 'Bonus',
+  special: 'Special',
+};
+
+/**
+ * Strip the synthesized "NY Times, Weekday, Month D, YYYY" prefix that
+ * nytxw_puz bakes into .puz titles, leaving just the theme title (if any).
+ */
+export function themeTitle(title) {
+  return (title || '').replace(/^NY Times,\s+\w+,\s+\w+\s+\d+,\s+\d{4}\s*/, '').trim();
+}
+
+/**
+ * Classify a puzzle id:
+ *   "2026-07-21"        -> {type:'daily', date:'2026-07-21'}
+ *   "mini-2026-07-21"   -> {type:'mini',  date:'2026-07-21'}   (also midi)
+ *   "bonus-2026-07-01"  -> {type:'bonus', date:'2026-07-01'}   (monthly)
+ *   anything else       -> {type:'special', date:null}
+ */
+export function parsePuzzleId(id) {
+  let m = /^(\d{4}-\d{2}-\d{2})$/.exec(id);
+  if (m) return { type: 'daily', date: m[1] };
+  m = /^(mini|midi|bonus)-(\d{4}-\d{2}-\d{2})$/.exec(id);
+  if (m) return { type: m[1], date: m[2] };
+  return { type: 'special', date: null };
 }
 
 /** UTC-safe weekday (0=Sunday) for a "YYYY-MM-DD" string. */

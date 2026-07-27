@@ -63,7 +63,8 @@ export class GridView {
     const { width: cols, height: rows } = this.model;
     const availW = this.wrap.clientWidth || 0;
     const availH = this.wrap.clientHeight || 0;
-    const MAX_CELL = 40; // NYT cells are ~33-38px
+    // NYT dailies use ~33-38px cells; minis/midis get big ones
+    const MAX_CELL = Math.max(cols, rows) <= 9 ? 68 : 40;
     const cell = Math.max(
       12,
       Math.min(

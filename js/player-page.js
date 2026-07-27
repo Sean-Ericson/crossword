@@ -32,7 +32,9 @@ import {
   debounce,
   formatTime,
   formatDateLong,
-  dateFromId,
+  parsePuzzleId,
+  themeTitle,
+  PUZZLE_TYPE_LABELS,
 } from './util.js';
 
 const params = new URLSearchParams(location.search);
@@ -61,8 +63,24 @@ async function main() {
   const model = new PuzzleModel(puz);
 
   // ----- header text -----
-  document.title = `${dateFromId(id) ? formatDateLong(id) : puz.title || id} — Crossword`;
-  qs('#puzzle-date').textContent = dateFromId(id) ? formatDateLong(id) : puz.title || id;
+  const idInfo = parsePuzzleId(id);
+  const typeLabel = PUZZLE_TYPE_LABELS[idInfo.type] ?? 'The Crossword';
+  let dateText;
+  if (idInfo.type === 'bonus' && idInfo.date) {
+    // monthly bonus: show month + the puzzle's own title
+    const month = new Date(idInfo.date + 'T12:00:00Z').toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    });
+    const theme = themeTitle(puz.title);
+    dateText = theme ? `${month} — ${theme}` : month;
+  } else {
+    dateText = idInfo.date ? formatDateLong(idInfo.date) : puz.title || id;
+  }
+  qs('.puzzle-title').textContent = typeLabel;
+  document.title = `${dateText} — ${typeLabel}`;
+  qs('#puzzle-date').textContent = dateText;
   qs('#puzzle-byline').textContent = puz.author ? `By ${puz.author}` : '';
   initProfileChip(qs('#profile-chip'));
 
@@ -227,9 +245,9 @@ async function main() {
     gameOverlayClose = showModal({
       title: fresh ? 'Ready to get started?' : 'Keep going?',
       body: fresh
-        ? dateFromId(id)
-          ? `The ${formatDateLong(id)} crossword awaits.`
-          : 'The crossword awaits.'
+        ? idInfo.date && idInfo.type !== 'bonus'
+          ? `The ${formatDateLong(idInfo.date)} ${idInfo.type === 'daily' ? 'crossword' : idInfo.type} awaits.`
+          : 'The puzzle awaits.'
         : `You're at ${formatTime(record.elapsed)}. Pick up where you left off.`,
       dismissible: false,
       actions: [{ label: fresh ? 'Begin' : 'Resume', primary: true, onClick: resumeGame }],

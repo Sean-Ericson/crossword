@@ -13,6 +13,8 @@ import {
   b64DecodeUtf8,
   dateFromId,
   weekdayOf,
+  parsePuzzleId,
+  themeTitle,
 } from '../js/util.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -116,4 +118,24 @@ test('util: date helpers', () => {
   assert.equal(dateFromId('mega2025'), null);
   assert.equal(weekdayOf('2026-07-21'), 2); // a Tuesday
   assert.equal(weekdayOf('2026-07-19'), 0); // a Sunday
+});
+
+test('util: parsePuzzleId classifies all types', () => {
+  assert.deepEqual(parsePuzzleId('2026-07-21'), { type: 'daily', date: '2026-07-21' });
+  assert.deepEqual(parsePuzzleId('mini-2026-07-21'), { type: 'mini', date: '2026-07-21' });
+  assert.deepEqual(parsePuzzleId('midi-2026-07-21'), { type: 'midi', date: '2026-07-21' });
+  assert.deepEqual(parsePuzzleId('bonus-2026-07-01'), { type: 'bonus', date: '2026-07-01' });
+  assert.deepEqual(parsePuzzleId('mega2025'), { type: 'special', date: null });
+  assert.deepEqual(parsePuzzleId('mini-2026-7-1'), { type: 'special', date: null });
+  assert.deepEqual(parsePuzzleId('dateFromId-2026-07-21x'), { type: 'special', date: null });
+});
+
+test('util: themeTitle strips the generated NYT date prefix', () => {
+  assert.equal(
+    themeTitle('NY Times, Wednesday, July 1, 2026 GO-O-O-OAL ORIENTED'),
+    'GO-O-O-OAL ORIENTED'
+  );
+  assert.equal(themeTitle('NY Times, Monday, July 27, 2026'), '');
+  assert.equal(themeTitle('Super Mega 2025'), 'Super Mega 2025');
+  assert.equal(themeTitle(''), '');
 });
