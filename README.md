@@ -52,6 +52,11 @@ files are skipped. On Windows, `update.cmd` does the same. Useful flags:
 Manual equivalent: drop `.puz` files into `puzzles/`, run
 `python tools/build_index.py`, commit and push.
 
+To keep the archive current automatically, run `daily_update.bat` from
+Windows Task Scheduler on an always-on machine — see
+[SETUP-SCHEDULED.md](SETUP-SCHEDULED.md). The updater rebases on the remote
+before downloading, so several machines can safely run it.
+
 > **Copyright note:** NYT puzzles are copyrighted. A GitHub Pages site is
 > public (private-repo Pages needs GitHub Pro), so keep this to personal use
 > and don't advertise the URL.

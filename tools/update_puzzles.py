@@ -123,6 +123,15 @@ def main():
         sys.exit(f"Unknown browser {args.browser!r} - choose one of: {options}")
 
     end = clean_date(args.end)
+
+    # Start from the remote's latest so two machines running this can't
+    # diverge; rebasing before we commit means no conflicts are possible.
+    if not args.no_git:
+        try:
+            run(['git', 'pull', '--rebase', '--autostash'])
+        except subprocess.CalledProcessError:
+            print('WARNING: git pull failed - continuing, but the push may be rejected')
+
     cookies = nyt.load_cookies(args.browser)
 
     def puzzle_ids_from_calendar(ptype, start):

@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+
+# scheduled-update logs (daily_update.bat)
+logs/
