@@ -93,11 +93,16 @@ the Sunday). Running late in the evening picks up tomorrow's puzzle; the
 updater always fills in anything it missed, so the exact time is not
 critical.
 
-```powershell
-schtasks /create /tn "Crossword daily update" ^
-  /tr "\"C:\Crossword\crossword\daily_update.bat\"" ^
-  /sc daily /st 23:30 /f
+Run this as one line, substituting your own path (`/tn` = task name,
+`/tr` = what to run, `/sc daily` + `/st` = when, `/f` = overwrite an
+existing task of the same name):
+
 ```
+schtasks /create /tn "Crossword daily update" /tr "C:\Crossword\crossword\daily_update.bat" /sc daily /st 23:30 /f
+```
+
+Quote the `/tr` path only if it contains spaces — and if it does, escape
+the inner quotes: `/tr "\"C:\My Folder\daily_update.bat\""`.
 
 Then open **Task Scheduler** → find the task → Properties and set:
 
@@ -115,6 +120,9 @@ minute, then check `logs\update.log`.
 > If "run whether logged on or not" ever fails to read cookies, switch that
 > setting to "Run only when user is logged on" and leave the PC signed in —
 > Firefox's cookie store is readable either way, but this removes all doubt.
+>
+> Never set the task to run as `SYSTEM`. That account has no Firefox
+> profile, so there is no NYT login for the downloader to find.
 
 ## Maintenance
 
