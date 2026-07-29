@@ -16,15 +16,27 @@ Close and reopen the terminal afterwards so PATH updates.
 
 ## 2. Clone both repos side by side
 
-The updater expects `nytxw_puz` as a sibling of `crossword-site` (override
-with `--nytxw PATH` if you put it elsewhere).
+Two repos, **in the same parent folder** — the updater looks for `nytxw_puz`
+as a sibling of the site repo (override with `--nytxw PATH` otherwise). The
+site folder's own name doesn't matter.
 
 ```powershell
 mkdir C:\Crossword
 cd C:\Crossword
-git clone https://github.com/Sean-Ericson/crossword.git crossword-site
+git clone https://github.com/Sean-Ericson/crossword.git
 git clone https://github.com/Q726kbXuN/nytxw_puz.git
 ```
+
+**Using GitHub Desktop instead?** `crossword` appears in your repo list, but
+`nytxw_puz` will not — it belongs to someone else, and the list only shows
+your own repos. Clone it with **File → Clone repository → URL tab** and
+paste `Q726kbXuN/nytxw_puz`. Keep the default location so both land in
+`Documents\GitHub\` as siblings.
+
+> Do **not** clone `crossword-data`. The site writes progress and stats to
+> it directly through the GitHub API from the browser; nothing on this PC
+> needs a local copy. (`Crosswords`, if you see it, is an unrelated older
+> project.)
 
 ## 3. Install the two Python packages the downloader needs
 
@@ -53,10 +65,12 @@ gh auth login          # choose GitHub.com → HTTPS → login with a browser
 gh auth setup-git      # makes git use gh's stored token
 ```
 
-Then confirm it pushes silently:
+Then confirm it pushes silently — from a **terminal**, not GitHub Desktop.
+The scheduled task runs command-line git, which has its own credential
+setup; GitHub Desktop being signed in is not enough on its own.
 
 ```powershell
-cd C:\Crossword\crossword-site
+cd C:\Crossword\crossword
 git pull
 git push               # should say "Everything up-to-date" with no prompt
 ```
@@ -64,7 +78,7 @@ git push               # should say "Everything up-to-date" with no prompt
 ## 6. Test the update by hand
 
 ```powershell
-cd C:\Crossword\crossword-site
+cd C:\Crossword\crossword
 .\daily_update.bat
 type logs\update.log
 ```
@@ -81,7 +95,7 @@ critical.
 
 ```powershell
 schtasks /create /tn "Crossword daily update" ^
-  /tr "\"C:\Crossword\crossword-site\daily_update.bat\"" ^
+  /tr "\"C:\Crossword\crossword\daily_update.bat\"" ^
   /sc daily /st 23:30 /f
 ```
 
