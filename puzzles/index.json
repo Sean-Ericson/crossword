@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-07-30T13:00:12Z",
+  "generated_at": "2026-07-31T13:00:12Z",
   "puzzles": [
+    {
+      "id": "mini-2026-07-31",
+      "file": "puzzles/mini-2026-07-31.puz",
+      "type": "mini",
+      "date": "2026-07-31",
+      "title": "NY Times, Friday, July 31, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-07-31",
+      "file": "puzzles/midi-2026-07-31.puz",
+      "type": "midi",
+      "date": "2026-07-31",
+      "title": "NY Times, Friday, July 31, 2026 MAKE IT COUNT",
+      "author": "Paolo Pasco / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-07-31",
+      "file": "puzzles/2026-07-31.puz",
+      "type": "daily",
+      "date": "2026-07-31",
+      "title": "NY Times, Friday, July 31, 2026",
+      "author": "Rafael Musa / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-07-30",
       "file": "puzzles/mini-2026-07-30.puz",
