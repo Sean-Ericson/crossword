@@ -1,7 +1,47 @@
 {
   "schema": 1,
-  "generated_at": "2026-07-31T13:00:12Z",
+  "generated_at": "2026-08-01T13:00:13Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-01",
+      "file": "puzzles/mini-2026-08-01.puz",
+      "type": "mini",
+      "date": "2026-08-01",
+      "title": "NY Times, Saturday, August 1, 2026",
+      "author": "Joel Fagliano",
+      "width": 7,
+      "height": 7
+    },
+    {
+      "id": "midi-2026-08-01",
+      "file": "puzzles/midi-2026-08-01.puz",
+      "type": "midi",
+      "date": "2026-08-01",
+      "title": "NY Times, Saturday, August 1, 2026 SUGAR CRASH",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "bonus-2026-08-01",
+      "file": "puzzles/bonus-2026-08-01.puz",
+      "type": "bonus",
+      "date": "2026-08-01",
+      "title": "NY Times, Saturday, August 1, 2026 TIME'S FUN WHEN YOU'RE HAVING FLIES",
+      "author": "Christina Iverson and Rob Rausch / Christina Iverson",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2026-08-01",
+      "file": "puzzles/2026-08-01.puz",
+      "type": "daily",
+      "date": "2026-08-01",
+      "title": "NY Times, Saturday, August 1, 2026",
+      "author": "Zachary David Levy / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-07-31",
       "file": "puzzles/mini-2026-07-31.puz",
