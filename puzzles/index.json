@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-01T13:00:13Z",
+  "generated_at": "2026-08-02T13:00:11Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-02",
+      "file": "puzzles/mini-2026-08-02.puz",
+      "type": "mini",
+      "date": "2026-08-02",
+      "title": "NY Times, Sunday, August 2, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-02",
+      "file": "puzzles/midi-2026-08-02.puz",
+      "type": "midi",
+      "date": "2026-08-02",
+      "title": "NY Times, Sunday, August 2, 2026 MIXED DRINKS",
+      "author": "Erik Agard / Ian Livengood",
+      "width": 11,
+      "height": 11
+    },
+    {
+      "id": "2026-08-02",
+      "file": "puzzles/2026-08-02.puz",
+      "type": "daily",
+      "date": "2026-08-02",
+      "title": "NY Times, Sunday, August 2, 2026 GOING FOR A SPIN",
+      "author": "Ralph Sharaga and Doug Peterson / Will Shortz",
+      "width": 21,
+      "height": 21
+    },
     {
       "id": "mini-2026-08-01",
       "file": "puzzles/mini-2026-08-01.puz",
