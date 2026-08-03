@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-02T13:00:11Z",
+  "generated_at": "2026-08-03T13:00:12Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-03",
+      "file": "puzzles/mini-2026-08-03.puz",
+      "type": "mini",
+      "date": "2026-08-03",
+      "title": "NY Times, Monday, August 3, 2026",
+      "author": "Christina Iverson / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-03",
+      "file": "puzzles/midi-2026-08-03.puz",
+      "type": "midi",
+      "date": "2026-08-03",
+      "title": "NY Times, Monday, August 3, 2026 VOWEL PLAY",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-08-03",
+      "file": "puzzles/2026-08-03.puz",
+      "type": "daily",
+      "date": "2026-08-03",
+      "title": "NY Times, Monday, August 3, 2026",
+      "author": "Willa Angel Chen Miller / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-02",
       "file": "puzzles/mini-2026-08-02.puz",
