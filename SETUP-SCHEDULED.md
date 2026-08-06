@@ -143,6 +143,14 @@ Stays running and polls every 5 seconds:
 schtasks /create /tn "Crossword fetch watcher" /tr "C:\Crossword\crossword\fetch_watch.bat" /sc onlogon /f
 ```
 
+> **`ERROR: Access is denied.`** — `/sc onlogon` needs an elevated prompt
+> (Start → type `cmd` → Ctrl+Shift+Enter). `/sc minute` in Option B does
+> not. If you'd rather not use admin at all, skip schtasks entirely: press
+> Win+R, run `shell:startup`, and put a shortcut to
+> **`fetch_watch_hidden.vbs`** in that folder. The watcher then starts at
+> every login with no console window and no elevation — the only
+> difference is it needs the machine to stay logged in.
+
 In Task Scheduler, open it and set:
 
 - **General → Run whether user is logged on or not**
