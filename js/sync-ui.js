@@ -30,6 +30,9 @@ export function initSyncBadge(badgeEl, sync, opts = {}) {
     badgeEl.title = error || 'GitHub sync settings';
   });
   badgeEl.addEventListener('click', () => openSyncSettings(sync, opts));
+  // Register the profile in the data repo as soon as sync is configured,
+  // so other solvers can see and compare with it before its first solve.
+  if (sync.active) sync.ensureProfile();
 }
 
 export function openSyncSettings(sync, { onSyncNow } = {}) {

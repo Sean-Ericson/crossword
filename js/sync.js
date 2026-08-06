@@ -166,12 +166,28 @@ export class Sync {
     return merged;
   }
 
-  /** Ensure users/<name>/profile.json exists (first sync from a profile). */
+  /**
+   * Ensure users/<name>/profile.json exists, so the profile shows up for
+   * everyone else as soon as it is connected - without waiting for a first
+   * solve. Remembers success locally to avoid re-checking on every load.
+   */
   async ensureProfile() {
     if (!this.client) return;
     const path = `users/${this.user}/profile.json`;
+    // keyed by repo, so pointing at a different data repo re-registers
+    const flag = `xw:${this.user}:registered:${this.client.owner}/${this.client.repo}`;
+    try {
+      if (localStorage.getItem(flag)) return;
+    } catch {
+      /* no storage; just do the check */
+    }
     try {
       const existing = await this.client.getFile(path);
+      try {
+        localStorage.setItem(flag, '1');
+      } catch {
+        /* ignore */
+      }
       if (!existing) {
         await this.client.putFile(
           path,

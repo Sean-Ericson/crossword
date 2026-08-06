@@ -16,6 +16,7 @@ globalThis.localStorage = {
 };
 
 const {
+  deleteUserData,
   saveLocal,
   loadLocal,
   saveStatsLocal,
@@ -165,6 +166,26 @@ test('summary: counts solved and in-progress separately', () => {
   assert.equal(summary.puzzles, 3);
   assert.equal(summary.solves, 1);
   assert.equal(summary.started, 1, 'only the touched-but-unfinished one');
+});
+
+test('delete: removes every key belonging to the profile', () => {
+  reset();
+  saveLocal(record('sean', '2026-07-20'));
+  saveStatsLocal(newStatsDoc('sean'));
+  saveSettings('sean', { jumpBack: true });
+  localStorage.setItem('xw:sean:registered:owner/repo', '1');
+  saveLocal(record('dana', '2026-07-20')); // must survive
+
+  deleteUserData('sean');
+
+  const left = [];
+  for (let i = 0; i < localStorage.length; i++) left.push(localStorage.key(i));
+  assert.deepEqual(
+    left.filter((k) => k.startsWith('xw:sean:')),
+    [],
+    'no sean keys remain, including the sync registration flag'
+  );
+  assert.equal(listProgressIds('dana').length, 1, 'other profiles untouched');
 });
 
 test('listProgressIds: does not leak across similarly named profiles', () => {

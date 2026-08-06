@@ -265,6 +265,15 @@ export function deleteUserData(user) {
     }
     localStorage.removeItem(statsKey(user));
     localStorage.removeItem(settingsKey(user));
+    // any leftover bookkeeping for this profile (e.g. sync registration);
+    // collect first, since removing shifts the key indexes
+    const prefix = `xw:${user}:`;
+    const stale = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix)) stale.push(key);
+    }
+    for (const key of stale) localStorage.removeItem(key);
   } catch {
     /* no storage available */
   }
