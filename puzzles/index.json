@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-06T05:18:23Z",
+  "generated_at": "2026-08-06T06:14:13Z",
   "puzzles": [
     {
       "id": "mini-2026-08-06",
@@ -609,6 +609,16 @@
       "date": "2026-05-01",
       "title": "NY Times, Friday, May 1, 2026 MY LIFE WAS SAVED BY ROCK 'N' ROLL",
       "author": "Jeff Tweedy and Christina Iverson / Christina Iverson",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2003-05-03",
+      "file": "puzzles/2003-05-03.puz",
+      "type": "daily",
+      "date": "2003-05-03",
+      "title": "NY Times, Saturday, May 3, 2003",
+      "author": "John Scott Marrone / Will Shortz",
       "width": 15,
       "height": 15
     },
