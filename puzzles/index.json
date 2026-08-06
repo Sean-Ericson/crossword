@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-06T16:51:09Z",
+  "generated_at": "2026-08-06T19:13:29Z",
   "puzzles": [
     {
       "id": "mini-2026-08-06",
@@ -649,6 +649,16 @@
       "date": "2026-05-01",
       "title": "NY Times, Friday, May 1, 2026 MY LIFE WAS SAVED BY ROCK 'N' ROLL",
       "author": "Jeff Tweedy and Christina Iverson / Christina Iverson",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "bonus-2026-01-01",
+      "file": "puzzles/bonus-2026-01-01.puz",
+      "type": "bonus",
+      "date": "2026-01-01",
+      "title": "NY Times, Thursday, January 1, 2026 YOUR TIME STARTS NOW",
+      "author": "Rena Cohen / Christina Iverson",
       "width": 15,
       "height": 15
     },
