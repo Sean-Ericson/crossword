@@ -11,6 +11,7 @@
  */
 
 import { isoNow } from './util.js';
+import { settingsKey } from './settings.js';
 
 export function progressKey(user, puzzleId) {
   return `xw:${user}:progress:${puzzleId}`;
@@ -182,4 +183,81 @@ export function mergeProgress(a, b) {
     used_reveal: usedReveal,
     clean: !usedCheck && !usedReveal,
   };
+}
+
+// ---------- moving local data between profiles ----------
+
+/** Puzzle ids this user has a local progress record for. */
+export function listProgressIds(user) {
+  const prefix = `xw:${user}:progress:`;
+  const ids = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix)) ids.push(key.slice(prefix.length));
+    }
+  } catch {
+    /* no storage available */
+  }
+  return ids;
+}
+
+/** What a profile has stored locally — drives the migration prompt. */
+export function localDataSummary(user) {
+  const ids = listProgressIds(user);
+  const solves = Object.keys(loadStatsLocal(user).solves || {}).length;
+  const started = ids.filter((id) => {
+    const record = loadLocal(user, id);
+    return record && !record.completed && (hasAnyFill(record) || record.elapsed > 0);
+  }).length;
+  return { puzzles: ids.length, solves, started, any: ids.length > 0 || solves > 0 };
+}
+
+/**
+ * Move one profile's local progress and stats onto another (e.g. adopting
+ * what you solved as "guest" when you first name yourself). Records that
+ * exist on both sides go through mergeProgress / mergeStats, so nothing is
+ * lost or double-counted. The source is cleared afterwards by default, so
+ * the same solves can't later be claimed by a second profile too.
+ */
+export function migrateUserData(fromUser, toUser, { clearSource = true } = {}) {
+  const result = { puzzles: 0, solves: 0 };
+  if (!fromUser || !toUser || fromUser === toUser) return result;
+
+  for (const id of listProgressIds(fromUser)) {
+    const source = loadLocal(fromUser, id);
+    if (!source) continue;
+    const merged = mergeProgress({ ...source, user: toUser }, loadLocal(toUser, id));
+    saveLocal({ ...merged, user: toUser, puzzle_id: id });
+    result.puzzles++;
+  }
+
+  const mergedStats = mergeStats(loadStatsLocal(fromUser), loadStatsLocal(toUser));
+  mergedStats.user = toUser;
+  saveStatsLocal(mergedStats);
+  result.solves = Object.keys(mergedStats.solves || {}).length;
+
+  // carry settings over only if the destination hasn't set its own
+  try {
+    const sourceSettings = localStorage.getItem(settingsKey(fromUser));
+    if (sourceSettings && !localStorage.getItem(settingsKey(toUser))) {
+      localStorage.setItem(settingsKey(toUser), sourceSettings);
+    }
+  } catch {
+    /* ignore */
+  }
+
+  if (clearSource) {
+    try {
+      for (const id of listProgressIds(fromUser)) {
+        localStorage.removeItem(progressKey(fromUser, id));
+      }
+      localStorage.removeItem(statsKey(fromUser));
+      localStorage.removeItem(settingsKey(fromUser));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return result;
 }

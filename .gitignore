@@ -5,3 +5,4 @@ Thumbs.db
 
 # scheduled-update logs (daily_update.bat)
 logs/
+DataPassword.txt
