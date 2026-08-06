@@ -30,7 +30,12 @@ export function initProfileChip(chipEl) {
 
 export function openProfileModal() {
   const active = getActiveUser();
-  const profiles = [...new Set([active, ...getLocalProfiles()])].sort();
+  // "guest" is the implicit identity people solve under before naming
+  // themselves, so surface it whenever it still holds anything - otherwise
+  // those solves would be stranded with no way to claim them.
+  const known = [active, ...getLocalProfiles()];
+  if (!known.includes('guest') && localDataSummary('guest').any) known.push('guest');
+  const profiles = [...new Set(known)].sort();
 
   const list = el(
     'div',
@@ -63,8 +68,23 @@ export function openProfileModal() {
           ]
         )
       );
-      // The active profile can't be removed - switch away from it first.
+      // The active profile can't be moved into itself or removed -
+      // switch away from it first.
       if (name !== active) {
+        if (summary.any) {
+          row.append(
+            el(
+              'button',
+              {
+                class: 'btn-quiet',
+                title: `Move “${name}”’s puzzles into “${active}”`,
+                style: 'font-size:12px;white-space:nowrap',
+                onclick: () => adoptInto(name, summary),
+              },
+              `Move to ${active}`
+            )
+          );
+        }
         row.append(
           el(
             'button',
@@ -155,6 +175,34 @@ export function openProfileModal() {
       ),
     ]),
   });
+
+  /** Claim another local profile's puzzles for the one in use. */
+  async function adoptInto(name, summary) {
+    const bits = [];
+    if (summary.solves) bits.push(`${summary.solves} solved`);
+    if (summary.started) bits.push(`${summary.started} in progress`);
+    const ok = await confirmDialog(
+      `Move “${name}”’s puzzles (${bits.join(', ')}) into “${active}”? ` +
+        `“${name}” is emptied, and anything already in “${active}” is kept.`,
+      { confirmLabel: `Move to ${active}`, title: `Claim ${name}’s puzzles` }
+    );
+    if (!ok) return;
+    const moved = migrateUserData(name, active);
+    removeLocalProfile(name);
+    setActiveUser(active); // removeLocalProfile can reassign the active user
+    const sync = new Sync(active);
+    if (sync.active) {
+      try {
+        await sync.ensureProfile();
+        await sync.pushStats(loadStatsLocal(active));
+      } catch {
+        /* the next solve will retry */
+      }
+    }
+    toast(`Moved ${moved.puzzles} puzzle${moved.puzzles === 1 ? '' : 's'} to “${active}”.`);
+    close();
+    location.reload();
+  }
 
   async function removeProfile(name, summary) {
     const bits = [];
