@@ -24,6 +24,7 @@ Needs the `gh` CLI authenticated (it is what talks to the private repo).
 """
 import argparse
 import base64
+import calendar
 import datetime
 import json
 import os
@@ -47,7 +48,7 @@ V6_ONLY = {'midi'}
 CALENDAR_API = (
     'https://www.nytimes.com/svc/crosswords/v3/puzzles.json'
     '?publish_type={ptype}&sort_order=asc&sort_by=print_date'
-    '&date_start={date}&date_end={date}'
+    '&date_start={start}&date_end={end}'
 )
 V6_DATE_API = 'https://www.nytimes.com/svc/crosswords/v6/puzzle/{ptype}/{date}.json'
 
@@ -235,19 +236,34 @@ def run(cmd, **kwargs):
 
 
 def find_puzzle_id(nyt, cookies, ptype, date):
-    """-> NYT's internal puzzle id for this type+date, or None."""
+    """
+    -> (NYT's internal puzzle id, its actual print date), or (None, None).
+
+    Bonus puzzles are monthly, and the site asks for them as the 1st of the
+    month, so search the whole month rather than that exact day.
+    """
     if ptype in V6_ONLY:
         data = json.loads(
             nyt.get_url(cookies, V6_DATE_API.format(ptype=ptype, date=date))
         )
-        return data.get('id') if data.get('body') else None
+        return (data.get('id'), date) if data.get('body') else (None, None)
+
+    start = end = date
+    if ptype == 'bonus':
+        year, month = int(date[:4]), int(date[5:7])
+        last_day = calendar.monthrange(year, month)[1]
+        start = f'{year:04d}-{month:02d}-01'
+        end = f'{year:04d}-{month:02d}-{last_day:02d}'
+
     listing = json.loads(
-        nyt.get_url(cookies, CALENDAR_API.format(ptype=ptype, date=date))
+        nyt.get_url(cookies, CALENDAR_API.format(ptype=ptype, start=start, end=end))
     )
     for entry in listing.get('results') or []:
-        if entry.get('print_date') == date and entry.get('format_type') == 'Normal':
-            return entry.get('puzzle_id')
-    return None
+        if entry.get('format_type') != 'Normal':
+            continue
+        if ptype == 'bonus' or entry.get('print_date') == date:
+            return entry.get('puzzle_id'), entry.get('print_date')
+    return None, None
 
 
 def main():
@@ -401,11 +417,21 @@ def serve_once(args, quiet=False):
                 status, message = 'done', 'Already in the archive.'
             else:
                 try:
-                    nyt_id = find_puzzle_id(nyt, cookies, ptype, date)
+                    nyt_id, actual_date = find_puzzle_id(nyt, cookies, ptype, date)
                     if nyt_id is None:
                         status = 'missing'
-                        message = f'NYT has no {ptype} puzzle for {date}.'
+                        message = (
+                            f'NYT has no {ptype} puzzle for '
+                            + (date[:7] if ptype == 'bonus' else date)
+                            + '.'
+                        )
                     else:
+                        # A monthly bonus may not fall on the 1st; archive it
+                        # under the date it actually ran.
+                        if actual_date and actual_date != date:
+                            path = os.path.join(
+                                PUZZLES_DIR, f'{PREFIX[ptype]}{actual_date}.puz'
+                            )
                         data = nyt.get_puzzle_from_id(cookies, nyt_id)
                         nyt.data_to_puz(data).save(path)
                         downloaded.append(os.path.basename(path))

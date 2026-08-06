@@ -247,6 +247,95 @@ async function main() {
     }
   }
 
+  /**
+   * Bonus puzzles come out monthly, so browse them a year at a time.
+   * Months NYT published but we haven't downloaded are offered for
+   * fetching, exactly like the dashed days in the calendar.
+   */
+  function renderBonusYear(entries) {
+    const byDate = new Map(entries.map((p) => [p.date, p]));
+    const start = ARCHIVE_START.bonus;
+    const minYear = Number(start.slice(0, 4));
+    const maxYear = Number(todayStr.slice(0, 4));
+    let year = Number((monthView.bonus ?? '').slice(0, 4));
+    if (!year || year < minYear || year > maxYear) {
+      year = Number((entries[0]?.date ?? todayStr).slice(0, 4));
+    }
+    monthView.bonus = `${year}-01`;
+
+    calHeader.hidden = false;
+    title.textContent = String(year);
+    prevBtn.disabled = year <= minYear;
+    nextBtn.disabled = year >= maxYear;
+    prevBtn.onclick = () => {
+      monthView.bonus = `${year - 1}-01`;
+      renderCurrent();
+    };
+    nextBtn.onclick = () => {
+      monthView.bonus = `${year + 1}-01`;
+      renderCurrent();
+    };
+
+    qs('#special-list').hidden = false;
+    qs('#special-title').textContent = 'Bonus puzzles';
+    const host = qs('#special-items');
+    host.textContent = '';
+
+    for (let m = 1; m <= 12; m++) {
+      const date = `${year}-${pad(m)}-01`;
+      const monthName = new Date(Date.UTC(year, m - 1, 1)).toLocaleDateString('en-US', {
+        month: 'long',
+        timeZone: 'UTC',
+      });
+      const puzzle = byDate.get(date);
+      if (puzzle) {
+        const { status } = statusBits(puzzle.id);
+        const [icon, iconClass] = STATUS_ICON[status];
+        host.append(
+          el(
+            'a',
+            { class: 'special-item', href: `./puzzle.html?id=${encodeURIComponent(puzzle.id)}` },
+            [
+              el('span', { class: 'sp-title' }, [monthName, themeTitle(puzzle.title) ? ` — ${themeTitle(puzzle.title)}` : ''].join('')),
+              el(
+                'span',
+                { class: 'sp-meta' },
+                [puzzle.author, `${puzzle.width}×${puzzle.height}`].filter(Boolean).join(' · ')
+              ),
+              el('span', { class: `sp-status ${iconClass}` }, icon),
+            ]
+          )
+        );
+        continue;
+      }
+      const published = date >= start && date <= todayStr;
+      if (published && sync.active) {
+        host.append(
+          el(
+            'a',
+            {
+              class: 'special-item fetchable',
+              href: `./puzzle.html?id=bonus-${date}`,
+              title: 'Not downloaded yet — opening it fetches it',
+            },
+            [
+              el('span', { class: 'sp-title' }, monthName),
+              el('span', { class: 'sp-meta' }, 'not downloaded'),
+              el('span', { class: 'sp-status' }, '↓'),
+            ]
+          )
+        );
+      } else if (published) {
+        host.append(
+          el('div', { class: 'special-item unavailable' }, [
+            el('span', { class: 'sp-title' }, monthName),
+            el('span', { class: 'sp-meta' }, 'not downloaded — connect sync to fetch'),
+          ])
+        );
+      }
+    }
+  }
+
   function renderCurrent() {
     calHeader.hidden = true;
     calEl.textContent = '';
@@ -255,15 +344,7 @@ async function main() {
 
     const entries = byType.get(tab);
     if (tab === 'bonus') {
-      renderList(entries, 'Bonus puzzles', (p) => {
-        const month = new Date(p.date + 'T12:00:00Z').toLocaleDateString('en-US', {
-          month: 'long',
-          year: 'numeric',
-          timeZone: 'UTC',
-        });
-        const theme = themeTitle(p.title);
-        return theme ? `${month} — ${theme}` : month;
-      });
+      renderBonusYear(entries);
     } else if (tab === 'special') {
       renderList(entries, 'Special puzzles', (p) => themeTitle(p.title) || p.title || p.id);
     } else if (entries.length) {

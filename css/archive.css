@@ -210,6 +210,33 @@
   font-size: 15px;
 }
 
+/* published, but not downloaded yet */
+.special-item.fetchable {
+  border-style: dashed;
+  color: #8e8e8e;
+}
+
+.special-item.fetchable:hover {
+  border-style: solid;
+  border-color: var(--color-link);
+  color: var(--color-text);
+}
+
+.special-item.fetchable .sp-status {
+  color: #b5b5b5;
+  font-size: 13px;
+}
+
+.special-item.fetchable:hover .sp-status {
+  color: var(--color-link);
+}
+
+.special-item.unavailable {
+  border-style: dashed;
+  color: #bdbdbd;
+  cursor: default;
+}
+
 .archive-empty {
   text-align: center;
   color: var(--color-text-muted);
