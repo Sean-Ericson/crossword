@@ -12,6 +12,10 @@ rem Run it by hand any time to test:  daily_update.bat
 rem ---------------------------------------------------------------------
 setlocal
 
+rem Scheduled tasks may not inherit the interactive PATH; make sure
+rem git and gh are findable regardless of how this was launched.
+set "PATH=%PATH%;C:\Program Files\GitHub CLI;C:\Program Files\Git\cmd;%LOCALAPPDATA%\Microsoft\WinGet\Links"
+
 set "REPO=%~dp0"
 set "LOGDIR=%REPO%logs"
 set "LOG=%LOGDIR%\update.log"

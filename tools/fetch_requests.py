@@ -28,6 +28,7 @@ import datetime
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -66,9 +67,56 @@ def now_iso():
     )
 
 
+# Scheduled tasks don't necessarily inherit the interactive PATH - gh in
+# particular is often only on the user's. Resolve the executables once, by
+# hand, so a missing PATH entry is a clear message instead of a
+# FileNotFoundError on every poll.
+EXE_CANDIDATES = {
+    'gh': [
+        r'C:\Program Files\GitHub CLI\gh.exe',
+        r'C:\Program Files (x86)\GitHub CLI\gh.exe',
+        os.path.expandvars(r'%LOCALAPPDATA%\Microsoft\WinGet\Links\gh.exe'),
+        os.path.expandvars(r'%LOCALAPPDATA%\GitHubCLI\gh.exe'),
+    ],
+    'git': [
+        r'C:\Program Files\Git\cmd\git.exe',
+        r'C:\Program Files (x86)\Git\cmd\git.exe',
+    ],
+}
+TOOLS = {}
+
+
+def find_exe(name):
+    """-> absolute path to `name`, or None. Env override: XWORD_GH / XWORD_GIT."""
+    override = os.environ.get(f'XWORD_{name.upper()}')
+    if override and os.path.isfile(override):
+        return override
+    found = shutil.which(name)
+    if found:
+        return found
+    for candidate in EXE_CANDIDATES.get(name, []):
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
+def resolve_tools(need_git=True):
+    for name in ('gh', 'git') if need_git else ('gh',):
+        path = find_exe(name)
+        if not path:
+            sys.exit(
+                f"Can't find {name}.exe. It isn't on this process's PATH - "
+                f'scheduled tasks often miss the user PATH. Either install it '
+                f'machine-wide, or set XWORD_{name.upper()} to its full path '
+                f'(e.g. setx XWORD_{name.upper()} "C:\\Program Files\\'
+                f'{"GitHub CLI" if name == "gh" else "Git\\cmd"}\\{name}.exe").'
+            )
+        TOOLS[name] = path
+
+
 def gh_api(path, method='GET', payload=None, repo=None):
     """Call the GitHub API through the authenticated gh CLI."""
-    cmd = ['gh', 'api', f'repos/{repo}/{path}', '-X', method]
+    cmd = [TOOLS.get('gh', 'gh'), 'api', f'repos/{repo}/{path}', '-X', method]
     if payload is not None:
         cmd += ['--input', '-']
     result = subprocess.run(
@@ -101,6 +149,8 @@ def default_data_repo():
 
 
 def run(cmd, **kwargs):
+    if cmd and cmd[0] == 'git':
+        cmd = [TOOLS.get('git', 'git'), *cmd[1:]]
     print('+ ' + ' '.join(cmd))
     return subprocess.run(cmd, cwd=SITE, check=True, **kwargs)
 
@@ -150,6 +200,8 @@ def main():
     if not args.data_repo:
         sys.exit('No data repo configured - pass --data-repo owner/name')
 
+    resolve_tools(need_git=not args.no_git)
+
     if not args.watch:
         return serve_once(args, quiet=False)
 
@@ -158,13 +210,23 @@ def main():
         f'(every {args.interval:g}s). Ctrl+C to stop.'
     )
     last_heartbeat = 0.0
+    last_error, repeats = None, 0
     while True:
         try:
             serve_once(args, quiet=True)
+            last_error, repeats = None, 0
         except KeyboardInterrupt:
             raise
         except Exception as exc:  # noqa: BLE001 - a bad poll shouldn't stop the loop
-            print(f'poll failed: {type(exc).__name__}: {exc}'[:200], file=sys.stderr)
+            detail = f'{type(exc).__name__}: {exc}'[:200]
+            # Don't fill the log with the same failure every few seconds.
+            if detail == last_error:
+                repeats += 1
+                if repeats in (10, 100) or repeats % 1000 == 0:
+                    print(f'  (still failing, {repeats} times)', file=sys.stderr, flush=True)
+            else:
+                print(f'poll failed: {detail}', file=sys.stderr, flush=True)
+                last_error, repeats = detail, 1
         # Occasional proof of life, so a silent log doesn't look like a crash.
         if time.time() - last_heartbeat > 3600:
             print(f'[{now_iso()}] watching...', flush=True)

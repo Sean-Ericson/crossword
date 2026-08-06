@@ -7,6 +7,10 @@ rem the py launcher, then whatever "python" is on PATH. Set XWORD_PYTHON
 rem if your interpreter lives somewhere else.
 setlocal
 
+rem Scheduled tasks may not inherit the interactive PATH; make sure
+rem git and gh are findable regardless of how this was launched.
+set "PATH=%PATH%;C:\Program Files\GitHub CLI;C:\Program Files\Git\cmd;%LOCALAPPDATA%\Microsoft\WinGet\Links"
+
 set "PY="
 if defined XWORD_PYTHON if exist "%XWORD_PYTHON%" set "PY=%XWORD_PYTHON%"
 if not defined PY if exist "%USERPROFILE%\miniconda3\python.exe" set "PY=%USERPROFILE%\miniconda3\python.exe"
