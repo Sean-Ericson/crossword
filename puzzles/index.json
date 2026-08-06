@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-06T07:04:15Z",
+  "generated_at": "2026-08-06T07:12:16Z",
   "puzzles": [
     {
       "id": "mini-2026-08-06",
@@ -581,6 +581,16 @@
       "author": "Michael Lieberman / Will Shortz",
       "width": 21,
       "height": 21
+    },
+    {
+      "id": "2026-07-15",
+      "file": "puzzles/2026-07-15.puz",
+      "type": "daily",
+      "date": "2026-07-15",
+      "title": "NY Times, Wednesday, July 15, 2026",
+      "author": "Jonathan Raksin and Jeff Chen / Will Shortz",
+      "width": 15,
+      "height": 15
     },
     {
       "id": "2026-07-06",
