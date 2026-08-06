@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-06T06:58:45Z",
+  "generated_at": "2026-08-06T07:04:15Z",
   "puzzles": [
     {
       "id": "mini-2026-08-06",
@@ -600,6 +600,16 @@
       "title": "NY Times, Wednesday, July 1, 2026 GO-O-O-OAL ORIENTED",
       "author": "Katie Hale and Adesina O. Koiki / Christina Iverson",
       "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2026-07-01",
+      "file": "puzzles/2026-07-01.puz",
+      "type": "daily",
+      "date": "2026-07-01",
+      "title": "NY Times, Wednesday, July 1, 2026",
+      "author": "Jeffrey Martinovic / Will Shortz",
+      "width": 16,
       "height": 15
     },
     {
