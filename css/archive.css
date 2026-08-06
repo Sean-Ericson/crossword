@@ -103,6 +103,28 @@
   background: none;
 }
 
+/* published by NYT but not downloaded yet - opening it fetches it */
+.cal-day.fetchable {
+  color: #9a9a9a;
+  border-style: dashed;
+  cursor: pointer;
+}
+
+.cal-day.fetchable:hover {
+  color: var(--color-text);
+  border-color: var(--color-link);
+  border-style: solid;
+}
+
+.cal-day.fetchable .day-status {
+  font-size: 11px;
+  color: #b5b5b5;
+}
+
+.cal-day.fetchable:hover .day-status {
+  color: var(--color-link);
+}
+
 .cal-day.has-puzzle {
   cursor: pointer;
   font-weight: 600;

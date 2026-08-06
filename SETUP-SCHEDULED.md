@@ -124,11 +124,37 @@ minute, then check `logs\update.log`.
 > Never set the task to run as `SYSTEM`. That account has no Firefox
 > profile, so there is no NYT login for the downloader to find.
 
+## 8. Register the on-demand fetcher
+
+This is what makes clicking an un-downloaded day on the site actually work.
+The site queues requests in the data repo; this task serves them.
+
+It talks to the private repo through the `gh` CLI, so make sure that's
+authenticated on this machine (step 5 covers it) — check with `gh auth status`.
+
+```
+schtasks /create /tn "Crossword fetch requests" /tr "C:\Crossword\crossword\fetch_requests.bat" /sc minute /mo 1 /f
+```
+
+Set it to **Run whether user is logged on or not** in Task Scheduler, same
+as the daily task. It exits immediately when nothing is queued and only
+writes to `logs\fetch.log` when it actually does something, so running it
+every minute is cheap.
+
+Test it by opening an old date on the site (e.g. a day in 2003) — it should
+appear within a couple of minutes. Or queue nothing and just run
+`fetch_requests.bat` by hand; it should print `No pending requests.`
+
+Useful flags: `--limit N` caps how many puzzles one run will fetch
+(default 25, so a stuck page can't become a scrape), `--keep-days N`
+controls how long served requests linger before cleanup (default 3).
+
 ## Maintenance
 
 - **The NYT login expires** every few months. Symptom: the log shows 0 new
-  puzzles for days, or a JSON/KeyError from the downloader. Fix: open Firefox
-  on that PC, sign back into nytimes.com, done.
+  puzzles for days, a JSON/KeyError from the downloader, or on-demand
+  fetches that never arrive. Fix: open Firefox on that PC, sign back into
+  nytimes.com, done.
 - **Watch the log** occasionally: `logs\update.log` (it rotates past ~1 MB).
   It is gitignored, so it never gets committed.
 - **Both PCs can push.** The updater runs `git pull --rebase --autostash`

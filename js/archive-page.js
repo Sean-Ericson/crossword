@@ -18,6 +18,7 @@ import { getActiveUser } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
 import { Sync } from './sync.js';
 import { initSyncBadge } from './sync-ui.js';
+import { ARCHIVE_START } from './config.js';
 
 const user = getActiveUser();
 const pad = (n) => String(n).padStart(2, '0');
@@ -40,7 +41,9 @@ const STATUS_ICON = {
 
 async function main() {
   initProfileChip(qs('#profile-chip'));
-  initSyncBadge(qs('#sync-badge'), new Sync(user));
+  const sync = new Sync(user);
+  initSyncBadge(qs('#sync-badge'), sync);
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   let index = null;
   try {
@@ -136,9 +139,12 @@ async function main() {
   function renderCalendar(entries) {
     calHeader.hidden = false;
     const byDate = new Map(entries.map((p) => [p.date, p]));
-    const months = [...new Set(entries.map((p) => p.date.slice(0, 7)))].sort();
-    const minMonth = months[0];
-    const maxMonth = months[months.length - 1];
+    // Browsable range spans the whole NYT archive for this type, not just
+    // what's downloaded - missing days can be fetched on demand.
+    const months = entries.map((p) => p.date.slice(0, 7));
+    const archiveStart = ARCHIVE_START[tab];
+    const minMonth = [archiveStart?.slice(0, 7), ...months].filter(Boolean).sort()[0];
+    const maxMonth = [todayStr.slice(0, 7), ...months].sort().at(-1);
     if (!monthView[tab] || monthView[tab] < minMonth || monthView[tab] > maxMonth) {
       monthView[tab] = maxMonth;
     }
@@ -172,7 +178,24 @@ async function main() {
       const date = `${y}-${pad(m)}-${pad(day)}`;
       const puzzle = byDate.get(date);
       if (!puzzle) {
-        calEl.append(el('div', { class: 'cal-day no-puzzle' }, String(day)));
+        // Not downloaded. If NYT published one, offer to fetch it.
+        const inArchive = archiveStart && date >= archiveStart && date <= todayStr;
+        if (inArchive && sync.active) {
+          const id = tab === 'daily' ? date : `${tab}-${date}`;
+          calEl.append(
+            el(
+              'a',
+              {
+                class: 'cal-day fetchable',
+                href: `./puzzle.html?id=${encodeURIComponent(id)}`,
+                title: `${formatDateLong(date)} — not downloaded yet; opening it fetches it`,
+              },
+              [el('span', {}, String(day)), el('span', { class: 'day-status' }, '↓')]
+            )
+          );
+        } else {
+          calEl.append(el('div', { class: 'cal-day no-puzzle' }, String(day)));
+        }
         continue;
       }
       const { record, status } = statusBits(puzzle.id);

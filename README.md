@@ -57,6 +57,21 @@ Windows Task Scheduler on an always-on machine — see
 [SETUP-SCHEDULED.md](SETUP-SCHEDULED.md). The updater rebases on the remote
 before downloading, so several machines can safely run it.
 
+### Fetching old puzzles on demand
+
+With sync connected, the calendar shows every date NYT has published (back
+to 1993 for the daily), not just what's downloaded. Undownloaded days are
+dashed with a ↓ — open one and it gets fetched for you, typically in a
+couple of minutes.
+
+A browser can't download from NYT itself (no CORS headers, and the session
+cookies are same-site), so it queues `requests/<id>.json` in the data repo
+and the machine running `fetch_requests.bat` does the download, commits it,
+and marks the request done. That means **on-demand fetching needs that
+machine to be switched on** — otherwise requests sit queued until it is.
+Setup is in [SETUP-SCHEDULED.md](SETUP-SCHEDULED.md); there's no need to
+bulk-download the archive, since it fills in as people play.
+
 > **Copyright note:** NYT puzzles are copyrighted. A GitHub Pages site is
 > public (private-repo Pages needs GitHub Pro), so keep this to personal use
 > and don't advertise the URL.

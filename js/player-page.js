@@ -23,6 +23,7 @@ import {
 } from './state.js';
 import { Sync } from './sync.js';
 import { initSyncBadge } from './sync-ui.js';
+import { tryLoadPuzzle, fetchOnDemand, isFetchable } from './fetch-puzzle.js';
 import { loadSettings, saveSettings, SETTING_LABELS } from './settings.js';
 import { getActiveUser } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
@@ -48,15 +49,29 @@ async function main() {
     showFatal('No puzzle specified. Pick one from the archive.');
     return;
   }
-  const url = fileParam || `./puzzles/${id}.puz`;
+  // The sync client is needed early: it both loads progress and, when the
+  // puzzle isn't in the archive yet, queues it for download.
+  const sync = new Sync(user);
+
+  let buffer = null;
+  if (fileParam) {
+    const resp = await fetch(fileParam).catch(() => null);
+    if (resp?.ok) buffer = await resp.arrayBuffer();
+  } else {
+    buffer = await tryLoadPuzzle(id);
+    if (!buffer) buffer = await obtainMissingPuzzle(id, sync);
+    if (!buffer) return; // obtainMissingPuzzle explained why
+  }
+  if (!buffer) {
+    showFatal("Couldn't load this puzzle.");
+    return;
+  }
 
   let puz;
   try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    puz = parsePuz(await resp.arrayBuffer());
+    puz = parsePuz(buffer);
   } catch (err) {
-    showFatal(`Couldn't load this puzzle (${err.message}).`);
+    showFatal(`This puzzle file looks corrupt (${err.message}).`);
     return;
   }
 
@@ -143,8 +158,7 @@ async function main() {
     autosave();
   });
 
-  // ----- GitHub sync -----
-  const sync = new Sync(user);
+  // ----- GitHub sync ----- (`sync` was built above, to load the puzzle)
   initSyncBadge(qs('#sync-badge'), sync, { onSyncNow: () => pushRemote({ force: true }) });
 
   /** Mutate `record` in place to match a merge winner and re-render. */
@@ -530,6 +544,72 @@ async function main() {
 }
 
 /* ---------- helpers ---------- */
+
+/**
+ * The archive doesn't have this puzzle. If it's something NYT published and
+ * sync is set up, queue it for the fetcher machine and wait; otherwise
+ * explain why it can't be had. Returns the bytes, or null after showing a
+ * message of its own.
+ */
+async function obtainMissingPuzzle(id, sync) {
+  const { type, date } = parsePuzzleId(id);
+  const pretty = date ? formatDateLong(date) : id;
+
+  if (!isFetchable(id)) {
+    showFatal(
+      date
+        ? `The ${PUZZLE_TYPE_LABELS[type] ?? 'puzzle'} for ${pretty} isn't in the archive, and NYT doesn't have one for that date.`
+        : `“${id}” isn't in the archive.`
+    );
+    return null;
+  }
+  if (!sync.active) {
+    showFatal(
+      `${pretty} hasn't been downloaded yet. Connect GitHub sync (the badge up top) and it can be fetched on demand.`
+    );
+    return null;
+  }
+
+  const status = el('p', {}, 'Asking for this puzzle…');
+  const hint = el('p', { style: 'font-size:12px;color:var(--color-text-muted)' }, '');
+  const closeWaiting = showModal({
+    title: 'Fetching this puzzle',
+    body: el('div', {}, [
+      el('p', {}, `${pretty} isn’t in the archive yet, so it’s being downloaded now.`),
+      status,
+      hint,
+    ]),
+    dismissible: false,
+  });
+
+  const started = Date.now();
+  const result = await fetchOnDemand(id, sync, (stage) => {
+    if (stage === 'waiting') {
+      status.textContent = 'Waiting for the download…';
+      const secs = Math.round((Date.now() - started) / 1000);
+      hint.textContent =
+        secs > 90
+          ? 'Taking a while — is the machine that downloads puzzles switched on?'
+          : 'This usually takes a couple of minutes.';
+    } else if (stage === 'publishing') {
+      status.textContent = 'Downloaded — waiting for the site to publish it…';
+      hint.textContent = '';
+    }
+  });
+  closeWaiting();
+
+  if (result.ok) return result.buffer;
+
+  const reasons = {
+    missing: result.message || `NYT doesn’t have a ${type} puzzle for ${pretty}.`,
+    error: `Something went wrong fetching it. ${result.message ?? ''}`.trim(),
+    timeout:
+      'It hasn’t arrived yet. The downloader may be offline — the request stays queued, so try again in a few minutes.',
+    offline: 'Connect GitHub sync to fetch puzzles on demand.',
+  };
+  showFatal(reasons[result.reason] ?? 'Could not fetch this puzzle.');
+  return null;
+}
 
 function showFatal(message) {
   showModal({

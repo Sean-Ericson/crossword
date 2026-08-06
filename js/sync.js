@@ -53,6 +53,10 @@ export function statsPath(user) {
   return `users/${user}/stats.json`;
 }
 
+export function requestPath(puzzleId) {
+  return `requests/${puzzleId}.json`;
+}
+
 export class Sync {
   constructor(user) {
     this.user = user;
@@ -233,5 +237,57 @@ export class Sync {
   async test() {
     if (!this.client) return { ok: false, error: 'No token configured.' };
     return this.client.testAuth();
+  }
+
+  // ---------- on-demand puzzle fetching ----------
+  // The browser can't pull from NYT (no CORS, and their cookies are
+  // same-site), so it leaves a request here and the always-on machine
+  // running tools/fetch_requests.py does the download.
+
+  /** @returns {Promise<object|null>} the request record, if any */
+  async getRequest(puzzleId) {
+    if (!this.client) return null;
+    try {
+      const file = await this.client.getFile(requestPath(puzzleId));
+      return file?.json ?? null;
+    } catch (err) {
+      this.fail(err);
+      return null;
+    }
+  }
+
+  /**
+   * Ask for a puzzle to be downloaded. Re-requesting something already
+   * queued is a no-op; a previously failed request is retried.
+   * @returns {Promise<object|null>} the current request record
+   */
+  async requestPuzzle(puzzleId, { type, date } = {}) {
+    if (!this.client) return null;
+    const path = requestPath(puzzleId);
+    try {
+      const existing = await this.client.getFile(path);
+      if (existing && ['pending', 'done'].includes(existing.json?.status)) {
+        return existing.json;
+      }
+      const record = {
+        schema: 1,
+        id: puzzleId,
+        type: type ?? null,
+        date: date ?? null,
+        requested_by: this.user,
+        requested_at: isoNow(),
+        status: 'pending',
+        message: null,
+        updated_at: isoNow(),
+      };
+      await this.client.putFile(path, record, {
+        message: `${this.user}: request ${puzzleId}`,
+        sha: existing?.sha ?? null,
+      });
+      return record;
+    } catch (err) {
+      this.fail(err);
+      return null;
+    }
   }
 }
