@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-06T06:32:35Z",
+  "generated_at": "2026-08-06T06:58:45Z",
   "puzzles": [
     {
       "id": "mini-2026-08-06",
@@ -583,6 +583,16 @@
       "height": 21
     },
     {
+      "id": "2026-07-06",
+      "file": "puzzles/2026-07-06.puz",
+      "type": "daily",
+      "date": "2026-07-06",
+      "title": "NY Times, Monday, July 6, 2026",
+      "author": "Alex Eaton-Salners / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
       "id": "bonus-2026-07-01",
       "file": "puzzles/bonus-2026-07-01.puz",
       "type": "bonus",
@@ -609,6 +619,16 @@
       "date": "2026-05-01",
       "title": "NY Times, Friday, May 1, 2026 MY LIFE WAS SAVED BY ROCK 'N' ROLL",
       "author": "Jeff Tweedy and Christina Iverson / Christina Iverson",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2010-01-01",
+      "file": "puzzles/2010-01-01.puz",
+      "type": "daily",
+      "date": "2010-01-01",
+      "title": "NY Times, Friday, January 1, 2010",
+      "author": "Brad Wilber / Will Shortz",
       "width": 15,
       "height": 15
     },
