@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-06T07:12:16Z",
+  "generated_at": "2026-08-06T07:13:15Z",
   "puzzles": [
     {
       "id": "mini-2026-08-06",
@@ -589,6 +589,16 @@
       "date": "2026-07-15",
       "title": "NY Times, Wednesday, July 15, 2026",
       "author": "Jonathan Raksin and Jeff Chen / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2026-07-07",
+      "file": "puzzles/2026-07-07.puz",
+      "type": "daily",
+      "date": "2026-07-07",
+      "title": "NY Times, Tuesday, July 7, 2026",
+      "author": "Brad Lively / Will Shortz",
       "width": 15,
       "height": 15
     },
