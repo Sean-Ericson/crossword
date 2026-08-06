@@ -139,14 +139,69 @@ def main():
         default=3,
         help='delete served requests older than this many days (0 = never)',
     )
+    parser.add_argument(
+        '--watch',
+        action='store_true',
+        help='keep running, polling every --interval seconds',
+    )
+    parser.add_argument('--interval', type=float, default=5.0)
     args = parser.parse_args()
 
     if not args.data_repo:
         sys.exit('No data repo configured - pass --data-repo owner/name')
 
+    if not args.watch:
+        return serve_once(args, quiet=False)
+
+    print(
+        f'Watching {args.data_repo} for puzzle requests '
+        f'(every {args.interval:g}s). Ctrl+C to stop.'
+    )
+    last_heartbeat = 0.0
+    while True:
+        try:
+            serve_once(args, quiet=True)
+        except KeyboardInterrupt:
+            raise
+        except Exception as exc:  # noqa: BLE001 - a bad poll shouldn't stop the loop
+            print(f'poll failed: {type(exc).__name__}: {exc}'[:200], file=sys.stderr)
+        # Occasional proof of life, so a silent log doesn't look like a crash.
+        if time.time() - last_heartbeat > 3600:
+            print(f'[{now_iso()}] watching...', flush=True)
+            last_heartbeat = time.time()
+        try:
+            time.sleep(args.interval)
+        except KeyboardInterrupt:
+            raise
+
+
+# Loaded once and reused across watch passes.
+_NYT = {'module': None, 'cookies': None, 'loaded_at': 0.0}
+COOKIE_TTL = 30 * 60  # re-read the browser's cookies this often
+
+
+def load_nyt(args):
+    if _NYT['module'] is None:
+        nytxw = os.path.abspath(args.nytxw)
+        if not os.path.isfile(os.path.join(nytxw, 'nyt.py')):
+            sys.exit(f"Can't find nytxw_puz at {nytxw} - pass --nytxw PATH")
+        sys.path.insert(0, nytxw)
+        import nyt  # noqa: PLC0415 - deliberately late, needs sys.path first
+
+        _NYT['module'] = nyt
+    if time.time() - _NYT['loaded_at'] > COOKIE_TTL:
+        # Picks up a fresh NYT login without restarting the watcher.
+        _NYT['cookies'] = _NYT['module'].load_cookies(args.browser)
+        _NYT['loaded_at'] = time.time()
+    return _NYT['module'], _NYT['cookies']
+
+
+def serve_once(args, quiet=False):
+    """One pass over the request queue. -> exit code."""
     listing = gh_api('contents/requests', repo=args.data_repo)
     if not listing:
-        print('No pending requests.')
+        if not quiet:
+            print('No pending requests.')
         return 0
 
     cutoff = (
@@ -180,7 +235,8 @@ def main():
         print(f'Cleaned up {len(stale)} served request(s).')
 
     if not pending:
-        print(f'{len(listing)} request file(s), none pending.')
+        if not quiet:
+            print(f'{len(listing)} request file(s), none pending.')
         return 0
 
     pending.sort(key=lambda item: item[2].get('requested_at') or '')
@@ -188,25 +244,13 @@ def main():
         print(f'{len(pending)} pending; serving the oldest {args.limit} this run.')
         pending = pending[: args.limit]
 
-    nytxw = os.path.abspath(args.nytxw)
-    if not os.path.isfile(os.path.join(nytxw, 'nyt.py')):
-        sys.exit(f"Can't find nytxw_puz at {nytxw} - pass --nytxw PATH")
-    sys.path.insert(0, nytxw)
-    import nyt  # noqa: E402
-
-    cookies = nyt.load_cookies(args.browser)
-
-    if not args.no_git:
-        try:
-            run(['git', 'pull', '--rebase', '--autostash'])
-        except subprocess.CalledProcessError:
-            print('WARNING: git pull failed - the push may be rejected')
+    nyt, cookies = load_nyt(args)
 
     downloaded, outcomes = [], []
     for name, sha, body in pending:
         puzzle_id = body.get('id') or name[:-5]
         ptype, date = classify(puzzle_id)
-        status, message = 'error', None
+        status, message, blob = 'error', None, None
 
         if not ptype:
             message = f'"{puzzle_id}" is not a puzzle id this can fetch.'
@@ -230,22 +274,24 @@ def main():
                 except Exception as exc:  # noqa: BLE001 - report, don't crash
                     message = f'{type(exc).__name__}: {exc}'[:200]
                     print(f'  ERROR {puzzle_id}: {message}', file=sys.stderr)
+            # Hand the bytes back through the request itself so the browser
+            # can start playing immediately, instead of waiting ~40s for
+            # GitHub Pages to publish the committed copy.
+            if status == 'done' and os.path.isfile(path):
+                try:
+                    with open(path, 'rb') as f:
+                        blob = base64.b64encode(f.read()).decode('ascii')
+                except OSError:
+                    blob = None
 
-        outcomes.append((name, sha, body, status, message))
+        outcomes.append((name, sha, body, status, message, blob))
 
-    if downloaded and not args.no_git:
-        run([sys.executable, os.path.join(HERE, 'build_index.py')])
-        run(['git', 'add', 'puzzles'])
-        label = downloaded[0] if len(downloaded) == 1 else f'{len(downloaded)} puzzles'
-        run(['git', 'commit', '-m', f'Fetch on demand: {label}'])
-        run(['git', 'push'])
-
-    # Only report success once the file is actually pushed, so a browser
-    # that sees "done" can rely on it turning up.
-    for name, sha, body, status, message in outcomes:
+    # Answer the waiting browsers first - delivery no longer depends on the
+    # commit, so there's no reason to make anyone wait for git.
+    for name, sha, body, status, message, blob in outcomes:
         body.update(status=status, message=message, updated_at=now_iso())
-        if status == 'done' and args.no_git:
-            body['message'] = 'Downloaded, but not published (--no-git).'
+        if blob:
+            body['content'] = blob
         gh_api(
             f'contents/requests/{name}',
             method='PUT',
@@ -258,6 +304,18 @@ def main():
             },
             repo=args.data_repo,
         )
+
+    # Then archive them properly, so they're served from the site from now on.
+    if downloaded and not args.no_git:
+        try:
+            run(['git', 'pull', '--rebase', '--autostash'])
+        except subprocess.CalledProcessError:
+            print('WARNING: git pull failed - the push may be rejected')
+        run([sys.executable, os.path.join(HERE, 'build_index.py')])
+        run(['git', 'add', 'puzzles'])
+        label = downloaded[0] if len(downloaded) == 1 else f'{len(downloaded)} puzzles'
+        run(['git', 'commit', '-m', f'Fetch on demand: {label}'])
+        run(['git', 'push'])
 
     served = ', '.join(f'{s}={sum(1 for o in outcomes if o[3] == s)}' for s in
                        ('done', 'missing', 'error'))

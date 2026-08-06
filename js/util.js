@@ -89,6 +89,14 @@ export function b64DecodeUtf8(b64) {
   return new TextDecoder().decode(bytes);
 }
 
+/** base64 -> ArrayBuffer, for binary payloads (a .puz handed over inline). */
+export function b64ToBytes(b64) {
+  const bin = atob(b64.replace(/\s/g, ''));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
 export function debounce(fn, ms) {
   let t = null;
   const wrapped = (...args) => {

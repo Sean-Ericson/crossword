@@ -66,11 +66,15 @@ couple of minutes.
 
 A browser can't download from NYT itself (no CORS headers, and the session
 cookies are same-site), so it queues `requests/<id>.json` in the data repo
-and the machine running `fetch_requests.bat` does the download, commits it,
-and marks the request done. That means **on-demand fetching needs that
-machine to be switched on** — otherwise requests sit queued until it is.
-Setup is in [SETUP-SCHEDULED.md](SETUP-SCHEDULED.md); there's no need to
-bulk-download the archive, since it fills in as people play.
+and the machine running `fetch_watch.bat` does the download. The fetcher
+answers with the `.puz` bytes attached to the request, so the puzzle opens
+straight away rather than waiting ~40 s for GitHub Pages to publish the
+copy it also commits for the archive.
+
+That means **on-demand fetching needs that machine to be switched on** —
+otherwise requests sit queued until it is. Setup is in
+[SETUP-SCHEDULED.md](SETUP-SCHEDULED.md); there's no need to bulk-download
+the archive, since it fills in as people play.
 
 > **Copyright note:** NYT puzzles are copyrighted. A GitHub Pages site is
 > public (private-repo Pages needs GitHub Pro), so keep this to personal use

@@ -12,7 +12,7 @@
  */
 
 import { ARCHIVE_START, FETCH_POLL_MS, FETCH_TIMEOUT_MS } from './config.js';
-import { parsePuzzleId } from './util.js';
+import { parsePuzzleId, b64ToBytes } from './util.js';
 
 /** Is this id something NYT plausibly published? */
 export function isFetchable(puzzleId) {
@@ -67,6 +67,7 @@ export async function fetchOnDemand(puzzleId, sync, onProgress = () => {}) {
   const deadline = Date.now() + FETCH_TIMEOUT_MS;
   let status = queued.status;
   let message = queued.message;
+  let inline = queued.content;
 
   // 1) wait for the fetcher to act on the request
   while (status === 'pending' && Date.now() < deadline) {
@@ -76,6 +77,17 @@ export async function fetchOnDemand(puzzleId, sync, onProgress = () => {}) {
     if (current) {
       status = current.status;
       message = current.message;
+      inline = current.content;
+    }
+  }
+
+  // The fetcher hands the bytes back with the reply, so a fetch doesn't
+  // have to wait ~40s for GitHub Pages to publish the committed copy.
+  if (status === 'done' && inline) {
+    try {
+      return { ok: true, buffer: b64ToBytes(inline) };
+    } catch {
+      /* fall through to the published copy */
     }
   }
   if (status === 'missing') {
