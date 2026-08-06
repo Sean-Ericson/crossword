@@ -247,17 +247,26 @@ export function migrateUserData(fromUser, toUser, { clearSource = true } = {}) {
     /* ignore */
   }
 
-  if (clearSource) {
-    try {
-      for (const id of listProgressIds(fromUser)) {
-        localStorage.removeItem(progressKey(fromUser, id));
-      }
-      localStorage.removeItem(statsKey(fromUser));
-      localStorage.removeItem(settingsKey(fromUser));
-    } catch {
-      /* ignore */
-    }
-  }
+  if (clearSource) deleteUserData(fromUser);
 
   return result;
+}
+
+/**
+ * Erase everything a profile stores on this device. Does not touch the
+ * data repo — remote copies are deleted on GitHub if they aren't wanted.
+ */
+export function deleteUserData(user) {
+  let removed = 0;
+  try {
+    for (const id of listProgressIds(user)) {
+      localStorage.removeItem(progressKey(user, id));
+      removed++;
+    }
+    localStorage.removeItem(statsKey(user));
+    localStorage.removeItem(settingsKey(user));
+  } catch {
+    /* no storage available */
+  }
+  return removed;
 }

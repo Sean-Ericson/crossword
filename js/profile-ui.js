@@ -3,14 +3,20 @@
  */
 
 import { el } from './util.js';
-import { showModal, toast } from './modals.js';
-import { localDataSummary, migrateUserData, loadStatsLocal } from './state.js';
+import { showModal, confirmDialog, toast } from './modals.js';
+import {
+  localDataSummary,
+  migrateUserData,
+  deleteUserData,
+  loadStatsLocal,
+} from './state.js';
 import { Sync } from './sync.js';
 import {
   getActiveUser,
   setActiveUser,
   getLocalProfiles,
   addLocalProfile,
+  removeLocalProfile,
   PROFILE_NAME_RE,
 } from './profiles.js';
 
@@ -29,25 +35,51 @@ export function openProfileModal() {
   const list = el(
     'div',
     { style: 'text-align:left' },
-    profiles.map((name) =>
-      el(
-        'label',
-        {
-          style:
-            'display:flex;gap:10px;align-items:center;padding:7px 4px;cursor:pointer;font-size:15px',
-        },
-        [
-          el('input', {
-            type: 'radio',
-            name: 'profile',
-            value: name,
-            ...(name === active ? { checked: true } : {}),
-            onchange: () => switchTo(name, { migrate: false }),
-          }),
-          name,
-        ]
-      )
-    )
+    profiles.map((name) => {
+      const summary = localDataSummary(name);
+      const row = el('div', {
+        style: 'display:flex;gap:10px;align-items:center;padding:7px 4px;font-size:15px',
+      });
+      row.append(
+        el(
+          'label',
+          { style: 'display:flex;gap:10px;align-items:center;cursor:pointer;flex:1' },
+          [
+            el('input', {
+              type: 'radio',
+              name: 'profile',
+              value: name,
+              ...(name === active ? { checked: true } : {}),
+              onchange: () => switchTo(name, { migrate: false }),
+            }),
+            name,
+            summary.solves
+              ? el(
+                  'span',
+                  { style: 'color:var(--color-text-muted);font-size:12px' },
+                  `${summary.solves} solved`
+                )
+              : null,
+          ]
+        )
+      );
+      // The active profile can't be removed - switch away from it first.
+      if (name !== active) {
+        row.append(
+          el(
+            'button',
+            {
+              class: 'btn-quiet',
+              title: `Remove “${name}” from this device`,
+              style: 'font-size:16px;line-height:1;color:var(--color-text-muted)',
+              onclick: () => removeProfile(name, summary),
+            },
+            '✕'
+          )
+        );
+      }
+      return row;
+    })
   );
 
   const input = el('input', {
@@ -123,6 +155,25 @@ export function openProfileModal() {
       ),
     ]),
   });
+
+  async function removeProfile(name, summary) {
+    const bits = [];
+    if (summary.solves) bits.push(`${summary.solves} solved`);
+    if (summary.started) bits.push(`${summary.started} in progress`);
+    const what = bits.length
+      ? `This deletes “${name}” and its saved puzzles (${bits.join(', ')}).`
+      : `Remove “${name}” from this device?`;
+    const ok = await confirmDialog(
+      `${what} This only affects this browser — anything already synced stays in the data repo.`,
+      { confirmLabel: 'Remove profile', title: `Remove ${name}?` }
+    );
+    if (!ok) return;
+    deleteUserData(name);
+    removeLocalProfile(name);
+    toast(`Removed “${name}”.`);
+    close();
+    location.reload();
+  }
 
   async function switchTo(name, { migrate }) {
     addLocalProfile(name);

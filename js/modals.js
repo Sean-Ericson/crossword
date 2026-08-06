@@ -9,7 +9,8 @@ import { el } from './util.js';
 /**
  * @param {{
  *   title?: string, body?: Node|string|Array,
- *   actions?: Array<{label:string, primary?:boolean, onClick?:Function}>,
+ *   actions?: Array<{label:string, primary?:boolean, onClick?:Function,
+ *                    keepOpen?:boolean}>,
  *   dismissible?: boolean,   // click-outside / × / Escape closes (default true)
  *   veil?: boolean,          // translucent white (true, NYT-style) vs dim
  *   onClose?: Function,
@@ -71,9 +72,13 @@ export function showModal(opts = {}) {
             'button',
             {
               class: a.primary ? 'btn btn-primary' : 'btn',
-              onclick: () => {
-                close();
-                a.onClick?.();
+              // Run the action BEFORE closing: close() fires onClose, which
+              // is how confirmDialog detects a dismissal. Closing first made
+              // every confirm resolve as "cancelled".
+              onclick: (e) => {
+                a.onClick?.(e);
+                // keepOpen actions (e.g. "Test connection") act in place
+                if (!a.keepOpen) close();
               },
             },
             a.label

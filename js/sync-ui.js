@@ -71,33 +71,26 @@ export function openSyncSettings(sync, { onSyncNow } = {}) {
     token: tokenIn.value.trim(),
   });
 
-  const testBtn = el(
-    'button',
-    {
-      class: 'btn',
-      onclick: async () => {
-        const c = readCfg();
-        if (!c.owner || !c.repo || !c.token) {
-          result.textContent = 'Owner, repo, and token are all required.';
-          result.style.color = '#b3261e';
-          return;
-        }
-        result.textContent = 'Testing…';
-        result.style.color = '';
-        const check = await new GitHubClient(c).testAuth();
-        if (check.ok) {
-          result.textContent = `✓ Connected${check.private ? ' (private repo)' : ' — WARNING: repo is public!'}${
-            check.pushAllowed ? '' : ' — token has no write access!'
-          }`;
-          result.style.color = check.private && check.pushAllowed ? '#256029' : '#b3261e';
-        } else {
-          result.textContent = `✗ ${check.error}`;
-          result.style.color = '#b3261e';
-        }
-      },
-    },
-    'Test connection'
-  );
+  async function testConnection() {
+    const c = readCfg();
+    if (!c.owner || !c.repo || !c.token) {
+      result.textContent = 'Owner, repo, and token are all required.';
+      result.style.color = '#b3261e';
+      return;
+    }
+    result.textContent = 'Testing…';
+    result.style.color = '';
+    const check = await new GitHubClient(c).testAuth();
+    if (check.ok) {
+      result.textContent = `✓ Connected${check.private ? ' (private repo)' : ' — WARNING: repo is public!'}${
+        check.pushAllowed ? '' : ' — token has no write access!'
+      }`;
+      result.style.color = check.private && check.pushAllowed ? '#256029' : '#b3261e';
+    } else {
+      result.textContent = `✗ ${check.error}`;
+      result.style.color = '#b3261e';
+    }
+  }
 
   const body = el('div', { style: 'text-align:left' }, [
     el(
@@ -110,45 +103,38 @@ export function openSyncSettings(sync, { onSyncNow } = {}) {
     branchRow,
     tokenRow,
     result,
-    el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [
-      testBtn,
-      sync?.active && onSyncNow
-        ? el(
-            'button',
-            {
-              class: 'btn',
-              onclick: () => {
-                onSyncNow();
-                toast('Syncing…');
-              },
-            },
-            'Sync now'
-          )
-        : null,
-    ]),
   ]);
 
-  showModal({
-    title: 'GitHub sync',
-    body,
-    actions: [
-      {
-        label: 'Disconnect',
-        onClick: () => {
-          const c = readCfg();
-          c.token = '';
-          saveGhConfig(c);
-          location.reload();
-        },
+  const actions = [{ label: 'Test connection', keepOpen: true, onClick: testConnection }];
+  if (sync?.active && onSyncNow) {
+    actions.push({
+      label: 'Sync now',
+      keepOpen: true,
+      onClick: () => {
+        onSyncNow();
+        toast('Syncing…');
       },
-      {
-        label: 'Save',
-        primary: true,
-        onClick: () => {
-          saveGhConfig(readCfg());
-          location.reload();
-        },
+    });
+  }
+  if (cfg.token) {
+    actions.push({
+      label: 'Disconnect',
+      onClick: () => {
+        const c = readCfg();
+        c.token = '';
+        saveGhConfig(c);
+        location.reload();
       },
-    ],
+    });
+  }
+  actions.push({
+    label: 'Save',
+    primary: true,
+    onClick: () => {
+      saveGhConfig(readCfg());
+      location.reload();
+    },
   });
+
+  showModal({ title: 'GitHub sync', body, actions });
 }
