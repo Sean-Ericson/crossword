@@ -129,8 +129,18 @@ minute, then check `logs\update.log`.
 This is what makes clicking an un-downloaded day on the site actually work.
 The site queues requests in the data repo; this serves them.
 
-It talks to the private repo through the `gh` CLI, so make sure that's
-authenticated on this machine (step 5 covers it) — check with `gh auth status`.
+It needs read/write access to the private data repo. Either works:
+
+- **A token** — the same fine-grained token the site uses. Save it as
+  `.github_token` in the repo root (gitignored), or set `XWORD_GITHUB_TOKEN`.
+  Nothing else to install.
+- **The `gh` CLI**, signed in (`gh auth status`). Used automatically if
+  there's no token.
+
+If neither is available the fetcher exits with instructions rather than
+retrying forever. Note that a scheduled task doesn't inherit your user
+PATH, so `gh` can be visible in your prompt yet missing here — the token
+route sidesteps that entirely.
 
 **Pick one of the two.** The watcher is faster; the scheduled task is
 simpler.

@@ -6,3 +6,6 @@ Thumbs.db
 # scheduled-update logs (daily_update.bat)
 logs/
 DataPassword.txt
+
+# local GitHub token for tools/fetch_requests.py
+.github_token

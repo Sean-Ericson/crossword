@@ -101,21 +101,100 @@ def find_exe(name):
 
 
 def resolve_tools(need_git=True):
-    for name in ('gh', 'git') if need_git else ('gh',):
-        path = find_exe(name)
-        if not path:
-            sys.exit(
-                f"Can't find {name}.exe. It isn't on this process's PATH - "
-                f'scheduled tasks often miss the user PATH. Either install it '
-                f'machine-wide, or set XWORD_{name.upper()} to its full path '
-                f'(e.g. setx XWORD_{name.upper()} "C:\\Program Files\\'
-                f'{"GitHub CLI" if name == "gh" else "Git\\cmd"}\\{name}.exe").'
+    """Work out how to reach the GitHub API, and find git for the archive."""
+    TOOLS['token'] = find_token()
+    if not TOOLS['token']:
+        gh = find_exe('gh')
+        if not gh:
+            suggested = (
+                TOKEN_FILES[0] if TOKEN_FILES else os.path.join(SITE, '.github_token')
             )
-        TOOLS[name] = path
+            sys.exit(
+                "Can't reach GitHub: no token and no gh.exe.\n"
+                'Fix either way:\n'
+                '  (a) Give it a token - the same fine-grained token the site\n'
+                '      uses for the data repo works. Save it as\n'
+                f'      {suggested}\n'
+                '      (that path is gitignored), or set XWORD_GITHUB_TOKEN.\n'
+                '  (b) Install the GitHub CLI and sign in:\n'
+                '      winget install GitHub.cli  &&  gh auth login\n'
+                '      If it is installed but not on this process\'s PATH,\n'
+                '      set XWORD_GH to the full path of gh.exe.'
+            )
+        TOOLS['gh'] = gh
+
+    if need_git:
+        git = find_exe('git')
+        if not git:
+            sys.exit(
+                "Can't find git.exe - needed to commit fetched puzzles. "
+                'Install Git, or set XWORD_GIT to its full path '
+                r'(e.g. setx XWORD_GIT "C:\Program Files\Git\cmd\git.exe").'
+            )
+        TOOLS['git'] = git
+
+
+TOKEN_FILES = [
+    os.path.join(SITE, '.github_token'),
+    os.path.expanduser('~/.crossword_github_token'),
+]
+
+
+def find_token():
+    """A GitHub token for the data repo: env var, then file, then gh."""
+    env = os.environ.get('XWORD_GITHUB_TOKEN')
+    if env and env.strip():
+        return env.strip()
+    for path in TOKEN_FILES:
+        try:
+            with open(path, encoding='utf-8') as f:
+                token = f.read().strip()
+            if token:
+                return token
+        except OSError:
+            continue
+    gh = find_exe('gh')
+    if gh:
+        result = subprocess.run(
+            [gh, 'auth', 'token'], capture_output=True, text=True, encoding='utf-8'
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+    return None
 
 
 def gh_api(path, method='GET', payload=None, repo=None):
-    """Call the GitHub API through the authenticated gh CLI."""
+    """
+    Call the GitHub contents API. Uses a token directly when one is
+    configured (no external tools needed); otherwise shells out to gh.
+    """
+    token = TOOLS.get('token')
+    if token:
+        import urllib.error  # noqa: PLC0415 - only needed on this path
+        import urllib.request
+
+        request = urllib.request.Request(
+            f'https://api.github.com/repos/{repo}/{path}',
+            method=method,
+            data=json.dumps(payload).encode('utf-8') if payload is not None else None,
+            headers={
+                'Authorization': f'Bearer {token}',
+                'Accept': 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28',
+                'Content-Type': 'application/json',
+                'User-Agent': 'crossword-site-fetcher',
+            },
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                body = response.read().decode('utf-8')
+            return json.loads(body) if body.strip() else None
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                return None
+            detail = exc.read().decode('utf-8', 'replace')[:200]
+            raise RuntimeError(f'GitHub {method} {path} -> {exc.code}: {detail}') from exc
+
     cmd = [TOOLS.get('gh', 'gh'), 'api', f'repos/{repo}/{path}', '-X', method]
     if payload is not None:
         cmd += ['--input', '-']
