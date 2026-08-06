@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-06T06:14:13Z",
+  "generated_at": "2026-08-06T06:32:35Z",
   "puzzles": [
     {
       "id": "mini-2026-08-06",
@@ -619,6 +619,16 @@
       "date": "2003-05-03",
       "title": "NY Times, Saturday, May 3, 2003",
       "author": "John Scott Marrone / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "1999-12-31",
+      "file": "puzzles/1999-12-31.puz",
+      "type": "daily",
+      "date": "1999-12-31",
+      "title": "NY Times, Friday, December 31, 1999",
+      "author": "Peter Gordon / Will Shortz",
       "width": 15,
       "height": 15
     },
