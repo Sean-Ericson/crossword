@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-07T05:01:30Z",
+  "generated_at": "2026-08-08T05:24:06Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-08",
+      "file": "puzzles/mini-2026-08-08.puz",
+      "type": "mini",
+      "date": "2026-08-08",
+      "title": "NY Times, Saturday, August 8, 2026",
+      "author": "Joel Fagliano",
+      "width": 7,
+      "height": 7
+    },
+    {
+      "id": "midi-2026-08-08",
+      "file": "puzzles/midi-2026-08-08.puz",
+      "type": "midi",
+      "date": "2026-08-08",
+      "title": "NY Times, Saturday, August 8, 2026 BANG! BANG!",
+      "author": "Hanh Huynh / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-08-08",
+      "file": "puzzles/2026-08-08.puz",
+      "type": "daily",
+      "date": "2026-08-08",
+      "title": "NY Times, Saturday, August 8, 2026",
+      "author": "Kameron Austin Collins / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-07",
       "file": "puzzles/mini-2026-08-07.puz",
