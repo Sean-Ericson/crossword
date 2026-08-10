@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-10T01:48:35Z",
+  "generated_at": "2026-08-10T03:26:03Z",
   "puzzles": [
     {
       "id": "mini-2026-08-09",
@@ -759,6 +759,16 @@
       "date": "2025-10-04",
       "title": "NY Times, Saturday, October 4, 2025",
       "author": "Ryan McCarty / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2024-08-05",
+      "file": "puzzles/2024-08-05.puz",
+      "type": "daily",
+      "date": "2024-08-05",
+      "title": "NY Times, Monday, August 5, 2024",
+      "author": "Andy Walker / Joel Fagliano",
       "width": 15,
       "height": 15
     },
