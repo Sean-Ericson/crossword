@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-10T05:21:44Z",
+  "generated_at": "2026-08-11T05:09:17Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-11",
+      "file": "puzzles/mini-2026-08-11.puz",
+      "type": "mini",
+      "date": "2026-08-11",
+      "title": "NY Times, Tuesday, August 11, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-11",
+      "file": "puzzles/midi-2026-08-11.puz",
+      "type": "midi",
+      "date": "2026-08-11",
+      "title": "NY Times, Tuesday, August 11, 2026 TWO WAYS OF SAYING IT",
+      "author": "Evan Kalish / Ian Livengood",
+      "width": 10,
+      "height": 9
+    },
+    {
+      "id": "2026-08-11",
+      "file": "puzzles/2026-08-11.puz",
+      "type": "daily",
+      "date": "2026-08-11",
+      "title": "NY Times, Tuesday, August 11, 2026",
+      "author": "Wade Bednar / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-10",
       "file": "puzzles/mini-2026-08-10.puz",
