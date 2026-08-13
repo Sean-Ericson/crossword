@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-12T05:17:09Z",
+  "generated_at": "2026-08-13T19:43:56Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-13",
+      "file": "puzzles/mini-2026-08-13.puz",
+      "type": "mini",
+      "date": "2026-08-13",
+      "title": "NY Times, Thursday, August 13, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-13",
+      "file": "puzzles/midi-2026-08-13.puz",
+      "type": "midi",
+      "date": "2026-08-13",
+      "title": "NY Times, Thursday, August 13, 2026 LOST IN TRANSLATION",
+      "author": "Andy Kravis / Ian Livengood",
+      "width": 11,
+      "height": 11
+    },
+    {
+      "id": "2026-08-13",
+      "file": "puzzles/2026-08-13.puz",
+      "type": "daily",
+      "date": "2026-08-13",
+      "title": "NY Times, Thursday, August 13, 2026",
+      "author": "Killian Olson / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-12",
       "file": "puzzles/mini-2026-08-12.puz",
