@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-13T19:43:56Z",
+  "generated_at": "2026-08-14T05:25:32Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-14",
+      "file": "puzzles/mini-2026-08-14.puz",
+      "type": "mini",
+      "date": "2026-08-14",
+      "title": "NY Times, Friday, August 14, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-14",
+      "file": "puzzles/midi-2026-08-14.puz",
+      "type": "midi",
+      "date": "2026-08-14",
+      "title": "NY Times, Friday, August 14, 2026 LAND OF OZ",
+      "author": "Ian Livengood",
+      "width": 10,
+      "height": 9
+    },
+    {
+      "id": "2026-08-14",
+      "file": "puzzles/2026-08-14.puz",
+      "type": "daily",
+      "date": "2026-08-14",
+      "title": "NY Times, Friday, August 14, 2026",
+      "author": "Zhou Zhang / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-13",
       "file": "puzzles/mini-2026-08-13.puz",
@@ -883,12 +913,32 @@
       "height": 15
     },
     {
+      "id": "mini-2025-09-12",
+      "file": "puzzles/mini-2025-09-12.puz",
+      "type": "mini",
+      "date": "2025-09-12",
+      "title": "NY Times, Friday, September 12, 2025",
+      "author": "Wyna Liu / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
       "id": "2024-08-05",
       "file": "puzzles/2024-08-05.puz",
       "type": "daily",
       "date": "2024-08-05",
       "title": "NY Times, Monday, August 5, 2024",
       "author": "Andy Walker / Joel Fagliano",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2021-04-26",
+      "file": "puzzles/2021-04-26.puz",
+      "type": "daily",
+      "date": "2021-04-26",
+      "title": "NY Times, Monday, April 26, 2021",
+      "author": "Eric and Lori Bornstein / Will Shortz",
       "width": 15,
       "height": 15
     },
