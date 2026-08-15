@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-14T15:07:36Z",
+  "generated_at": "2026-08-15T05:21:42Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-15",
+      "file": "puzzles/mini-2026-08-15.puz",
+      "type": "mini",
+      "date": "2026-08-15",
+      "title": "NY Times, Saturday, August 15, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 7,
+      "height": 7
+    },
+    {
+      "id": "midi-2026-08-15",
+      "file": "puzzles/midi-2026-08-15.puz",
+      "type": "midi",
+      "date": "2026-08-15",
+      "title": "NY Times, Saturday, August 15, 2026 CIRCLE OF LIFE",
+      "author": "Joel Fagliano / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-08-15",
+      "file": "puzzles/2026-08-15.puz",
+      "type": "daily",
+      "date": "2026-08-15",
+      "title": "NY Times, Saturday, August 15, 2026",
+      "author": "Blake Slonecker / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-14",
       "file": "puzzles/mini-2026-08-14.puz",
