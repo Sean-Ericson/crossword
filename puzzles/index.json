@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-15T05:21:42Z",
+  "generated_at": "2026-08-16T05:19:47Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-16",
+      "file": "puzzles/mini-2026-08-16.puz",
+      "type": "mini",
+      "date": "2026-08-16",
+      "title": "NY Times, Sunday, August 16, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-16",
+      "file": "puzzles/midi-2026-08-16.puz",
+      "type": "midi",
+      "date": "2026-08-16",
+      "title": "NY Times, Sunday, August 16, 2026 PUT A TENT ON THIS CIRCUS!",
+      "author": "Kareem Ayas / Ian Livengood",
+      "width": 10,
+      "height": 10
+    },
+    {
+      "id": "2026-08-16",
+      "file": "puzzles/2026-08-16.puz",
+      "type": "daily",
+      "date": "2026-08-16",
+      "title": "NY Times, Sunday, August 16, 2026 TAKE THE EDGE OFF",
+      "author": "Sam Brody / Will Shortz",
+      "width": 21,
+      "height": 21
+    },
     {
       "id": "mini-2026-08-15",
       "file": "puzzles/mini-2026-08-15.puz",
