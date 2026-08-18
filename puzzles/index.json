@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-18T18:55:48Z",
+  "generated_at": "2026-08-18T23:01:25Z",
   "puzzles": [
     {
       "id": "mini-2026-08-18",
@@ -1080,6 +1080,16 @@
       "title": "NY Times, Wednesday, April 22, 2020",
       "author": "Jules Markey / Will Shortz",
       "width": 16,
+      "height": 15
+    },
+    {
+      "id": "2019-06-17",
+      "file": "puzzles/2019-06-17.puz",
+      "type": "daily",
+      "date": "2019-06-17",
+      "title": "NY Times, Monday, June 17, 2019",
+      "author": "Erik Agard, Yacob Yonas / Will Shortz",
+      "width": 15,
       "height": 15
     },
     {
