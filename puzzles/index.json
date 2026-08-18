@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-18T05:23:39Z",
+  "generated_at": "2026-08-18T18:55:48Z",
   "puzzles": [
     {
       "id": "mini-2026-08-18",
@@ -1099,6 +1099,16 @@
       "date": "2018-08-07",
       "title": "NY Times, Tuesday, August 7, 2018",
       "author": "Alex Eaton-Salners / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2016-08-18",
+      "file": "puzzles/2016-08-18.puz",
+      "type": "daily",
+      "date": "2016-08-18",
+      "title": "NY Times, Thursday, August 18, 2016",
+      "author": "Jeff Chen, Parker Lewis / Will Shortz",
       "width": 15,
       "height": 15
     },
