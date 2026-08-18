@@ -16,8 +16,18 @@ list) to its HTML, holding only the clues whose formatting differs from
 the plain text. Most puzzles have none, so the section is usually absent.
 """
 import json
+import re
 
 FCLU = b'FCLU'
+
+# NYT's `formatted` also HTML-escapes quotes and apostrophes, so it differs
+# from `plain` on plenty of clues that carry no styling at all. Only an
+# actual tag is worth storing.
+HAS_TAG_RE = re.compile(r'<[a-zA-Z/][^>]*>')
+
+
+def has_markup(html):
+    return bool(html) and bool(HAS_TAG_RE.search(html))
 
 
 def formatted_clues(data):
@@ -39,9 +49,8 @@ def formatted_clues(data):
             if isinstance(text, list):
                 text = text[0] if text else {}
             if isinstance(text, dict):
-                plain = text.get('plain', '')
                 rich = text.get('formatted')
-                out.append(rich if rich and rich != plain else None)
+                out.append(rich if has_markup(rich) else None)
             else:
                 out.append(None)
     return out

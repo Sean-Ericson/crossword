@@ -14,10 +14,14 @@ Usage:
 
     --limit N     stop after N puzzles (default 40) so a long archive can
                   be worked through over several runs
+    --since DATE  only puzzles dated on or after DATE (YYYY-MM-DD), or a
+                  plain number of days back, e.g. --since 7
+    --until DATE  only puzzles dated on or before DATE
     --no-git      patch the files but don't commit or push
     --nytxw PATH  path to the nytxw_puz checkout (default: ../nytxw_puz)
 """
 import argparse
+import datetime
 import os
 import subprocess
 import sys
@@ -32,12 +36,24 @@ from fetch_requests import classify, find_puzzle_id, PREFIX  # noqa: E402
 from nyt_clues import FCLU, attach_formatted_clues  # noqa: E402
 
 
+def as_date_bound(value):
+    """'2026-08-11' as-is; a bare number means that many days ago."""
+    if not value:
+        return None
+    if value.isdigit():
+        back = datetime.date.today() - datetime.timedelta(days=int(value))
+        return back.isoformat()
+    return value
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument('browser', nargs='?', default='Firefox')
     parser.add_argument('--limit', type=int, default=40)
+    parser.add_argument('--since')
+    parser.add_argument('--until')
     parser.add_argument('--no-git', action='store_true')
     parser.add_argument(
         '--nytxw', default=os.path.join(os.path.dirname(SITE), 'nytxw_puz')
@@ -54,9 +70,17 @@ def main():
     puz.IGNORE_CHECKSUMS = True
     puz.ENCODING = 'cp1252'
 
+    since = as_date_bound(args.since)
+    until = as_date_bound(args.until)
+
     todo = []
     for name in sorted(os.listdir(PUZZLES_DIR)):
         if not name.endswith('.puz'):
+            continue
+        ptype, date = classify(os.path.splitext(name)[0])
+        if not ptype or not date:
+            continue  # undated one-offs have nothing to look up
+        if (since and date < since) or (until and date > until):
             continue
         path = os.path.join(PUZZLES_DIR, name)
         try:
@@ -65,9 +89,7 @@ def main():
             continue
         if FCLU in existing.extensions:
             continue
-        ptype, date = classify(os.path.splitext(name)[0])
-        if ptype:
-            todo.append((name, path, ptype, date))
+        todo.append((name, path, ptype, date))
 
     if not todo:
         print('Every puzzle already carries its clue formatting.')
