@@ -156,6 +156,17 @@ export function parsePuz(data) {
     });
   }
 
+  // FCLU is ours (see tools/nyt_clues.py): NYT's clue formatting, which the
+  // .puz clue strings can't carry. Other readers skip unknown extensions.
+  let cluesFormatted = null;
+  if (extensions.FCLU) {
+    try {
+      cluesFormatted = JSON.parse(new TextDecoder().decode(extensions.FCLU));
+    } catch {
+      cluesFormatted = null; // never let bad markup break a puzzle
+    }
+  }
+
   let rebus = null;
   const rebusSquares = {};
   if (extensions.GRBS) {
@@ -184,6 +195,7 @@ export function parsePuz(data) {
     solution,
     fill,
     clues,
+    cluesFormatted, // {clueIndex: html} for clues NYT styled, else null
     circled,
     rebus,
     rebusSquares,

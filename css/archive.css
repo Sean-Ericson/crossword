@@ -40,8 +40,37 @@
 .cal-header h2 {
   font-size: 20px;
   margin: 0;
-  min-width: 200px;
+  min-width: 240px;
   text-align: center;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.cal-header select {
+  font-family: inherit;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-text);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.cal-header select:hover {
+  border-color: var(--color-border);
+  background: var(--color-bg-muted);
+}
+
+.cal-header select:focus-visible {
+  outline: 2px solid var(--color-link);
+}
+
+.cal-header select[hidden] {
+  display: none;
 }
 
 .cal-nav {

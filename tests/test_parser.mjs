@@ -15,6 +15,7 @@ import {
   weekdayOf,
   parsePuzzleId,
   themeTitle,
+  findClueReferences,
 } from '../js/util.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -128,6 +129,44 @@ test('util: parsePuzzleId classifies all types', () => {
   assert.deepEqual(parsePuzzleId('mega2025'), { type: 'special', date: null });
   assert.deepEqual(parsePuzzleId('mini-2026-7-1'), { type: 'special', date: null });
   assert.deepEqual(parsePuzzleId('dateFromId-2026-07-21x'), { type: 'special', date: null });
+});
+
+test('util: findClueReferences picks up the forms NYT uses', () => {
+  const refs = (t) => findClueReferences(t).map((r) => r.dir + r.num);
+
+  assert.deepEqual(refs('See 17-Across'), ['A17']);
+  assert.deepEqual(refs('With 23-Down, a hint'), ['D23']);
+  assert.deepEqual(refs('17-Across and 23-Down'), ['A17', 'D23']);
+  // a trailing direction applies to every number in the run
+  assert.deepEqual(refs('17-, 23- and 45-Across'), ['A17', 'A23', 'A45']);
+  assert.deepEqual(refs('Like 8 Down'), ['D8']);
+  // no references, and nothing that merely looks numeric
+  assert.deepEqual(refs('Capital of France'), []);
+  assert.deepEqual(refs('1990s sitcom'), []);
+  assert.deepEqual(refs(''), []);
+  assert.deepEqual(refs(null), []);
+  // duplicates collapse
+  assert.deepEqual(refs('17-Across, yes, 17-Across'), ['A17']);
+});
+
+test('model: referencesOf resolves to real words and skips self', () => {
+  const p = parsePuz(readFileSync(fixture('fixture15.puz')));
+  const m = new PuzzleModel(p);
+  const target = m.words.A[2];
+  const fake = { ...m.words.A[0], clueText: `See ${target.num}-Across` };
+  assert.deepEqual(m.referencesOf(fake), [target]);
+
+  // a clue referring to itself yields nothing
+  const selfRef = { ...m.words.A[0] };
+  selfRef.clueText = `See ${selfRef.num}-Across`;
+  assert.deepEqual(
+    m.referencesOf(m.words.A[0]).filter((w) => w === m.words.A[0]),
+    []
+  );
+
+  // numbers with no matching entry are dropped, not crashed on
+  assert.deepEqual(m.referencesOf({ ...m.words.A[0], clueText: 'See 999-Down' }), []);
+  assert.deepEqual(m.referencesOf(null), []);
 });
 
 test('util: themeTitle strips the generated NYT date prefix', () => {

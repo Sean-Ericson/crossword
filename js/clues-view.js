@@ -2,7 +2,7 @@
  * clues-view.js — Across/Down clue lists and the current-clue bar.
  */
 
-import { el } from './util.js';
+import { el, setRichText } from './util.js';
 
 export class CluesView {
   /**
@@ -22,6 +22,8 @@ export class CluesView {
     const buildList = (host, title, words) => {
       const ol = el('ol', { class: 'clue-items' });
       for (const word of words) {
+        const text = el('span', { class: 'clue-item-text' });
+        setRichText(text, word.clueHtml, word.clueText);
         const li = el(
           'li',
           {
@@ -32,10 +34,7 @@ export class CluesView {
               onSelectWord(word);
             },
           },
-          [
-            el('span', { class: 'clue-item-num' }, String(word.num)),
-            el('span', { class: 'clue-item-text' }, word.clueText),
-          ]
+          [el('span', { class: 'clue-item-num' }, String(word.num)), text]
         );
         this.itemsByWordId.set(word.id, li);
         ol.append(li);
@@ -79,7 +78,7 @@ export class CluesView {
     }
     if (word) {
       this.barNum.textContent = `${word.num}${word.dir === 'A' ? 'A' : 'D'}`;
-      this.barText.textContent = word.clueText;
+      setRichText(this.barText, word.clueHtml, word.clueText);
     }
   }
 
@@ -93,6 +92,15 @@ export class CluesView {
     } else if (bottom > list.scrollTop + list.clientHeight) {
       list.scrollTop = bottom - list.clientHeight + 4;
     }
+  }
+
+  /** Mark the clue rows for entries the active clue points at. */
+  setReferenced(words) {
+    for (const li of this.referencedItems ?? []) li.classList.remove('referenced');
+    this.referencedItems = words
+      .map((w) => this.itemsByWordId.get(w.id))
+      .filter(Boolean);
+    for (const li of this.referencedItems) li.classList.add('referenced');
   }
 
   /** Gray out clues whose words are completely filled (NYT style). */

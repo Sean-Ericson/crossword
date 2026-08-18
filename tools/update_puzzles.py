@@ -35,6 +35,8 @@ import subprocess
 import sys
 import time
 
+from nyt_clues import attach_formatted_clues
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(HERE)
 PUZZLES_DIR = os.path.join(SITE, 'puzzles')
@@ -185,7 +187,9 @@ def main():
             if os.path.isfile(path):
                 continue
             puzzle = nyt.get_puzzle_from_id(cookies, puzzle_id)
-            nyt.data_to_puz(puzzle).save(path)
+            built = nyt.data_to_puz(puzzle)
+            attach_formatted_clues(built, puzzle)
+            built.save(path)
             new_by_type.setdefault(ptype, []).append(date)
             print(f'  downloaded {prefix}{date}.puz')
             time.sleep(1.0)  # be gentle with the website

@@ -118,6 +118,20 @@ export class GridView {
     this.setSelection(null, []);
   }
 
+  /**
+   * Shade entries the current clue points at ("See 17-Across"). Tracked
+   * separately from the selection so the two never fight over classes.
+   */
+  setReferenced(cells) {
+    for (const i of this.appliedReferenced ?? []) {
+      this.cellEls[i].classList.remove('ref-word');
+    }
+    this.appliedReferenced = [...cells];
+    for (const i of this.appliedReferenced) {
+      this.cellEls[i].classList.add('ref-word');
+    }
+  }
+
   /** Viewport rect of a cell (for the rebus input overlay). */
   cellRect(index) {
     return this.cellEls[index].getBoundingClientRect();

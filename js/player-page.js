@@ -135,6 +135,10 @@ async function main() {
   engine.on('selection', ({ index, word }) => {
     gridView.setSelection(index, word ? word.cells : []);
     cluesView.setActive(word, engine.crossWord());
+    // Shade whatever this clue points at, e.g. "With 23-Down, ..."
+    const referenced = model.referencesOf(word);
+    gridView.setReferenced(referenced.flatMap((w) => w.cells));
+    cluesView.setReferenced(referenced);
   });
   engine.on('cells', (indexes) => {
     for (const i of indexes) gridView.updateCell(i, record);

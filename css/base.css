@@ -4,6 +4,7 @@
   /* NYT Games palette */
   --color-cell-selected: #ffda00;   /* cursor cell */
   --color-cell-word: #a7d8ff;       /* rest of active word */
+  --color-cell-ref: #dfe3f5;        /* entries the active clue points at */
   --color-clue-active: #a7d8ff;     /* active clue row fill */
   --color-clue-cross: #a7d8ff;      /* crossing clue left border */
   --color-black: #000;

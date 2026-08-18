@@ -120,6 +120,68 @@ export function debounce(fn, ms) {
   return wrapped;
 }
 
+/*
+ * Clues that point at other entries: "See 17-Across", "With 23-Down, ...",
+ * "17-, 23- and 45-Across". The trailing direction applies to every number
+ * in the run, which is why the list is captured in one go.
+ */
+const CLUE_REF_RE =
+  /((?:\d+\s*-\s*(?:,\s*|and\s+|&\s*))*\d+)\s*-?\s*(Across|Down)\b/gi;
+
+/**
+ * @param {string} text plain clue text
+ * @returns {Array<{num:number, dir:'A'|'D'}>} entries the clue refers to
+ */
+export function findClueReferences(text) {
+  const refs = [];
+  const seen = new Set();
+  for (const match of String(text || '').matchAll(CLUE_REF_RE)) {
+    const dir = match[2].toLowerCase().startsWith('a') ? 'A' : 'D';
+    for (const digits of match[1].match(/\d+/g) ?? []) {
+      const key = dir + digits;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      refs.push({ num: Number(digits), dir });
+    }
+  }
+  return refs;
+}
+
+// Inline tags NYT actually uses in clue text. Anything else is flattened
+// to its text, so markup can never smuggle in script or layout.
+const RICH_TAGS = new Set(['I', 'EM', 'B', 'STRONG', 'SUB', 'SUP', 'U', 'BR']);
+
+/**
+ * Replace `host`'s contents with `html`, keeping only the inline formatting
+ * tags above and dropping every attribute. Falls back to plain text when
+ * there's no markup to preserve.
+ */
+export function setRichText(host, html, plain = '') {
+  host.textContent = '';
+  if (!html) {
+    host.textContent = plain;
+    return;
+  }
+  const parsed = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
+  const convert = (source, target) => {
+    for (const node of source.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        target.append(node.textContent);
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        if (RICH_TAGS.has(node.tagName)) {
+          const clean = document.createElement(node.tagName.toLowerCase());
+          convert(node, clean);
+          target.append(clean);
+        } else {
+          convert(node, target); // unwrap anything unexpected
+        }
+      }
+    }
+  };
+  convert(parsed.body, host);
+  if (!host.textContent) host.textContent = plain;
+}
+
 /** Tiny DOM builder: el('div', {class:'x', onclick:fn}, ['text', child]) */
 export function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);

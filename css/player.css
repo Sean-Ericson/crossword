@@ -219,6 +219,12 @@ body.player-page {
   cursor: default;
 }
 
+/* Entries the current clue refers to. Listed before the selection rules so
+   the active word always wins where they overlap. */
+.cell.ref-word {
+  background: var(--color-cell-ref);
+}
+
 .cell.sel-word {
   background: var(--color-cell-word);
 }
@@ -399,6 +405,10 @@ body.player-page {
 
 .clue-item.cross {
   border-left-color: var(--color-clue-cross);
+}
+
+.clue-item.referenced {
+  background: var(--color-cell-ref);
 }
 
 .clue-item.filled .clue-item-text {

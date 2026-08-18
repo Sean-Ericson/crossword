@@ -11,6 +11,7 @@
  */
 
 import { isBlackChar } from './puz.js';
+import { findClueReferences } from './util.js';
 
 export class PuzzleModel {
   /** @param {ReturnType<import('./puz.js').parsePuz>} puz */
@@ -58,6 +59,7 @@ export class PuzzleModel {
             num,
             clueIndex,
             clueText: puz.clues[clueIndex] ?? '',
+            clueHtml: puz.cluesFormatted?.[clueIndex] ?? null,
             cells,
           });
           clueIndex++;
@@ -74,6 +76,7 @@ export class PuzzleModel {
             num,
             clueIndex,
             clueText: puz.clues[clueIndex] ?? '',
+            clueHtml: puz.cluesFormatted?.[clueIndex] ?? null,
             cells,
           });
           clueIndex++;
@@ -85,6 +88,8 @@ export class PuzzleModel {
     this.words = { A: across, D: down };
     /** Tab order: all across in number order, then all down, wrapping. */
     this.clueOrder = [...across, ...down];
+    /** 'A17' / 'D23' -> word, for resolving cross-references in clues. */
+    this.byId = new Map(this.clueOrder.map((w) => [w.id, w]));
 
     const circledSet = new Set(puz.circled);
     /**
@@ -129,6 +134,22 @@ export class PuzzleModel {
   wordAt(index, dir) {
     const cell = this.cells[index];
     return dir === 'A' ? cell.across : cell.down;
+  }
+
+  /** @returns {object|undefined} the word numbered `num` going `dir` */
+  wordByNumber(num, dir) {
+    return this.byId.get(dir + num);
+  }
+
+  /**
+   * Entries this word's clue points at ("See 17-Across"), excluding itself.
+   * Parsed from the plain text, so markup can't confuse it.
+   */
+  referencesOf(word) {
+    if (!word) return [];
+    return findClueReferences(word.clueText)
+      .map(({ num, dir }) => this.wordByNumber(num, dir))
+      .filter((w) => w && w !== word);
   }
 
   /** Position of `index` within clueOrder's word list, or -1. */

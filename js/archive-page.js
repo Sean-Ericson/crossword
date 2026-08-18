@@ -130,11 +130,68 @@ async function main() {
   const prevBtn = qs('#cal-prev');
   const nextBtn = qs('#cal-next');
 
+  const monthSel = qs('#cal-month');
+  const yearSel = qs('#cal-year');
+
   const shift = (ym, delta) => {
     const [y, m] = ym.split('-').map(Number);
     const d = new Date(Date.UTC(y, m - 1 + delta, 1));
     return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`;
   };
+
+  const MONTH_NAMES = Array.from({ length: 12 }, (_, i) =>
+    new Date(Date.UTC(2000, i, 1)).toLocaleDateString('en-US', {
+      month: 'long',
+      timeZone: 'UTC',
+    })
+  );
+
+  function fillSelect(select, options, selected) {
+    select.textContent = '';
+    for (const { value, label, disabled } of options) {
+      select.append(
+        el('option', { value, ...(disabled ? { disabled: true } : {}) }, label)
+      );
+    }
+    select.value = String(selected);
+  }
+
+  /**
+   * Point the month/year dropdowns at `view`, clamped to the archive's
+   * range. Jumping to 2003 by way of 270 clicks on "‹" is no fun.
+   */
+  function syncMonthYearPickers(view, minMonth, maxMonth) {
+    const [y, m] = view.split('-').map(Number);
+    const minYear = Number(minMonth.slice(0, 4));
+    const maxYear = Number(maxMonth.slice(0, 4));
+
+    monthSel.hidden = false;
+    fillSelect(
+      monthSel,
+      MONTH_NAMES.map((label, i) => {
+        const ym = `${y}-${pad(i + 1)}`;
+        return { value: String(i + 1), label, disabled: ym < minMonth || ym > maxMonth };
+      }),
+      m
+    );
+    fillSelect(
+      yearSel,
+      Array.from({ length: maxYear - minYear + 1 }, (_, i) => {
+        const year = maxYear - i; // newest first, like the archive itself
+        return { value: String(year), label: String(year) };
+      }),
+      y
+    );
+
+    const goTo = (ym) => {
+      // Clamp, so picking e.g. December of the current year lands on the
+      // newest month that actually exists rather than an empty grid.
+      monthView[tab] = ym < minMonth ? minMonth : ym > maxMonth ? maxMonth : ym;
+      renderCurrent();
+    };
+    monthSel.onchange = () => goTo(`${yearSel.value}-${pad(Number(monthSel.value))}`);
+    yearSel.onchange = () => goTo(`${yearSel.value}-${pad(Number(monthSel.value))}`);
+  }
 
   function renderCalendar(entries) {
     calHeader.hidden = false;
@@ -151,11 +208,7 @@ async function main() {
     const view = monthView[tab];
 
     const [y, m] = view.split('-').map(Number);
-    title.textContent = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-US', {
-      month: 'long',
-      year: 'numeric',
-      timeZone: 'UTC',
-    });
+    syncMonthYearPickers(view, minMonth, maxMonth);
     prevBtn.disabled = view <= minMonth;
     nextBtn.disabled = view >= maxMonth;
     prevBtn.onclick = () => {
@@ -264,7 +317,21 @@ async function main() {
     monthView.bonus = `${year}-01`;
 
     calHeader.hidden = false;
-    title.textContent = String(year);
+    // Bonus puzzles are monthly, so only the year picker makes sense here.
+    monthSel.hidden = true;
+    fillSelect(
+      yearSel,
+      Array.from({ length: maxYear - minYear + 1 }, (_, i) => {
+        const y = maxYear - i;
+        return { value: String(y), label: String(y) };
+      }),
+      year
+    );
+    yearSel.onchange = () => {
+      monthView.bonus = `${yearSel.value}-01`;
+      renderCurrent();
+    };
+    monthSel.onchange = null;
     prevBtn.disabled = year <= minYear;
     nextBtn.disabled = year >= maxYear;
     prevBtn.onclick = () => {

@@ -34,6 +34,8 @@ import subprocess
 import sys
 import time
 
+from nyt_clues import attach_formatted_clues
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(HERE)
 PUZZLES_DIR = os.path.join(SITE, 'puzzles')
@@ -433,7 +435,9 @@ def serve_once(args, quiet=False):
                                 PUZZLES_DIR, f'{PREFIX[ptype]}{actual_date}.puz'
                             )
                         data = nyt.get_puzzle_from_id(cookies, nyt_id)
-                        nyt.data_to_puz(data).save(path)
+                        built = nyt.data_to_puz(data)
+                        attach_formatted_clues(built, data)
+                        built.save(path)
                         downloaded.append(os.path.basename(path))
                         status = 'done'
                         print(f'  downloaded {os.path.basename(path)}')
