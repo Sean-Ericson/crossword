@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-18T23:01:25Z",
+  "generated_at": "2026-08-19T05:22:06Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-19",
+      "file": "puzzles/mini-2026-08-19.puz",
+      "type": "mini",
+      "date": "2026-08-19",
+      "title": "NY Times, Wednesday, August 19, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-19",
+      "file": "puzzles/midi-2026-08-19.puz",
+      "type": "midi",
+      "date": "2026-08-19",
+      "title": "NY Times, Wednesday, August 19, 2026 FRANKLY SPEAKING",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-08-19",
+      "file": "puzzles/2026-08-19.puz",
+      "type": "daily",
+      "date": "2026-08-19",
+      "title": "NY Times, Wednesday, August 19, 2026",
+      "author": "Kareem Ayas / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-18",
       "file": "puzzles/mini-2026-08-18.puz",
