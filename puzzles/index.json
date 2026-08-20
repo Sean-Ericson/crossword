@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-19T05:22:06Z",
+  "generated_at": "2026-08-20T05:01:08Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-20",
+      "file": "puzzles/mini-2026-08-20.puz",
+      "type": "mini",
+      "date": "2026-08-20",
+      "title": "NY Times, Thursday, August 20, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-20",
+      "file": "puzzles/midi-2026-08-20.puz",
+      "type": "midi",
+      "date": "2026-08-20",
+      "title": "NY Times, Thursday, August 20, 2026 LINES FROM A SCRIPT",
+      "author": "Nguhi Ross and Erik Agard / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-08-20",
+      "file": "puzzles/2026-08-20.puz",
+      "type": "daily",
+      "date": "2026-08-20",
+      "title": "NY Times, Thursday, August 20, 2026",
+      "author": "Hoang-Kim Vu / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-19",
       "file": "puzzles/mini-2026-08-19.puz",
