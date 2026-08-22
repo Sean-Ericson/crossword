@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-21T05:29:59Z",
+  "generated_at": "2026-08-22T05:19:44Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-22",
+      "file": "puzzles/mini-2026-08-22.puz",
+      "type": "mini",
+      "date": "2026-08-22",
+      "title": "NY Times, Saturday, August 22, 2026",
+      "author": "Ian Livengood / Joel Fagliano",
+      "width": 7,
+      "height": 7
+    },
+    {
+      "id": "midi-2026-08-22",
+      "file": "puzzles/midi-2026-08-22.puz",
+      "type": "midi",
+      "date": "2026-08-22",
+      "title": "NY Times, Saturday, August 22, 2026 SOLID LINEUP",
+      "author": "Jeremy Newton / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-08-22",
+      "file": "puzzles/2026-08-22.puz",
+      "type": "daily",
+      "date": "2026-08-22",
+      "title": "NY Times, Saturday, August 22, 2026",
+      "author": "Adrian Johnson / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-21",
       "file": "puzzles/mini-2026-08-21.puz",
