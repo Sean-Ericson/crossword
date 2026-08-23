@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-22T05:19:44Z",
+  "generated_at": "2026-08-23T05:19:17Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-23",
+      "file": "puzzles/mini-2026-08-23.puz",
+      "type": "mini",
+      "date": "2026-08-23",
+      "title": "NY Times, Sunday, August 23, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 6
+    },
+    {
+      "id": "midi-2026-08-23",
+      "file": "puzzles/midi-2026-08-23.puz",
+      "type": "midi",
+      "date": "2026-08-23",
+      "title": "NY Times, Sunday, August 23, 2026 CROSSBONES",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 10
+    },
+    {
+      "id": "2026-08-23",
+      "file": "puzzles/2026-08-23.puz",
+      "type": "daily",
+      "date": "2026-08-23",
+      "title": "NY Times, Sunday, August 23, 2026 SMALL CHANGE",
+      "author": "Jill Singer / Will Shortz",
+      "width": 22,
+      "height": 21
+    },
     {
       "id": "mini-2026-08-22",
       "file": "puzzles/mini-2026-08-22.puz",
