@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-23T05:19:17Z",
+  "generated_at": "2026-08-24T05:16:38Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-24",
+      "file": "puzzles/mini-2026-08-24.puz",
+      "type": "mini",
+      "date": "2026-08-24",
+      "title": "NY Times, Monday, August 24, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-24",
+      "file": "puzzles/midi-2026-08-24.puz",
+      "type": "midi",
+      "date": "2026-08-24",
+      "title": "NY Times, Monday, August 24, 2026 THINGS ARE LOOKING UP",
+      "author": "Ian Livengood",
+      "width": 10,
+      "height": 9
+    },
+    {
+      "id": "2026-08-24",
+      "file": "puzzles/2026-08-24.puz",
+      "type": "daily",
+      "date": "2026-08-24",
+      "title": "NY Times, Monday, August 24, 2026",
+      "author": "Steven Jopek / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-23",
       "file": "puzzles/mini-2026-08-23.puz",
