@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-24T05:16:38Z",
+  "generated_at": "2026-08-25T05:24:16Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-25",
+      "file": "puzzles/mini-2026-08-25.puz",
+      "type": "mini",
+      "date": "2026-08-25",
+      "title": "NY Times, Tuesday, August 25, 2026",
+      "author": "Ian Livengood / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-25",
+      "file": "puzzles/midi-2026-08-25.puz",
+      "type": "midi",
+      "date": "2026-08-25",
+      "title": "NY Times, Tuesday, August 25, 2026 BUT FIRST, COFFEE",
+      "author": "Shannon Rapp / Ian Livengood",
+      "width": 10,
+      "height": 9
+    },
+    {
+      "id": "2026-08-25",
+      "file": "puzzles/2026-08-25.puz",
+      "type": "daily",
+      "date": "2026-08-25",
+      "title": "NY Times, Tuesday, August 25, 2026",
+      "author": "Bryan Kaproth-Gerecht / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-24",
       "file": "puzzles/mini-2026-08-24.puz",
