@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-25T05:24:16Z",
+  "generated_at": "2026-08-26T05:13:59Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-26",
+      "file": "puzzles/mini-2026-08-26.puz",
+      "type": "mini",
+      "date": "2026-08-26",
+      "title": "NY Times, Wednesday, August 26, 2026",
+      "author": "Adam Aaronson / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-26",
+      "file": "puzzles/midi-2026-08-26.puz",
+      "type": "midi",
+      "date": "2026-08-26",
+      "title": "NY Times, Wednesday, August 26, 2026 BOTH SIDES NOW",
+      "author": "Paolo Pasco / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-08-26",
+      "file": "puzzles/2026-08-26.puz",
+      "type": "daily",
+      "date": "2026-08-26",
+      "title": "NY Times, Wednesday, August 26, 2026",
+      "author": "John Kugelman and Lance Enfinger / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-25",
       "file": "puzzles/mini-2026-08-25.puz",
