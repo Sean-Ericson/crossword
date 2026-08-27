@@ -24,6 +24,17 @@ body.player-page {
   color: var(--color-text);
 }
 
+.puzzle-header .puzzle-theme {
+  font-size: 15px;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--color-text);
+}
+
+.puzzle-header .puzzle-theme:empty {
+  display: none;
+}
+
 .puzzle-header .puzzle-byline {
   font-size: 13px;
   color: var(--color-text-muted);

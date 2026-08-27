@@ -111,7 +111,9 @@ async function main() {
     const latest = dailies[0]; // index is sorted date-desc
     const { status } = statusBits(latest.id);
     qs('#hero-title').textContent = formatDateLong(latest.date);
+    const heroTheme = themeTitle(latest.title);
     qs('#hero-sub').textContent = [
+      heroTheme && `“${heroTheme}”`,
       latest.author && `By ${latest.author}`,
       `${latest.width}×${latest.height}`,
       status !== 'unsolved' ? STATUS_ICON[status][2] : null,
@@ -259,7 +261,9 @@ async function main() {
           {
             class: `cal-day has-puzzle st-${status}`,
             href: `./puzzle.html?id=${encodeURIComponent(puzzle.id)}`,
-            title: tooltip || formatDateLong(date),
+            title: [formatDateLong(date), themeTitle(puzzle.title), tooltip]
+              .filter(Boolean)
+              .join(' — '),
           },
           [
             el('span', {}, String(day)),

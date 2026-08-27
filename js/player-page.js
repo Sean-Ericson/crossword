@@ -80,22 +80,24 @@ async function main() {
   // ----- header text -----
   const idInfo = parsePuzzleId(id);
   const typeLabel = PUZZLE_TYPE_LABELS[idInfo.type] ?? 'The Crossword';
+  // Themed puzzles carry a title ("LOST IN TRANSLATION") that clues
+  // sometimes point at, so it needs to be on screen while solving.
+  const theme = themeTitle(puz.title);
   let dateText;
   if (idInfo.type === 'bonus' && idInfo.date) {
-    // monthly bonus: show month + the puzzle's own title
-    const month = new Date(idInfo.date + 'T12:00:00Z').toLocaleDateString('en-US', {
+    dateText = new Date(idInfo.date + 'T12:00:00Z').toLocaleDateString('en-US', {
       month: 'long',
       year: 'numeric',
       timeZone: 'UTC',
     });
-    const theme = themeTitle(puz.title);
-    dateText = theme ? `${month} — ${theme}` : month;
   } else {
-    dateText = idInfo.date ? formatDateLong(idInfo.date) : puz.title || id;
+    dateText = idInfo.date ? formatDateLong(idInfo.date) : theme || id;
   }
   qs('.puzzle-title').textContent = typeLabel;
-  document.title = `${dateText} — ${typeLabel}`;
+  document.title = [dateText, theme, typeLabel].filter(Boolean).join(' — ');
   qs('#puzzle-date').textContent = dateText;
+  const themeEl = qs('#puzzle-theme');
+  themeEl.textContent = theme && theme !== dateText ? `“${theme}”` : '';
   qs('#puzzle-byline').textContent = puz.author ? `By ${puz.author}` : '';
   initProfileChip(qs('#profile-chip'));
 
