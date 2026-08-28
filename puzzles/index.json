@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-27T05:01:01Z",
+  "generated_at": "2026-08-28T05:17:51Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-28",
+      "file": "puzzles/mini-2026-08-28.puz",
+      "type": "mini",
+      "date": "2026-08-28",
+      "title": "NY Times, Friday, August 28, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-28",
+      "file": "puzzles/midi-2026-08-28.puz",
+      "type": "midi",
+      "date": "2026-08-28",
+      "title": "NY Times, Friday, August 28, 2026 PAY UP FRONT",
+      "author": "Aaron Gee and Avery Gee Katz / Ian Livengood",
+      "width": 10,
+      "height": 9
+    },
+    {
+      "id": "2026-08-28",
+      "file": "puzzles/2026-08-28.puz",
+      "type": "daily",
+      "date": "2026-08-28",
+      "title": "NY Times, Friday, August 28, 2026",
+      "author": "Jack Hatchett / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-27",
       "file": "puzzles/mini-2026-08-27.puz",
