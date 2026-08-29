@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-28T05:17:51Z",
+  "generated_at": "2026-08-29T05:18:24Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-29",
+      "file": "puzzles/mini-2026-08-29.puz",
+      "type": "mini",
+      "date": "2026-08-29",
+      "title": "NY Times, Saturday, August 29, 2026",
+      "author": "Joel Fagliano",
+      "width": 7,
+      "height": 7
+    },
+    {
+      "id": "midi-2026-08-29",
+      "file": "puzzles/midi-2026-08-29.puz",
+      "type": "midi",
+      "date": "2026-08-29",
+      "title": "NY Times, Saturday, August 29, 2026 WILDFLOWERS",
+      "author": "Olivia Mitra Framke / Ian Livengood",
+      "width": 9,
+      "height": 10
+    },
+    {
+      "id": "2026-08-29",
+      "file": "puzzles/2026-08-29.puz",
+      "type": "daily",
+      "date": "2026-08-29",
+      "title": "NY Times, Saturday, August 29, 2026",
+      "author": "Rafael Musa and Kate Chin Park / Will Shortz",
+      "width": 15,
+      "height": 16
+    },
     {
       "id": "mini-2026-08-28",
       "file": "puzzles/mini-2026-08-28.puz",
