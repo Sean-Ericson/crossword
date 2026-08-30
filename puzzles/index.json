@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-29T05:18:24Z",
+  "generated_at": "2026-08-30T05:16:39Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-30",
+      "file": "puzzles/mini-2026-08-30.puz",
+      "type": "mini",
+      "date": "2026-08-30",
+      "title": "NY Times, Sunday, August 30, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-30",
+      "file": "puzzles/midi-2026-08-30.puz",
+      "type": "midi",
+      "date": "2026-08-30",
+      "title": "NY Times, Sunday, August 30, 2026 PYRAMID SCHEME",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-08-30",
+      "file": "puzzles/2026-08-30.puz",
+      "type": "daily",
+      "date": "2026-08-30",
+      "title": "NY Times, Sunday, August 30, 2026 WRITTEN IN THE STARS",
+      "author": "Daniel Grinberg / Will Shortz",
+      "width": 21,
+      "height": 21
+    },
     {
       "id": "mini-2026-08-29",
       "file": "puzzles/mini-2026-08-29.puz",
