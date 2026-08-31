@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-08-30T05:16:39Z",
+  "generated_at": "2026-08-31T05:21:27Z",
   "puzzles": [
+    {
+      "id": "mini-2026-08-31",
+      "file": "puzzles/mini-2026-08-31.puz",
+      "type": "mini",
+      "date": "2026-08-31",
+      "title": "NY Times, Monday, August 31, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-08-31",
+      "file": "puzzles/midi-2026-08-31.puz",
+      "type": "midi",
+      "date": "2026-08-31",
+      "title": "NY Times, Monday, August 31, 2026 OH, WHAT A MEAL",
+      "author": "Tom McCoy / Ian Livengood",
+      "width": 9,
+      "height": 10
+    },
+    {
+      "id": "2026-08-31",
+      "file": "puzzles/2026-08-31.puz",
+      "type": "daily",
+      "date": "2026-08-31",
+      "title": "NY Times, Monday, August 31, 2026",
+      "author": "Christopher Youngs / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-08-30",
       "file": "puzzles/mini-2026-08-30.puz",
