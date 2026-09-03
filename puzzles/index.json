@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-02T05:01:11Z",
+  "generated_at": "2026-09-03T05:03:53Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-03",
+      "file": "puzzles/mini-2026-09-03.puz",
+      "type": "mini",
+      "date": "2026-09-03",
+      "title": "NY Times, Thursday, September 3, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-03",
+      "file": "puzzles/midi-2026-09-03.puz",
+      "type": "midi",
+      "date": "2026-09-03",
+      "title": "NY Times, Thursday, September 3, 2026 RO-BLOX",
+      "author": "Hanh Huynh / Ian Livengood",
+      "width": 9,
+      "height": 10
+    },
+    {
+      "id": "2026-09-03",
+      "file": "puzzles/2026-09-03.puz",
+      "type": "daily",
+      "date": "2026-09-03",
+      "title": "NY Times, Thursday, September 3, 2026",
+      "author": "Zhou Zhang / Will Shortz",
+      "width": 15,
+      "height": 16
+    },
     {
       "id": "mini-2026-09-02",
       "file": "puzzles/mini-2026-09-02.puz",
