@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-04T05:06:33Z",
+  "generated_at": "2026-09-04T19:09:59Z",
   "puzzles": [
     {
       "id": "mini-2026-09-04",
@@ -1659,6 +1659,16 @@
       "date": "2003-05-03",
       "title": "NY Times, Saturday, May 3, 2003",
       "author": "John Scott Marrone / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "bonus-2001-10-01",
+      "file": "puzzles/bonus-2001-10-01.puz",
+      "type": "bonus",
+      "date": "2001-10-01",
+      "title": "NY Times, Monday, October 1, 2001 HALLOWEEN COLORS",
+      "author": "Fred Piscop",
       "width": 15,
       "height": 15
     },
