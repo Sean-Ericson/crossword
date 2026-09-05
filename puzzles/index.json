@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-04T19:09:59Z",
+  "generated_at": "2026-09-05T05:21:34Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-05",
+      "file": "puzzles/mini-2026-09-05.puz",
+      "type": "mini",
+      "date": "2026-09-05",
+      "title": "NY Times, Saturday, September 5, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 7,
+      "height": 7
+    },
+    {
+      "id": "midi-2026-09-05",
+      "file": "puzzles/midi-2026-09-05.puz",
+      "type": "midi",
+      "date": "2026-09-05",
+      "title": "NY Times, Saturday, September 5, 2026 AROUND THE BEND",
+      "author": "Evan Kalish / Ian Livengood",
+      "width": 9,
+      "height": 10
+    },
+    {
+      "id": "2026-09-05",
+      "file": "puzzles/2026-09-05.puz",
+      "type": "daily",
+      "date": "2026-09-05",
+      "title": "NY Times, Saturday, September 5, 2026",
+      "author": "Fritz Juhnke / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-09-04",
       "file": "puzzles/mini-2026-09-04.puz",
