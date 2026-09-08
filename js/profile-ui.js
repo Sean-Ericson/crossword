@@ -30,6 +30,7 @@ export function initProfileChip(chipEl) {
 
 export function openProfileModal() {
   const active = getActiveUser();
+  const sync = new Sync(active);
   // "guest" is the implicit identity people solve under before naming
   // themselves, so surface it whenever it still holds anything - otherwise
   // those solves would be stranded with no way to claim them.
@@ -162,12 +163,15 @@ export function openProfileModal() {
     ),
   ]);
 
+  const syncedHost = el('div', { style: 'margin-top:12px' });
+
   const close = showModal({
     title: 'Who’s solving?',
     body: el('div', {}, [
       list,
       addRow,
       migrateRow,
+      syncedHost,
       el(
         'p',
         { style: 'font-size:12px;margin-top:12px' },
@@ -202,6 +206,35 @@ export function openProfileModal() {
     toast(`Moved ${moved.puzzles} puzzle${moved.puzzles === 1 ? '' : 's'} to “${active}”.`);
     close();
     location.reload();
+  }
+
+  // Profiles that exist in the data repo but not on this device - on a
+  // second machine that is every one of them, and typing the name by hand
+  // just risks a typo creating an empty profile instead.
+  if (sync.active) {
+    sync.listUsers().then((names) => {
+      const elsewhere = names.filter((n) => !profiles.includes(n));
+      if (!elsewhere.length) return;
+      syncedHost.append(
+        el(
+          'div',
+          { style: 'font-size:12px;color:var(--color-text-muted);margin-bottom:6px' },
+          'Already synced — pick one to use it here:'
+        ),
+        el(
+          'div',
+          { style: 'display:flex;gap:6px;flex-wrap:wrap' },
+          elsewhere.map((name) =>
+            el(
+              'button',
+              { class: 'btn', style: 'padding:5px 14px;font-size:13px',
+                onclick: () => switchTo(name, { migrate: false }) },
+              name
+            )
+          )
+        )
+      );
+    });
   }
 
   async function removeProfile(name, summary) {

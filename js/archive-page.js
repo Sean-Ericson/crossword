@@ -97,9 +97,47 @@ async function main() {
     }
   }
 
+  // What this device knows locally, plus whatever the data repo says about
+  // puzzles it has never opened - otherwise a second machine shows an empty
+  // archive even though everything is synced.
+  const remoteSolves = new Map();
+  const remoteStarted = new Set();
+  const loadedYears = new Set();
+  let statsRequested = false;
+
   function statusBits(id) {
     const record = loadLocal(user, id);
-    return { record, status: statusOf(record) };
+    if (record) return { record, status: statusOf(record) };
+
+    const solve = remoteSolves.get(id);
+    if (solve) {
+      // Stand in for the real record; opening the puzzle pulls the rest.
+      const stub = { completed: true, elapsed: solve.seconds, clean: !!solve.clean };
+      return { record: stub, status: solve.clean ? 'solved-clean' : 'solved' };
+    }
+    if (remoteStarted.has(id)) return { record: null, status: 'in-progress' };
+    return { record: null, status: 'unsolved' };
+  }
+
+  async function ensureRemoteStats() {
+    if (!sync.active || statsRequested) return;
+    statsRequested = true;
+    const doc = await sync.pullStats(user);
+    const solves = doc?.solves ?? {};
+    if (!Object.keys(solves).length) return;
+    for (const [id, entry] of Object.entries(solves)) remoteSolves.set(id, entry);
+    renderCurrent();
+  }
+
+  /** Progress files are sharded by year, so fetch the year on screen. */
+  async function ensureRemoteYear(year) {
+    if (!sync.active || !year || loadedYears.has(year)) return;
+    loadedYears.add(year);
+    const ids = await sync.listProgress(user, year);
+    const added = ids.filter((id) => !remoteStarted.has(id));
+    if (!added.length) return;
+    for (const id of added) remoteStarted.add(id);
+    renderCurrent();
   }
 
   // ----- hero (Daily tab only) -----
@@ -210,6 +248,7 @@ async function main() {
     const view = monthView[tab];
 
     const [y, m] = view.split('-').map(Number);
+    ensureRemoteYear(String(y));
     syncMonthYearPickers(view, minMonth, maxMonth);
     prevBtn.disabled = view <= minMonth;
     nextBtn.disabled = view >= maxMonth;
@@ -321,6 +360,7 @@ async function main() {
     monthView.bonus = `${year}-01`;
 
     calHeader.hidden = false;
+    ensureRemoteYear(String(year));
     // Bonus puzzles are monthly, so only the year picker makes sense here.
     monthSel.hidden = true;
     fillSelect(
@@ -425,6 +465,7 @@ async function main() {
 
   renderTabs();
   renderCurrent();
+  ensureRemoteStats();
 }
 
 main();

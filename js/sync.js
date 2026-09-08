@@ -222,6 +222,25 @@ export class Sync {
     }
   }
 
+  /**
+   * Puzzle ids this user has saved progress for in one year. Lets a
+   * machine that has never opened these puzzles still show them as
+   * started, instead of an archive that looks empty.
+   * @returns {Promise<string[]>}
+   */
+  async listProgress(user = this.user, year = '') {
+    if (!this.client) return [];
+    try {
+      const entries = await this.client.listDir(`users/${user}/progress/${year}`);
+      return entries
+        .filter((e) => e.type === 'file' && e.name.endsWith('.json'))
+        .map((e) => e.name.slice(0, -'.json'.length));
+    } catch (err) {
+      this.fail(err);
+      return [];
+    }
+  }
+
   /** @returns {Promise<string[]>} user folder names in the data repo */
   async listUsers() {
     if (!this.client) return [];
