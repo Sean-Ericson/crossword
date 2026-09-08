@@ -16,6 +16,7 @@ import {
   parsePuzzleId,
   themeTitle,
   findClueReferences,
+  isLocalSrc,
 } from '../js/util.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -167,6 +168,23 @@ test('model: referencesOf resolves to real words and skips self', () => {
   // numbers with no matching entry are dropped, not crashed on
   assert.deepEqual(m.referencesOf({ ...m.words.A[0], clueText: 'See 999-Down' }), []);
   assert.deepEqual(m.referencesOf(null), []);
+});
+
+test('util: isLocalSrc only trusts paths inside the site', () => {
+  // picture clues, once localized by tools/nyt_clues.py
+  assert.equal(isLocalSrc('./puzzles/images/2026-09-06/a.png'), true);
+  assert.equal(isLocalSrc('puzzles/images/a.png'), true);
+  assert.equal(isLocalSrc('/puzzles/images/a.png'), true);
+
+  // anything that could reach off-site, or execute, is refused
+  assert.equal(isLocalSrc('https://www.nytimes.com/games-assets/a.png'), false);
+  assert.equal(isLocalSrc('http://evil.test/a.png'), false);
+  assert.equal(isLocalSrc('//evil.test/a.png'), false);
+  assert.equal(isLocalSrc('data:image/png;base64,AAAA'), false);
+  assert.equal(isLocalSrc('javascript:alert(1)'), false);
+  assert.equal(isLocalSrc('JavaScript:alert(1)'), false);
+  assert.equal(isLocalSrc(''), false);
+  assert.equal(isLocalSrc(null), false);
 });
 
 test('util: themeTitle strips the generated NYT date prefix', () => {

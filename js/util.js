@@ -151,6 +151,18 @@ export function findClueReferences(text) {
 // to its text, so markup can never smuggle in script or layout.
 const RICH_TAGS = new Set(['I', 'EM', 'B', 'STRONG', 'SUB', 'SUP', 'U', 'BR']);
 
+// Picture clues are allowed, but only from our own archive: anything with a
+// scheme (http:, data:, javascript:) or protocol-relative is refused, so a
+// clue can never pull in - or phone home to - a remote resource.
+export function isLocalSrc(src) {
+  return Boolean(src) && !/^[a-z][a-z0-9+.-]*:/i.test(src) && !src.startsWith('//');
+}
+
+// NYT ships some picture clues with unfilled newsroom placeholder alt text.
+// They are strings of 'tk' typed loosely, so allow any run of those
+// two letters rather than exact repetitions ('Tktktktkttk' counts).
+const PLACEHOLDER_ALT_RE = /^[tk\s]{4,}$/i;
+
 /**
  * Replace `host`'s contents with `html`, keeping only the inline formatting
  * tags above and dropping every attribute. Falls back to plain text when
@@ -168,7 +180,19 @@ export function setRichText(host, html, plain = '') {
       if (node.nodeType === Node.TEXT_NODE) {
         target.append(node.textContent);
       } else if (node.nodeType === Node.ELEMENT_NODE) {
-        if (RICH_TAGS.has(node.tagName)) {
+        if (node.tagName === 'IMG') {
+          // A remote src is dropped entirely, leaving the plain-text
+          // fallback below rather than a broken image.
+          const src = node.getAttribute('src');
+          if (isLocalSrc(src)) {
+            const img = document.createElement('img');
+            img.setAttribute('src', src);
+            const alt = node.getAttribute('alt') || '';
+            img.setAttribute('alt', PLACEHOLDER_ALT_RE.test(alt) ? plain : alt);
+            img.setAttribute('loading', 'lazy');
+            target.append(img);
+          }
+        } else if (RICH_TAGS.has(node.tagName)) {
           const clean = document.createElement(node.tagName.toLowerCase());
           convert(node, clean);
           target.append(clean);
@@ -179,7 +203,7 @@ export function setRichText(host, html, plain = '') {
     }
   };
   convert(parsed.body, host);
-  if (!host.textContent) host.textContent = plain;
+  if (!host.childNodes.length) host.textContent = plain;
 }
 
 /** Tiny DOM builder: el('div', {class:'x', onclick:fn}, ['text', child]) */

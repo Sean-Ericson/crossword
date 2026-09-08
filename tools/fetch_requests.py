@@ -39,6 +39,7 @@ from nyt_clues import attach_formatted_clues
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(HERE)
 PUZZLES_DIR = os.path.join(SITE, 'puzzles')
+IMAGES_DIR = os.path.join(PUZZLES_DIR, 'images')
 
 # Mirrors js/util.js parsePuzzleId and js/config.js ARCHIVE_START.
 TYPED_RE = re.compile(r'^(mini|midi|bonus)-(\d{4}-\d{2}-\d{2})$')
@@ -436,7 +437,12 @@ def serve_once(args, quiet=False):
                             )
                         data = nyt.get_puzzle_from_id(cookies, nyt_id)
                         built = nyt.data_to_puz(data)
-                        attach_formatted_clues(built, data)
+                        attach_formatted_clues(
+                            built,
+                            data,
+                            puzzle_id=os.path.splitext(os.path.basename(path))[0],
+                            images_dir=IMAGES_DIR,
+                        )
                         built.save(path)
                         downloaded.append(os.path.basename(path))
                         status = 'done'

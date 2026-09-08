@@ -40,6 +40,7 @@ from nyt_clues import attach_formatted_clues
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(HERE)
 PUZZLES_DIR = os.path.join(SITE, 'puzzles')
+IMAGES_DIR = os.path.join(PUZZLES_DIR, 'images')
 
 # (type name, filename prefix, source)
 # 'calendar' types are listed by the v3 calendar API (publish_type=<name>);
@@ -188,7 +189,9 @@ def main():
                 continue
             puzzle = nyt.get_puzzle_from_id(cookies, puzzle_id)
             built = nyt.data_to_puz(puzzle)
-            attach_formatted_clues(built, puzzle)
+            attach_formatted_clues(
+                built, puzzle, puzzle_id=f'{prefix}{date}', images_dir=IMAGES_DIR
+            )
             built.save(path)
             new_by_type.setdefault(ptype, []).append(date)
             print(f'  downloaded {prefix}{date}.puz')

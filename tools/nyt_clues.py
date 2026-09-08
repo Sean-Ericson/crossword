@@ -16,9 +16,19 @@ list) to its HTML, holding only the clues whose formatting differs from
 the plain text. Most puzzles have none, so the section is usually absent.
 """
 import json
+import os
 import re
+import urllib.request
 
 FCLU = b'FCLU'
+
+# Some clues are pictures rather than words (rebus-style Sunday themes).
+# NYT delivers them as <img src="https://www.nytimes.com/games-assets/...">,
+# which we can't leave pointing at their servers: the site would hotlink
+# assets that may vanish, and the player refuses remote image sources.
+IMG_SRC_RE = re.compile(r'(<img[^>]*?src=")([^"]+)(")', re.IGNORECASE)
+SAFE_NAME_RE = re.compile(r'[^A-Za-z0-9._-]+')
+IMAGE_TIMEOUT = 30
 
 # NYT's `formatted` also HTML-escapes quotes and apostrophes, so it differs
 # from `plain` on plenty of clues that carry no styling at all. Only an
@@ -56,15 +66,63 @@ def formatted_clues(data):
     return out
 
 
-def attach_formatted_clues(puzzle, data):
+def is_remote(src):
+    return bool(re.match(r'(?i)^(?:[a-z][a-z0-9+.-]*:)?//', src or ''))
+
+
+def localize_images(mapping, puzzle_id, images_dir):
     """
-    Add the FCLU section to `puzzle` if any clue carries formatting.
-    Returns how many formatted clues were stored.
+    Download any remote clue images into images_dir/<puzzle_id>/ and point
+    the markup at the local copies instead. Returns how many were saved.
+
+    A download that fails leaves that clue's markup untouched, so it simply
+    falls back to the plain text rather than losing the whole section.
+    """
+    if not puzzle_id or not images_dir:
+        return 0
+    saved = 0
+    for key, html in list(mapping.items()):
+        def replace(match, key=key):
+            nonlocal saved
+            prefix, src, suffix = match.group(1), match.group(2), match.group(3)
+            if not is_remote(src):
+                return match.group(0)  # already local
+            name = SAFE_NAME_RE.sub('_', os.path.basename(src.split('?')[0]))
+            if not name:
+                return match.group(0)
+            target_dir = os.path.join(images_dir, puzzle_id)
+            target = os.path.join(target_dir, name)
+            if not os.path.isfile(target):
+                try:
+                    request = urllib.request.Request(
+                        src, headers={'User-Agent': 'crossword-site'}
+                    )
+                    with urllib.request.urlopen(request, timeout=IMAGE_TIMEOUT) as r:
+                        blob = r.read()
+                    os.makedirs(target_dir, exist_ok=True)
+                    with open(target, 'wb') as f:
+                        f.write(blob)
+                except Exception as exc:  # noqa: BLE001 - keep the clue usable
+                    print(f'    image {src} failed: {exc}'[:150])
+                    return match.group(0)
+            saved += 1
+            return f'{prefix}./puzzles/images/{puzzle_id}/{name}{suffix}'
+
+        mapping[key] = IMG_SRC_RE.sub(replace, html)
+    return saved
+
+
+def attach_formatted_clues(puzzle, data, puzzle_id=None, images_dir=None):
+    """
+    Add the FCLU section to `puzzle` if any clue carries formatting, saving
+    any picture clues alongside the archive. Returns how many formatted
+    clues were stored.
     """
     rich = formatted_clues(data)
     mapping = {str(i): html for i, html in enumerate(rich) if html}
     if not mapping:
         return 0
+    localize_images(mapping, puzzle_id, images_dir)
     payload = json.dumps(mapping, ensure_ascii=False, separators=(',', ':'))
     puzzle.extensions[FCLU] = payload.encode('utf-8')
     return len(mapping)

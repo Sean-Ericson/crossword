@@ -22,6 +22,7 @@ Usage:
 """
 import argparse
 import datetime
+import json
 import os
 import subprocess
 import sys
@@ -30,10 +31,30 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(HERE)
 PUZZLES_DIR = os.path.join(SITE, 'puzzles')
+IMAGES_DIR = os.path.join(PUZZLES_DIR, 'images')
 sys.path.insert(0, HERE)
 
 from fetch_requests import classify, find_puzzle_id, PREFIX  # noqa: E402
-from nyt_clues import FCLU, attach_formatted_clues  # noqa: E402
+from nyt_clues import FCLU, IMG_SRC_RE, attach_formatted_clues, is_remote  # noqa: E402
+
+
+def needs_images(puzzle):
+    """
+    True when stored markup still points at NYT for a picture clue. Those
+    predate local image copies, and the player refuses remote sources, so
+    they need fetching again.
+    """
+    try:
+        # The section is JSON, so its quotes are escaped - scan the decoded
+        # clue values rather than the raw payload text.
+        mapping = json.loads(puzzle.extensions.get(FCLU, b'').decode('utf-8') or '{}')
+    except (UnicodeDecodeError, ValueError):
+        return False
+    return any(
+        is_remote(m.group(2))
+        for html in mapping.values()
+        for m in IMG_SRC_RE.finditer(html)
+    )
 
 
 def as_date_bound(value):
@@ -87,7 +108,7 @@ def main():
             existing = puz.read(path)
         except Exception:  # noqa: BLE001 - a broken file isn't this tool's job
             continue
-        if FCLU in existing.extensions:
+        if FCLU in existing.extensions and not needs_images(existing):
             continue
         todo.append((name, path, ptype, date))
 
@@ -109,7 +130,12 @@ def main():
                 continue
             data = nyt.get_puzzle_from_id(cookies, nyt_id)
             rebuilt = nyt.data_to_puz(data)
-            count = attach_formatted_clues(rebuilt, data)
+            count = attach_formatted_clues(
+                rebuilt,
+                data,
+                puzzle_id=os.path.splitext(name)[0],
+                images_dir=IMAGES_DIR,
+            )
             # Patch the archived file rather than replacing it, so a
             # re-download can't quietly change a puzzle someone is solving.
             existing = puz.read(path)
