@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-08T05:23:23Z",
+  "generated_at": "2026-09-09T22:28:29Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-09",
+      "file": "puzzles/mini-2026-09-09.puz",
+      "type": "mini",
+      "date": "2026-09-09",
+      "title": "NY Times, Wednesday, September 9, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-09",
+      "file": "puzzles/midi-2026-09-09.puz",
+      "type": "midi",
+      "date": "2026-09-09",
+      "title": "NY Times, Wednesday, September 9, 2026 GREEN ENERGY",
+      "author": "Erica Hsiung Wojcik / Ian Livengood",
+      "width": 10,
+      "height": 9
+    },
+    {
+      "id": "2026-09-09",
+      "file": "puzzles/2026-09-09.puz",
+      "type": "daily",
+      "date": "2026-09-09",
+      "title": "NY Times, Wednesday, September 9, 2026",
+      "author": "Dario Salvucci / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-09-08",
       "file": "puzzles/mini-2026-09-08.puz",
