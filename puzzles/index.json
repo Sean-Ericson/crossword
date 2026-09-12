@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-12T01:32:35Z",
+  "generated_at": "2026-09-12T05:28:09Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-12",
+      "file": "puzzles/mini-2026-09-12.puz",
+      "type": "mini",
+      "date": "2026-09-12",
+      "title": "NY Times, Saturday, September 12, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 7,
+      "height": 7
+    },
+    {
+      "id": "midi-2026-09-12",
+      "file": "puzzles/midi-2026-09-12.puz",
+      "type": "midi",
+      "date": "2026-09-12",
+      "title": "NY Times, Saturday, September 12, 2026 HOUSING BUBBLES",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-09-12",
+      "file": "puzzles/2026-09-12.puz",
+      "type": "daily",
+      "date": "2026-09-12",
+      "title": "NY Times, Saturday, September 12, 2026",
+      "author": "Adam Wagner and Michael Lieberman / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-09-11",
       "file": "puzzles/mini-2026-09-11.puz",
