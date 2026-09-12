@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-11T19:52:53Z",
+  "generated_at": "2026-09-12T01:10:36Z",
   "puzzles": [
     {
       "id": "mini-2026-09-11",
@@ -1820,6 +1820,16 @@
       "title": "NY Times, Wednesday, April 22, 2020",
       "author": "Jules Markey / Will Shortz",
       "width": 16,
+      "height": 15
+    },
+    {
+      "id": "2019-10-16",
+      "file": "puzzles/2019-10-16.puz",
+      "type": "daily",
+      "date": "2019-10-16",
+      "title": "NY Times, Wednesday, October 16, 2019",
+      "author": "Peter A. Collins / Will Shortz",
+      "width": 15,
       "height": 15
     },
     {
