@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-12T01:10:36Z",
+  "generated_at": "2026-09-12T01:32:35Z",
   "puzzles": [
     {
       "id": "mini-2026-09-11",
@@ -1799,6 +1799,16 @@
       "date": "2024-08-05",
       "title": "NY Times, Monday, August 5, 2024",
       "author": "Andy Walker / Joel Fagliano",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2022-09-14",
+      "file": "puzzles/2022-09-14.puz",
+      "type": "daily",
+      "date": "2022-09-14",
+      "title": "NY Times, Wednesday, September 14, 2022",
+      "author": "Michael Dewey / Will Shortz",
       "width": 15,
       "height": 15
     },
