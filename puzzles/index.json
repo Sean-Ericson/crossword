@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-12T05:28:09Z",
+  "generated_at": "2026-09-13T05:27:00Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-13",
+      "file": "puzzles/mini-2026-09-13.puz",
+      "type": "mini",
+      "date": "2026-09-13",
+      "title": "NY Times, Sunday, September 13, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-13",
+      "file": "puzzles/midi-2026-09-13.puz",
+      "type": "midi",
+      "date": "2026-09-13",
+      "title": "NY Times, Sunday, September 13, 2026 BALLPARK FIGURES",
+      "author": "Natan Last / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-09-13",
+      "file": "puzzles/2026-09-13.puz",
+      "type": "daily",
+      "date": "2026-09-13",
+      "title": "NY Times, Sunday, September 13, 2026 THINKING INSIDE THE BOX",
+      "author": "Henry Lin-David and Frank S. David / Will Shortz",
+      "width": 22,
+      "height": 22
+    },
     {
       "id": "mini-2026-09-12",
       "file": "puzzles/mini-2026-09-12.puz",
