@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-14T05:15:47Z",
+  "generated_at": "2026-09-14T20:30:03Z",
   "puzzles": [
     {
       "id": "mini-2026-09-14",
@@ -1899,6 +1899,16 @@
       "date": "2022-09-14",
       "title": "NY Times, Wednesday, September 14, 2022",
       "author": "Michael Dewey / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2021-09-15",
+      "file": "puzzles/2021-09-15.puz",
+      "type": "daily",
+      "date": "2021-09-15",
+      "title": "NY Times, Wednesday, September 15, 2021",
+      "author": "Sophie Buchmueller and Ross Trudeau / Will Shortz",
       "width": 15,
       "height": 15
     },
