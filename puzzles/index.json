@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-14T20:30:03Z",
+  "generated_at": "2026-09-14T20:42:22Z",
   "puzzles": [
     {
       "id": "mini-2026-09-14",
@@ -1941,6 +1941,16 @@
       "author": "Peter A. Collins / Will Shortz",
       "width": 15,
       "height": 15
+    },
+    {
+      "id": "2019-09-15",
+      "file": "puzzles/2019-09-15.puz",
+      "type": "daily",
+      "date": "2019-09-15",
+      "title": "NY Times, Sunday, September 15, 2019 GET YOUR MIND OUT OF THE GUTTER",
+      "author": "Andrew Kingsley / Will Shortz",
+      "width": 21,
+      "height": 21
     },
     {
       "id": "2019-06-17",
