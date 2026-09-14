@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-13T05:27:00Z",
+  "generated_at": "2026-09-14T05:15:47Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-14",
+      "file": "puzzles/mini-2026-09-14.puz",
+      "type": "mini",
+      "date": "2026-09-14",
+      "title": "NY Times, Monday, September 14, 2026",
+      "author": "Christina Iverson / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-14",
+      "file": "puzzles/midi-2026-09-14.puz",
+      "type": "midi",
+      "date": "2026-09-14",
+      "title": "NY Times, Monday, September 14, 2026 TWO OF A KIND",
+      "author": "Alina Abidi / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-09-14",
+      "file": "puzzles/2026-09-14.puz",
+      "type": "daily",
+      "date": "2026-09-14",
+      "title": "NY Times, Monday, September 14, 2026",
+      "author": "Andrea Carla Michaels and Dena R. Verkuil / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-09-13",
       "file": "puzzles/mini-2026-09-13.puz",
