@@ -1,7 +1,17 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-14T20:42:22Z",
+  "generated_at": "2026-09-16T15:10:05Z",
   "puzzles": [
+    {
+      "id": "2026-09-15",
+      "file": "puzzles/2026-09-15.puz",
+      "type": "daily",
+      "date": "2026-09-15",
+      "title": "NY Times, Tuesday, September 15, 2026",
+      "author": "Nate Cardin / Will Shortz",
+      "width": 15,
+      "height": 16
+    },
     {
       "id": "mini-2026-09-14",
       "file": "puzzles/mini-2026-09-14.puz",
@@ -1989,6 +1999,16 @@
       "date": "2016-08-18",
       "title": "NY Times, Thursday, August 18, 2016",
       "author": "Jeff Chen, Parker Lewis / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2014-09-10",
+      "file": "puzzles/2014-09-10.puz",
+      "type": "daily",
+      "date": "2014-09-10",
+      "title": "NY Times, Wednesday, September 10, 2014",
+      "author": "Jim Peredo / Will Shortz",
       "width": 15,
       "height": 15
     },
