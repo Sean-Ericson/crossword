@@ -1,7 +1,57 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-16T23:10:36Z",
+  "generated_at": "2026-09-17T05:07:59Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-17",
+      "file": "puzzles/mini-2026-09-17.puz",
+      "type": "mini",
+      "date": "2026-09-17",
+      "title": "NY Times, Thursday, September 17, 2026",
+      "author": "Christina Iverson / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-17",
+      "file": "puzzles/midi-2026-09-17.puz",
+      "type": "midi",
+      "date": "2026-09-17",
+      "title": "NY Times, Thursday, September 17, 2026 SO MANY WAYS TO GO",
+      "author": "Ian Livengood",
+      "width": 10,
+      "height": 9
+    },
+    {
+      "id": "2026-09-17",
+      "file": "puzzles/2026-09-17.puz",
+      "type": "daily",
+      "date": "2026-09-17",
+      "title": "NY Times, Thursday, September 17, 2026",
+      "author": "Enrique Henestroza Anguiano / Will Shortz",
+      "width": 14,
+      "height": 15
+    },
+    {
+      "id": "mini-2026-09-16",
+      "file": "puzzles/mini-2026-09-16.puz",
+      "type": "mini",
+      "date": "2026-09-16",
+      "title": "NY Times, Wednesday, September 16, 2026",
+      "author": "Adam Aaronson / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-16",
+      "file": "puzzles/midi-2026-09-16.puz",
+      "type": "midi",
+      "date": "2026-09-16",
+      "title": "NY Times, Wednesday, September 16, 2026 TEA PARTY",
+      "author": "Adrianne Baik / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
     {
       "id": "2026-09-16",
       "file": "puzzles/2026-09-16.puz",
@@ -11,6 +61,26 @@
       "author": "Peter Gorman / Will Shortz",
       "width": 15,
       "height": 15
+    },
+    {
+      "id": "mini-2026-09-15",
+      "file": "puzzles/mini-2026-09-15.puz",
+      "type": "mini",
+      "date": "2026-09-15",
+      "title": "NY Times, Tuesday, September 15, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-15",
+      "file": "puzzles/midi-2026-09-15.puz",
+      "type": "midi",
+      "date": "2026-09-15",
+      "title": "NY Times, Tuesday, September 15, 2026 TO BE CONTINUED ...",
+      "author": "Rena Cohen / Ian Livengood",
+      "width": 11,
+      "height": 11
     },
     {
       "id": "2026-09-15",
