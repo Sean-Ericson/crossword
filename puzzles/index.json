@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-17T05:07:59Z",
+  "generated_at": "2026-09-18T05:22:38Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-18",
+      "file": "puzzles/mini-2026-09-18.puz",
+      "type": "mini",
+      "date": "2026-09-18",
+      "title": "NY Times, Friday, September 18, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-18",
+      "file": "puzzles/midi-2026-09-18.puz",
+      "type": "midi",
+      "date": "2026-09-18",
+      "title": "NY Times, Friday, September 18, 2026 BRAND SPELL CHECK",
+      "author": "Aidan Deshong / Ian Livengood",
+      "width": 10,
+      "height": 10
+    },
+    {
+      "id": "2026-09-18",
+      "file": "puzzles/2026-09-18.puz",
+      "type": "daily",
+      "date": "2026-09-18",
+      "title": "NY Times, Friday, September 18, 2026",
+      "author": "Ryan Mathiason / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-09-17",
       "file": "puzzles/mini-2026-09-17.puz",
