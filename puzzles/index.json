@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-18T05:22:38Z",
+  "generated_at": "2026-09-19T05:02:20Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-19",
+      "file": "puzzles/mini-2026-09-19.puz",
+      "type": "mini",
+      "date": "2026-09-19",
+      "title": "NY Times, Saturday, September 19, 2026",
+      "author": "Joel Fagliano",
+      "width": 6,
+      "height": 8
+    },
+    {
+      "id": "midi-2026-09-19",
+      "file": "puzzles/midi-2026-09-19.puz",
+      "type": "midi",
+      "date": "2026-09-19",
+      "title": "NY Times, Saturday, September 19, 2026 SEA WHAT I'M SAYING",
+      "author": "Jeremy Newton / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-09-19",
+      "file": "puzzles/2026-09-19.puz",
+      "type": "daily",
+      "date": "2026-09-19",
+      "title": "NY Times, Saturday, September 19, 2026",
+      "author": "Hannah Slovut-Einertson / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-09-18",
       "file": "puzzles/mini-2026-09-18.puz",
