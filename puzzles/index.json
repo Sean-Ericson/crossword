@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-20T05:05:19Z",
+  "generated_at": "2026-09-21T05:07:44Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-21",
+      "file": "puzzles/mini-2026-09-21.puz",
+      "type": "mini",
+      "date": "2026-09-21",
+      "title": "NY Times, Monday, September 21, 2026",
+      "author": "Joel Fagliano",
+      "width": 6,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-21",
+      "file": "puzzles/midi-2026-09-21.puz",
+      "type": "midi",
+      "date": "2026-09-21",
+      "title": "NY Times, Monday, September 21, 2026 MAKE A BEELINE FOR IT",
+      "author": "Zhou Zhang and Kevin Curry / Ian Livengood",
+      "width": 10,
+      "height": 9
+    },
+    {
+      "id": "2026-09-21",
+      "file": "puzzles/2026-09-21.puz",
+      "type": "daily",
+      "date": "2026-09-21",
+      "title": "NY Times, Monday, September 21, 2026",
+      "author": "Alexander Liebeskind / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-09-20",
       "file": "puzzles/mini-2026-09-20.puz",
