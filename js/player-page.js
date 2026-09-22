@@ -17,6 +17,7 @@ import {
   saveLocal,
   recordFitsModel,
   hasAnyFill,
+  fillPercent,
   mergeProgress,
   addSolveLocal,
   solveEntryFrom,
@@ -125,8 +126,14 @@ async function main() {
     onBarNav: (delta) => engine.nextClue(delta),
   });
 
+  const progressEl = qs('#progress-pct');
+  const updateProgress = () => {
+    progressEl.textContent = `${fillPercent(record)}%`;
+  };
+
   gridView.updateAll(record);
   cluesView.updateFilled(record);
+  updateProgress();
   gridView.setCompleted(record.completed);
 
   // keep the clue bar exactly as wide as the board
@@ -145,6 +152,7 @@ async function main() {
   engine.on('cells', (indexes) => {
     for (const i of indexes) gridView.updateCell(i, record);
     cluesView.updateFilled(record);
+    updateProgress();
   });
   engine.emitSelection();
 
@@ -175,6 +183,7 @@ async function main() {
     });
     gridView.updateAll(record);
     cluesView.updateFilled(record);
+    updateProgress();
     timer.setElapsed(record.elapsed || 0);
     saveLocal(record);
     engine.emitSelection();

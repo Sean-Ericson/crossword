@@ -14,7 +14,7 @@ import {
   MARK_REVEALED,
   MARK_CONFIRMED,
 } from '../js/engine.js';
-import { newProgress, mergeProgress, statusOf } from '../js/state.js';
+import { newProgress, mergeProgress, statusOf, fillPercent } from '../js/state.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const puz = parsePuz(readFileSync(path.join(here, 'fixtures', 'fixture15.puz')));
@@ -315,6 +315,18 @@ test('engine: solve after reveal is not clean', () => {
   assert.ok(record.completed);
   assert.equal(record.clean, false);
   assert.equal(statusOf(record), 'solved');
+});
+
+test('state: fillPercent — floors filled / fillable, ignoring blacks', () => {
+  const { engine, record } = fresh();
+  const open = model.cells.filter((c) => !c.isBlack);
+  assert.equal(fillPercent(record), 0);
+  engine.setCell(open[0].index, 'A');
+  assert.equal(fillPercent(record), Math.floor(100 / open.length));
+  fillAllExcept(engine, record, [open[0].index]);
+  assert.equal(fillPercent(record), 100); // open[0] still holds 'A'
+  engine.setCell(open[1].index, '');
+  assert.equal(fillPercent(record), Math.floor(((open.length - 1) * 100) / open.length));
 });
 
 test('state: mergeProgress — completed wins outright', () => {

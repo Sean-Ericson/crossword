@@ -74,6 +74,18 @@ export function hasAnyFill(record) {
   return record.fill.some((v) => v !== '' && v !== '.');
 }
 
+/** Filled squares as a whole percent of fillable squares, rounded down. */
+export function fillPercent(record) {
+  let total = 0;
+  let filled = 0;
+  for (const v of record.fill) {
+    if (v === '.') continue;
+    total++;
+    if (v !== '') filled++;
+  }
+  return total ? Math.floor((filled * 100) / total) : 0;
+}
+
 /** 'unsolved' | 'in-progress' | 'solved' | 'solved-clean' */
 export function statusOf(record) {
   if (!record) return 'unsolved';
