@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-09T22:28:29Z",
+  "generated_at": "2026-09-22T05:08:43Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-22",
+      "file": "puzzles/mini-2026-09-22.puz",
+      "type": "mini",
+      "date": "2026-09-22",
+      "title": "NY Times, Tuesday, September 22, 2026",
+      "author": "Ian Livengood / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-22",
+      "file": "puzzles/midi-2026-09-22.puz",
+      "type": "midi",
+      "date": "2026-09-22",
+      "title": "NY Times, Tuesday, September 22, 2026 THAT'S THE SPIRIT!",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-09-22",
+      "file": "puzzles/2026-09-22.puz",
+      "type": "daily",
+      "date": "2026-09-22",
+      "title": "NY Times, Tuesday, September 22, 2026",
+      "author": "Erik Agard / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-09-21",
       "file": "puzzles/mini-2026-09-21.puz",
@@ -150,216 +180,6 @@
       "title": "NY Times, Thursday, September 17, 2026",
       "author": "Enrique Henestroza Anguiano / Will Shortz",
       "width": 14,
-      "height": 15
-    },
-    {
-      "id": "mini-2026-09-16",
-      "file": "puzzles/mini-2026-09-16.puz",
-      "type": "mini",
-      "date": "2026-09-16",
-      "title": "NY Times, Wednesday, September 16, 2026",
-      "author": "Adam Aaronson / Joel Fagliano",
-      "width": 5,
-      "height": 5
-    },
-    {
-      "id": "midi-2026-09-16",
-      "file": "puzzles/midi-2026-09-16.puz",
-      "type": "midi",
-      "date": "2026-09-16",
-      "title": "NY Times, Wednesday, September 16, 2026 TEA PARTY",
-      "author": "Adrianne Baik / Ian Livengood",
-      "width": 9,
-      "height": 9
-    },
-    {
-      "id": "2026-09-16",
-      "file": "puzzles/2026-09-16.puz",
-      "type": "daily",
-      "date": "2026-09-16",
-      "title": "NY Times, Wednesday, September 16, 2026",
-      "author": "Peter Gorman / Will Shortz",
-      "width": 15,
-      "height": 15
-    },
-    {
-      "id": "mini-2026-09-15",
-      "file": "puzzles/mini-2026-09-15.puz",
-      "type": "mini",
-      "date": "2026-09-15",
-      "title": "NY Times, Tuesday, September 15, 2026",
-      "author": "Joel Fagliano",
-      "width": 5,
-      "height": 5
-    },
-    {
-      "id": "midi-2026-09-15",
-      "file": "puzzles/midi-2026-09-15.puz",
-      "type": "midi",
-      "date": "2026-09-15",
-      "title": "NY Times, Tuesday, September 15, 2026 TO BE CONTINUED ...",
-      "author": "Rena Cohen / Ian Livengood",
-      "width": 11,
-      "height": 11
-    },
-    {
-      "id": "2026-09-15",
-      "file": "puzzles/2026-09-15.puz",
-      "type": "daily",
-      "date": "2026-09-15",
-      "title": "NY Times, Tuesday, September 15, 2026",
-      "author": "Nate Cardin / Will Shortz",
-      "width": 15,
-      "height": 16
-    },
-    {
-      "id": "mini-2026-09-14",
-      "file": "puzzles/mini-2026-09-14.puz",
-      "type": "mini",
-      "date": "2026-09-14",
-      "title": "NY Times, Monday, September 14, 2026",
-      "author": "Christina Iverson / Joel Fagliano",
-      "width": 5,
-      "height": 5
-    },
-    {
-      "id": "midi-2026-09-14",
-      "file": "puzzles/midi-2026-09-14.puz",
-      "type": "midi",
-      "date": "2026-09-14",
-      "title": "NY Times, Monday, September 14, 2026 TWO OF A KIND",
-      "author": "Alina Abidi / Ian Livengood",
-      "width": 9,
-      "height": 9
-    },
-    {
-      "id": "2026-09-14",
-      "file": "puzzles/2026-09-14.puz",
-      "type": "daily",
-      "date": "2026-09-14",
-      "title": "NY Times, Monday, September 14, 2026",
-      "author": "Andrea Carla Michaels and Dena R. Verkuil / Will Shortz",
-      "width": 15,
-      "height": 15
-    },
-    {
-      "id": "mini-2026-09-13",
-      "file": "puzzles/mini-2026-09-13.puz",
-      "type": "mini",
-      "date": "2026-09-13",
-      "title": "NY Times, Sunday, September 13, 2026",
-      "author": "Joel Fagliano",
-      "width": 5,
-      "height": 5
-    },
-    {
-      "id": "midi-2026-09-13",
-      "file": "puzzles/midi-2026-09-13.puz",
-      "type": "midi",
-      "date": "2026-09-13",
-      "title": "NY Times, Sunday, September 13, 2026 BALLPARK FIGURES",
-      "author": "Natan Last / Ian Livengood",
-      "width": 9,
-      "height": 9
-    },
-    {
-      "id": "2026-09-13",
-      "file": "puzzles/2026-09-13.puz",
-      "type": "daily",
-      "date": "2026-09-13",
-      "title": "NY Times, Sunday, September 13, 2026 THINKING INSIDE THE BOX",
-      "author": "Henry Lin-David and Frank S. David / Will Shortz",
-      "width": 22,
-      "height": 22
-    },
-    {
-      "id": "mini-2026-09-12",
-      "file": "puzzles/mini-2026-09-12.puz",
-      "type": "mini",
-      "date": "2026-09-12",
-      "title": "NY Times, Saturday, September 12, 2026",
-      "author": "Sam Ezersky / Joel Fagliano",
-      "width": 7,
-      "height": 7
-    },
-    {
-      "id": "midi-2026-09-12",
-      "file": "puzzles/midi-2026-09-12.puz",
-      "type": "midi",
-      "date": "2026-09-12",
-      "title": "NY Times, Saturday, September 12, 2026 HOUSING BUBBLES",
-      "author": "Ian Livengood",
-      "width": 9,
-      "height": 9
-    },
-    {
-      "id": "2026-09-12",
-      "file": "puzzles/2026-09-12.puz",
-      "type": "daily",
-      "date": "2026-09-12",
-      "title": "NY Times, Saturday, September 12, 2026",
-      "author": "Adam Wagner and Michael Lieberman / Will Shortz",
-      "width": 15,
-      "height": 15
-    },
-    {
-      "id": "mini-2026-09-11",
-      "file": "puzzles/mini-2026-09-11.puz",
-      "type": "mini",
-      "date": "2026-09-11",
-      "title": "NY Times, Friday, September 11, 2026",
-      "author": "Wyna Liu / Joel Fagliano",
-      "width": 5,
-      "height": 5
-    },
-    {
-      "id": "midi-2026-09-11",
-      "file": "puzzles/midi-2026-09-11.puz",
-      "type": "midi",
-      "date": "2026-09-11",
-      "title": "NY Times, Friday, September 11, 2026 TEAM BUILDING EXERCISE",
-      "author": "Nate Cardin / Ian Livengood",
-      "width": 10,
-      "height": 9
-    },
-    {
-      "id": "2026-09-11",
-      "file": "puzzles/2026-09-11.puz",
-      "type": "daily",
-      "date": "2026-09-11",
-      "title": "NY Times, Friday, September 11, 2026",
-      "author": "Robyn Weintraub / Will Shortz",
-      "width": 15,
-      "height": 15
-    },
-    {
-      "id": "mini-2026-09-10",
-      "file": "puzzles/mini-2026-09-10.puz",
-      "type": "mini",
-      "date": "2026-09-10",
-      "title": "NY Times, Thursday, September 10, 2026",
-      "author": "Ian Livengood / Joel Fagliano",
-      "width": 5,
-      "height": 5
-    },
-    {
-      "id": "midi-2026-09-10",
-      "file": "puzzles/midi-2026-09-10.puz",
-      "type": "midi",
-      "date": "2026-09-10",
-      "title": "NY Times, Thursday, September 10, 2026 INTERSTATES",
-      "author": "Kareem Ayas / Ian Livengood",
-      "width": 10,
-      "height": 11
-    },
-    {
-      "id": "2026-09-10",
-      "file": "puzzles/2026-09-10.puz",
-      "type": "daily",
-      "date": "2026-09-10",
-      "title": "NY Times, Thursday, September 10, 2026",
-      "author": "Simeon Seigel / Will Shortz",
-      "width": 15,
       "height": 15
     },
     {
