@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-22T05:08:43Z",
+  "generated_at": "2026-09-23T05:02:40Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-23",
+      "file": "puzzles/mini-2026-09-23.puz",
+      "type": "mini",
+      "date": "2026-09-23",
+      "title": "NY Times, Wednesday, September 23, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-23",
+      "file": "puzzles/midi-2026-09-23.puz",
+      "type": "midi",
+      "date": "2026-09-23",
+      "title": "NY Times, Wednesday, September 23, 2026 START THE MUSIC!",
+      "author": "Tarun Krishnamurthy / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-09-23",
+      "file": "puzzles/2026-09-23.puz",
+      "type": "daily",
+      "date": "2026-09-23",
+      "title": "NY Times, Wednesday, September 23, 2026",
+      "author": "Dana Edwards / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-09-22",
       "file": "puzzles/mini-2026-09-22.puz",
