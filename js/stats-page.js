@@ -1,9 +1,9 @@
 /*
  * stats-page.js — per-user statistics and multi-user comparison.
  *
- * Users shown = local profiles ∪ users discovered in the data repo.
- * Each user keeps a stable color assigned from the sorted list of all
- * known users (color follows the entity, not the selection order).
+ * Users shown = every account on the server, each in its own color (the
+ * same one their cursor has in co-op solves). Solo stats only; co-op
+ * solves are listed separately and never count toward streaks or times.
  */
 
 import {
@@ -15,15 +15,10 @@ import {
   parsePuzzleId,
 } from './util.js';
 import { computeUserStats, compareUsers } from './stats.js';
-import { loadStatsLocal, mergeStats } from './state.js';
-import { getActiveUser, getLocalProfiles } from './profiles.js';
+import { loadMe } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
-import { Sync } from './sync.js';
-import { initSyncBadge } from './sync-ui.js';
+import { api } from './api.js';
 
-// Okabe-Ito subset — CVD-validated; bars always carry direct value labels
-// and the comparison ships a table view (contrast relief).
-const USER_COLORS = ['#0072B2', '#E69F00', '#009E73', '#CC79A7', '#56B4E9', '#999999'];
 const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon..Sun, NYT style
 const TYPE_TABS = [
   ['daily', 'Daily'],
@@ -34,32 +29,34 @@ const TYPE_TABS = [
 ];
 const TYPE_KEY = 'xw:site:stats-type';
 
-const activeUser = getActiveUser();
-const sync = new Sync(activeUser);
 const solvesCache = new Map(); // user -> solves map
+const coopCache = new Map(); // user -> co-op solve list
 
 async function getSolves(user) {
-  if (solvesCache.has(user)) return solvesCache.get(user);
-  const isLocal = user === activeUser || getLocalProfiles().includes(user);
-  const localDoc = isLocal ? loadStatsLocal(user) : null;
-  let remoteDoc = null;
-  if (sync.active) {
-    remoteDoc = await new Sync(user).pullStats(user);
+  if (!solvesCache.has(user)) {
+    const doc = await api.get(`stats/${encodeURIComponent(user)}`).catch(() => null);
+    solvesCache.set(user, doc?.solves ?? {});
   }
-  const solves = mergeStats(localDoc, remoteDoc)?.solves ?? {};
-  solvesCache.set(user, solves);
-  return solves;
+  return solvesCache.get(user);
+}
+
+async function getCoopSolves(user) {
+  if (!coopCache.has(user)) {
+    const doc = await api.get(`coop-stats/${encodeURIComponent(user)}`).catch(() => null);
+    coopCache.set(user, doc?.solves ?? []);
+  }
+  return coopCache.get(user);
 }
 
 async function main() {
+  const me = await loadMe();
+  const activeUser = me.name;
   initProfileChip(qs('#profile-chip'));
-  initSyncBadge(qs('#sync-badge'), sync);
 
-  const locals = new Set([activeUser, ...getLocalProfiles()]);
-  const remotes = sync.active ? await sync.listUsers() : [];
-  const allUsers = [...new Set([...locals, ...remotes])].sort();
-  const colorOf = (user) =>
-    USER_COLORS[allUsers.indexOf(user) % USER_COLORS.length];
+  const accounts = (await api.get('users')).users;
+  const allUsers = accounts.map((u) => u.name).sort();
+  const colorOf = (user) => accounts.find((u) => u.name === user)?.color ?? '#999999';
+  const nameOf = (user) => accounts.find((u) => u.name === user)?.display_name ?? user;
 
   const selected = new Set([activeUser]);
   let statsType = localStorage.getItem(TYPE_KEY);
@@ -106,7 +103,7 @@ async function main() {
         { class: 'user-chip' + (selected.has(user) ? ' selected' : '') },
         [
           el('span', { class: 'dot', style: `background:${colorOf(user)}` }),
-          user,
+          nameOf(user),
           el('input', {
             type: 'checkbox',
             ...(selected.has(user) ? { checked: true } : {}),
@@ -122,10 +119,8 @@ async function main() {
       );
       host.append(chip);
     }
-    if (!sync.active && allUsers.length <= 1) {
-      host.append(
-        el('span', { class: 'user-note' }, 'Connect GitHub sync to compare with other solvers.')
-      );
+    if (allUsers.length <= 1) {
+      host.append(el('span', { class: 'user-note' }, 'Other solvers show up here once they have accounts.'));
     }
   }
 
@@ -137,8 +132,57 @@ async function main() {
     for (const user of users) {
       data.push({ user, solves: filterByType(await getSolves(user)) });
     }
-    if (users.length === 1) renderSingle(body, data[0]);
-    else renderComparison(body, data);
+    if (users.length === 1) {
+      renderSingle(body, data[0]);
+      renderCoop(body, users[0], (await getCoopSolves(users[0])).filter(
+        (s) => parsePuzzleId(s.puzzle_id).type === statsType
+      ));
+    } else {
+      renderComparison(body, data);
+    }
+  }
+
+  /** Co-op solves: listed on their own, never mixed into solo stats. */
+  function renderCoop(body, user, solves) {
+    if (!solves.length) return;
+    const sorted = [...solves].sort((a, b) => b.puzzle_id.localeCompare(a.puzzle_id));
+    const clean = solves.filter((s) => s.clean).length;
+    const best = Math.min(...solves.map((s) => s.seconds));
+    body.append(
+      el('div', { class: 'coop-stats' }, [
+        el('h2', {}, 'Co-op solves'),
+        el(
+          'p',
+          { class: 'chart-sub' },
+          `${solves.length} solved together · ${clean} clean · best ${formatTime(best)}. Not counted in the solo stats above.`
+        ),
+        el('table', { class: 'h2h-table' }, [
+          el('thead', {}, el('tr', {}, [el('th', {}, 'Puzzle'), el('th', {}, 'With'), el('th', {}, 'Time'), el('th', {}, '')])),
+          el(
+            'tbody',
+            {},
+            sorted.map((s) => {
+              const info = parsePuzzleId(s.puzzle_id);
+              return el('tr', {}, [
+                el('td', {}, info.date ? formatDateLong(info.date) : s.puzzle_id),
+                el(
+                  'td',
+                  {},
+                  s.members
+                    .filter((n) => n !== user)
+                    .map((n) => el('span', { class: 'coop-partner' }, [
+                      el('span', { class: 'dot', style: `background:${colorOf(n)}` }),
+                      nameOf(n),
+                    ]))
+                ),
+                el('td', {}, formatTime(s.seconds)),
+                el('td', { class: 'gold' }, s.clean ? '★' : ''),
+              ]);
+            })
+          ),
+        ]),
+      ])
+    );
   }
 
   function tile(value, label, sub = '') {

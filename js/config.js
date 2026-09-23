@@ -1,20 +1,6 @@
 /*
- * config.js — site-wide defaults.
- *
- * The GitHub data-repo settings below are only defaults for the settings
- * panel; whatever the user saves there (localStorage `xw:site:gh`) wins.
- * Fill in `owner` with your GitHub username before deploying so family
- * members only have to paste a token.
+ * config.js — site-wide constants shared by the pages.
  */
-
-export const SITE_CONFIG = {
-  siteTitle: 'The Crossword',
-  data: {
-    owner: 'Sean-Ericson',
-    repo: 'crossword-data',
-    branch: 'main',
-  },
-};
 
 /**
  * How far back each puzzle type goes at NYT (probed against the archive).
@@ -28,7 +14,3 @@ export const ARCHIVE_START = {
   midi: '2026-03-02',
   bonus: '1997-02-01', // monthly
 };
-
-/** On-demand fetching: how long to wait before suggesting something's wrong. */
-export const FETCH_POLL_MS = 4000;
-export const FETCH_TIMEOUT_MS = 6 * 60 * 1000;

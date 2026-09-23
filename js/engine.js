@@ -3,13 +3,19 @@
  * behavior: cursor movement, typing/advancement, pencil, check/reveal/
  * autocheck, rebus entries, and completion detection.
  *
- * Emits:
- *   'cells'      number[]                 cell indexes whose render changed
+ * Emits (listeners get (data, meta)):
+ *   'cells'      number[]                 cell indexes whose render changed;
+ *                                         meta.remote when the change came
+ *                                         from the server, not this user
  *   'selection'  {index, dir, word}       cursor or active word changed
  *   'dirty'      record                   progress record mutated
  *   'full'       {solved, clean}          grid became/stayed full after a
  *                                         fill mutation (page shows congrats
  *                                         or "not quite")
+ *
+ * With `deferCompletion` set, a correctly filled grid is not marked solved
+ * here: the server decides that for shared solves and says so via
+ * markCompleted(). An incorrect full grid still emits {solved:false}.
  */
 
 import { isoNow } from './util.js';
@@ -30,6 +36,7 @@ export class SolveEngine {
     this.record = record;
     this.settings = settings;
     this.pencil = false;
+    this.deferCompletion = false;
     this.listeners = {};
 
     // start at the first across word's first cell (NYT starts at 1-Across)
@@ -43,8 +50,8 @@ export class SolveEngine {
     return this;
   }
 
-  emit(event, data) {
-    for (const cb of this.listeners[event] ?? []) cb(data);
+  emit(event, data, meta = {}) {
+    for (const cb of this.listeners[event] ?? []) cb(data, meta);
   }
 
   // ---------- selection ----------
@@ -433,6 +440,7 @@ export class SolveEngine {
     if (this.record.completed || !this.isFull()) return;
     const scrambled = this.model.puz.scrambled;
     if (scrambled || this.allCorrect()) {
+      if (this.deferCompletion) return; // the server announces the solve
       const rec = this.record;
       rec.completed = true;
       rec.solved_at = isoNow();
@@ -442,5 +450,53 @@ export class SolveEngine {
     } else {
       this.emit('full', { solved: false, clean: false });
     }
+  }
+
+  // ---------- changes from other solvers (via the server) ----------
+
+  /**
+   * Apply cell values decided elsewhere. Doesn't move the cursor, touch
+   * the record, or check completion; emits 'cells' with meta.remote so the
+   * sync layer doesn't echo them back.
+   * @param {Array<{i:number, fill:string, marks:number}>} changes
+   */
+  applyRemoteCells(changes) {
+    const rec = this.record;
+    const changed = [];
+    for (const { i, fill, marks } of changes) {
+      if (rec.fill[i] === fill && rec.marks[i] === marks) continue;
+      rec.fill[i] = fill;
+      rec.marks[i] = marks;
+      changed.push(i);
+    }
+    if (changed.length) this.emit('cells', changed, { remote: true });
+  }
+
+  applyRemoteFlags({ used_check, used_reveal, autocheck, clean }) {
+    const rec = this.record;
+    rec.used_check = !!used_check;
+    rec.used_reveal = !!used_reveal;
+    rec.autocheck = !!autocheck;
+    rec.clean = !!clean;
+  }
+
+  /** Swap in a whole record (server snapshot), keeping object identity. */
+  replaceRecord(next) {
+    const rec = this.record;
+    for (const key of Object.keys(rec)) delete rec[key];
+    Object.assign(rec, next, { fill: [...next.fill], marks: [...next.marks] });
+    this.emit('cells', this.model.cells.map((c) => c.index), { remote: true });
+    this.emitSelection();
+  }
+
+  /** The server declared the grid solved. Emits 'full' unless already done. */
+  markCompleted({ solved_at, clean, elapsed }) {
+    const rec = this.record;
+    const already = rec.completed;
+    rec.completed = true;
+    rec.solved_at = solved_at;
+    rec.clean = !!clean;
+    if (elapsed != null) rec.elapsed = elapsed;
+    if (!already) this.emit('full', { solved: true, clean: rec.clean }, { remote: true });
   }
 }

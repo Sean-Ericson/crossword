@@ -2,10 +2,11 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+node_modules/
 
-# scheduled-update logs (daily_update.bat)
+# server state and local settings (see DEPLOY.md)
+server/data/
+server/config.json
+deploy/deploy.env
 logs/
 DataPassword.txt
-
-# local GitHub token for tools/fetch_requests.py
-.github_token

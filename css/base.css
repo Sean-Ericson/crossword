@@ -266,3 +266,53 @@ a {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* account chip: colored dot = the color others see your cursor in */
+.user-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+/* ---------- login page ---------- */
+
+.login-main {
+  max-width: 360px;
+  margin: 12vh auto 0;
+  padding: 0 16px;
+}
+
+.login-main h1 {
+  font-size: 26px;
+  margin: 0 0 18px;
+}
+
+.login-main label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.login-main input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  font-size: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.login-main .btn {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.login-error {
+  color: var(--color-wrong);
+  font-size: 14px;
+  min-height: 20px;
+  margin: 6px 0;
+}

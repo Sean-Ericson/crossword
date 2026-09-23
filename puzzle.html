@@ -16,7 +16,7 @@
       <a href="./stats.html">Stats</a>
     </nav>
     <span class="spacer"></span>
-    <span id="sync-badge" class="badge" hidden></span>
+    <span id="sync-badge" class="live-dot" hidden></span>
     <span id="profile-chip" class="badge"></span>
   </header>
 
@@ -33,6 +33,10 @@
       <span class="pause-icon">⏸</span>
     </button>
     <span class="progress-pct" id="progress-pct" title="Squares filled">0%</span>
+    <div class="menu-host menu-left">
+      <button class="tool-btn solve-btn" id="solve-btn" title="Solo or co-op">Solo ▾</button>
+    </div>
+    <span class="presence" id="presence"></span>
     <span class="spacer"></span>
     <button class="tool-btn" id="pencil-btn" title="Pencil mode (entries in gray)">✎ Pencil</button>
     <button class="tool-btn" id="rebus-btn" title="Enter multiple letters (Esc)">Rebus</button>

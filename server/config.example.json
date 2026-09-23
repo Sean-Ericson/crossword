@@ -1,0 +1,7 @@
+{
+  "port": 8080,
+  "nytBrowser": "Firefox",
+  "dailyUpdateAt": "23:30",
+  "backupAt": "04:00",
+  "keepBackups": 14
+}

@@ -1,52 +1,44 @@
 /*
- * profiles.js — local profile management. A "profile" is just a name; it
- * scopes localStorage keys and the folder used in the data repo. Remote
- * discovery of other users lives in sync.js.
+ * profiles.js — who is signed in. Identity comes from the server session
+ * (GET /api/me); every page calls loadMe() before doing anything else.
+ *
+ * The old device-local profile list (from the GitHub-sync days) is still
+ * readable so its progress can be imported into an account.
  */
 
-const ACTIVE_KEY = 'xw:site:profile';
-const LIST_KEY = 'xw:site:profiles';
+import { api } from './api.js';
 
-export const PROFILE_NAME_RE = /^[a-z0-9-]{1,24}$/;
+const LEGACY_LIST_KEY = 'xw:site:profiles';
+const LEGACY_ACTIVE_KEY = 'xw:site:profile';
 
+let me = null;
+
+/** @returns {Promise<{name, display_name, color, is_admin}>} */
+export async function loadMe() {
+  const { user } = await api.get('me');
+  me = user;
+  return user;
+}
+
+export function currentUser() {
+  return me;
+}
+
+/** Name of the signed-in user (after loadMe()). */
 export function getActiveUser() {
+  return me?.name ?? 'guest';
+}
+
+/** Profile names this browser used before accounts existed. */
+export function getLegacyProfiles() {
+  const names = new Set(['guest']);
   try {
-    return localStorage.getItem(ACTIVE_KEY) || 'guest';
+    const list = JSON.parse(localStorage.getItem(LEGACY_LIST_KEY) || '[]');
+    if (Array.isArray(list)) list.forEach((n) => names.add(n));
+    const active = localStorage.getItem(LEGACY_ACTIVE_KEY);
+    if (active) names.add(active);
   } catch {
-    return 'guest';
+    /* no storage */
   }
-}
-
-export function setActiveUser(name) {
-  localStorage.setItem(ACTIVE_KEY, name);
-}
-
-export function getLocalProfiles() {
-  try {
-    const raw = localStorage.getItem(LIST_KEY);
-    const list = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list : [];
-  } catch {
-    return [];
-  }
-}
-
-export function addLocalProfile(name) {
-  if (!PROFILE_NAME_RE.test(name)) {
-    throw new Error('Names must be 1-24 chars: lowercase letters, digits, hyphens.');
-  }
-  const list = getLocalProfiles();
-  if (!list.includes(name)) {
-    list.push(name);
-    list.sort();
-    localStorage.setItem(LIST_KEY, JSON.stringify(list));
-  }
-  return list;
-}
-
-export function removeLocalProfile(name) {
-  const list = getLocalProfiles().filter((n) => n !== name);
-  localStorage.setItem(LIST_KEY, JSON.stringify(list));
-  if (getActiveUser() === name) setActiveUser(list[0] || 'guest');
-  return list;
+  return [...names].sort();
 }

@@ -57,6 +57,7 @@ export class GridView {
     this.rescale();
 
     this.appliedSelection = [];
+    this.remote = new Map(); // key -> {els, index, tag}
   }
 
   rescale() {
@@ -76,6 +77,7 @@ export class GridView {
     this.board.style.width = `${cell * cols + 5}px`; // + frame/gap slack
     this.board.style.height = `${cell * rows + 5}px`;
     this.board.style.fontSize = `${Math.max(8, cell * 0.62)}px`;
+    this.remote?.forEach((r) => this.placeTag(r));
   }
 
   /** Refresh a cell's letter + marker classes from the progress record. */
@@ -139,5 +141,57 @@ export class GridView {
 
   setCompleted(done) {
     this.board.classList.toggle('completed', done);
+  }
+
+  // ---------- other solvers' cursors ----------
+
+  /**
+   * Show someone else's cursor: an outlined cell, a light tint on their
+   * word, and a name tag. Kept apart from the local selection classes (all
+   * drawn as child elements) so the two never fight.
+   * @param {string} key      one per remote connection
+   * @param {{index:number, cells:number[], color:string, label?:string}} at
+   */
+  setRemoteCursor(key, { index, cells, color, label }) {
+    this.clearRemoteCursor(key);
+    const els = [];
+    for (const i of new Set([...cells, index])) {
+      const tint = el('div', { class: 'remote-tint', style: `--rc:${color}` });
+      this.cellEls[i].append(tint);
+      els.push(tint);
+    }
+    const caret = el('div', { class: 'remote-caret', style: `--rc:${color}` });
+    this.cellEls[index].append(caret);
+    els.push(caret);
+    let tag = null;
+    if (label) {
+      tag = el('div', { class: 'remote-tag', style: `--rc:${color}` }, label);
+      this.board.append(tag);
+      els.push(tag);
+    }
+    const entry = { els, index, tag };
+    this.remote.set(key, entry);
+    this.placeTag(entry);
+  }
+
+  placeTag({ tag, index }) {
+    if (!tag) return;
+    const cellEl = this.cellEls[index];
+    tag.style.left = `${cellEl.offsetLeft}px`;
+    tag.style.top = `${cellEl.offsetTop}px`;
+  }
+
+  clearRemoteCursor(key) {
+    const entry = this.remote.get(key);
+    if (!entry) return;
+    for (const node of entry.els) node.remove();
+    this.remote.delete(key);
+  }
+
+  /** Drop every remote cursor whose key isn't in `keep`. */
+  pruneRemoteCursors(keep) {
+    for (const key of [...this.remote.keys()]) {
+      if (!keep.has(key)) this.clearRemoteCursor(key);
+    }
   }
 }

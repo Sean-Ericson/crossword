@@ -110,4 +110,20 @@ export class CluesView {
       this.itemsByWordId.get(word.id).classList.toggle('filled', filled);
     }
   }
+
+  /**
+   * Colored dots on the clues other solvers are working on.
+   * @param {Array<{wordId:string, color:string, label:string}>} markers
+   */
+  setRemoteMarkers(markers) {
+    for (const dot of this.remoteDots ?? []) dot.remove();
+    this.remoteDots = [];
+    for (const { wordId, color, label } of markers) {
+      const li = this.itemsByWordId.get(wordId);
+      if (!li) continue;
+      const dot = el('span', { class: 'clue-remote', style: `background:${color}`, title: label });
+      li.append(dot);
+      this.remoteDots.push(dot);
+    }
+  }
 }

@@ -1,285 +1,149 @@
 /*
- * profile-ui.js — shared profile chip + switcher modal used by all pages.
+ * profile-ui.js — the header account chip and its menu: change password,
+ * import progress saved in this browser before accounts existed, log out.
  */
 
 import { el } from './util.js';
 import { showModal, confirmDialog, toast } from './modals.js';
+import { api } from './api.js';
+import { currentUser, getLegacyProfiles } from './profiles.js';
 import {
   localDataSummary,
-  migrateUserData,
-  deleteUserData,
+  listProgressIds,
+  loadLocal,
   loadStatsLocal,
+  deleteUserData,
 } from './state.js';
-import { Sync } from './sync.js';
-import {
-  getActiveUser,
-  setActiveUser,
-  getLocalProfiles,
-  addLocalProfile,
-  removeLocalProfile,
-  PROFILE_NAME_RE,
-} from './profiles.js';
 
-/** Render the header chip; clicking opens the switcher. */
+/** Render the header chip; clicking opens the account menu. */
 export function initProfileChip(chipEl) {
-  chipEl.textContent = getActiveUser();
+  const me = currentUser();
+  if (!me) return;
+  chipEl.textContent = '';
+  chipEl.append(
+    el('span', { class: 'user-dot', style: `background:${me.color}` }),
+    me.display_name || me.name
+  );
   chipEl.style.cursor = 'pointer';
-  chipEl.title = 'Switch profile';
-  chipEl.addEventListener('click', () => openProfileModal());
+  chipEl.title = 'Account';
+  chipEl.addEventListener('click', () => openAccountModal());
 }
 
-export function openProfileModal() {
-  const active = getActiveUser();
-  const sync = new Sync(active);
-  // "guest" is the implicit identity people solve under before naming
-  // themselves, so surface it whenever it still holds anything - otherwise
-  // those solves would be stranded with no way to claim them.
-  const known = [active, ...getLocalProfiles()];
-  if (!known.includes('guest') && localDataSummary('guest').any) known.push('guest');
-  const profiles = [...new Set(known)].sort();
+const inputStyle =
+  'width:100%;padding:8px 10px;border:1px solid var(--color-border);border-radius:6px;font-size:14px;box-sizing:border-box';
 
-  const list = el(
-    'div',
-    { style: 'text-align:left' },
-    profiles.map((name) => {
-      const summary = localDataSummary(name);
-      const row = el('div', {
-        style: 'display:flex;gap:10px;align-items:center;padding:7px 4px;font-size:15px',
-      });
-      row.append(
-        el(
-          'label',
-          { style: 'display:flex;gap:10px;align-items:center;cursor:pointer;flex:1' },
-          [
-            el('input', {
-              type: 'radio',
-              name: 'profile',
-              value: name,
-              ...(name === active ? { checked: true } : {}),
-              onchange: () => switchTo(name, { migrate: false }),
-            }),
-            name,
-            summary.solves
-              ? el(
-                  'span',
-                  { style: 'color:var(--color-text-muted);font-size:12px' },
-                  `${summary.solves} solved`
-                )
-              : null,
-          ]
-        )
-      );
-      // The active profile can't be moved into itself or removed -
-      // switch away from it first.
-      if (name !== active) {
-        if (summary.any) {
-          row.append(
-            el(
-              'button',
-              {
-                class: 'btn-quiet',
-                title: `Move “${name}”’s puzzles into “${active}”`,
-                style: 'font-size:12px;white-space:nowrap',
-                onclick: () => adoptInto(name, summary),
-              },
-              `Move to ${active}`
-            )
-          );
-        }
-        row.append(
-          el(
-            'button',
-            {
-              class: 'btn-quiet',
-              title: `Remove “${name}” from this device`,
-              style: 'font-size:16px;line-height:1;color:var(--color-text-muted)',
-              onclick: () => removeProfile(name, summary),
-            },
-            '✕'
-          )
-        );
-      }
-      return row;
-    })
-  );
+export function openAccountModal() {
+  const me = currentUser();
+  const legacy = getLegacyProfiles()
+    .map((name) => ({ name, summary: localDataSummary(name) }))
+    .filter((p) => p.summary.any);
 
-  const input = el('input', {
-    type: 'text',
-    placeholder: 'new-profile-name',
-    style:
-      'flex:1;padding:8px 10px;border:1px solid var(--color-border);border-radius:6px;font-size:14px',
-  });
-
-  // Offer to carry this device's existing solves onto the new profile.
-  // Checked by default from "guest", since that is the unnamed default
-  // identity people accumulate solves under before setting up a profile.
-  const summary = localDataSummary(active);
-  let migrateBox = null;
-  let migrateRow = null;
-  if (summary.any) {
-    const bits = [];
-    if (summary.solves) bits.push(`${summary.solves} solved`);
-    if (summary.started) bits.push(`${summary.started} in progress`);
-    migrateBox = el('input', {
-      type: 'checkbox',
-      ...(active === 'guest' ? { checked: true } : {}),
-    });
-    migrateRow = el(
-      'label',
-      {
-        style:
-          'display:flex;gap:10px;align-items:flex-start;margin-top:12px;cursor:pointer;font-size:13px;line-height:1.4',
-      },
-      [
-        migrateBox,
-        el('span', {}, [
-          `Move “${active}”’s puzzles to the new profile`,
-          bits.length ? el('span', { style: 'color:var(--color-text-muted)' }, ` (${bits.join(', ')})`) : null,
-        ]),
-      ]
-    );
-  }
-
-  const addRow = el('div', { style: 'display:flex;gap:8px;margin-top:10px' }, [
-    input,
+  const body = el('div', { style: 'text-align:left' }, [
+    el('p', { style: 'margin-top:0' }, [
+      'Signed in as ',
+      el('b', {}, me.display_name || me.name),
+      me.display_name && me.display_name !== me.name ? ` (${me.name})` : '',
+    ]),
+    el('button', { class: 'btn', style: 'margin-right:8px', onclick: () => openPasswordModal() }, 'Change password'),
     el(
       'button',
       {
         class: 'btn',
-        onclick: () => {
-          const name = input.value.trim().toLowerCase();
-          if (!PROFILE_NAME_RE.test(name)) {
-            toast('Names: 1-24 lowercase letters, digits, or hyphens.', { error: true });
-            return;
-          }
-          if (profiles.includes(name)) {
-            toast(`“${name}” already exists — pick it above.`, { error: true });
-            return;
-          }
-          switchTo(name, { migrate: !!migrateBox?.checked });
+        onclick: async () => {
+          await api.post('logout').catch(() => {});
+          location.href = './login.html';
         },
       },
-      'Add'
+      'Log out'
     ),
+    legacy.length ? legacySection(legacy) : null,
   ]);
 
-  const syncedHost = el('div', { style: 'margin-top:12px' });
+  const close = showModal({ title: 'Account', body });
 
-  const close = showModal({
-    title: 'Who’s solving?',
-    body: el('div', {}, [
-      list,
-      addRow,
-      migrateRow,
-      syncedHost,
+  function legacySection(profiles) {
+    return el('div', { style: 'margin-top:18px;border-top:1px solid var(--color-border);padding-top:12px' }, [
+      el('h3', { style: 'font-size:14px;margin:0 0 6px' }, 'Progress saved in this browser'),
       el(
         'p',
-        { style: 'font-size:12px;margin-top:12px' },
-        'Each profile keeps its own progress, stats, and settings.'
+        { style: 'font-size:13px;color:var(--color-text-muted);margin:0 0 8px' },
+        'From before accounts. Import it into your account; anything already on the server is kept (the same merge rules as before).'
       ),
-    ]),
-  });
-
-  /** Claim another local profile's puzzles for the one in use. */
-  async function adoptInto(name, summary) {
-    const bits = [];
-    if (summary.solves) bits.push(`${summary.solves} solved`);
-    if (summary.started) bits.push(`${summary.started} in progress`);
-    const ok = await confirmDialog(
-      `Move “${name}”’s puzzles (${bits.join(', ')}) into “${active}”? ` +
-        `“${name}” is emptied, and anything already in “${active}” is kept.`,
-      { confirmLabel: `Move to ${active}`, title: `Claim ${name}’s puzzles` }
-    );
-    if (!ok) return;
-    const moved = migrateUserData(name, active);
-    removeLocalProfile(name);
-    setActiveUser(active); // removeLocalProfile can reassign the active user
-    const sync = new Sync(active);
-    if (sync.active) {
-      try {
-        await sync.ensureProfile();
-        await sync.pushStats(loadStatsLocal(active));
-      } catch {
-        /* the next solve will retry */
-      }
-    }
-    toast(`Moved ${moved.puzzles} puzzle${moved.puzzles === 1 ? '' : 's'} to “${active}”.`);
-    close();
-    location.reload();
+      ...profiles.map(({ name, summary }) => {
+        const bits = [];
+        if (summary.solves) bits.push(`${summary.solves} solved`);
+        if (summary.started) bits.push(`${summary.started} in progress`);
+        return el('div', { style: 'display:flex;gap:10px;align-items:center;padding:4px 0' }, [
+          el('span', { style: 'flex:1' }, [
+            el('b', {}, name),
+            ` — ${summary.puzzles} puzzle${summary.puzzles === 1 ? '' : 's'}${bits.length ? ` (${bits.join(', ')})` : ''}`,
+          ]),
+          el('button', { class: 'btn', style: 'font-size:13px;padding:4px 12px', onclick: () => importLegacy(name) }, 'Import'),
+        ]);
+      }),
+    ]);
   }
 
-  // Profiles that exist in the data repo but not on this device - on a
-  // second machine that is every one of them, and typing the name by hand
-  // just risks a typo creating an empty profile instead.
-  if (sync.active) {
-    sync.listUsers().then((names) => {
-      const elsewhere = names.filter((n) => !profiles.includes(n));
-      if (!elsewhere.length) return;
-      syncedHost.append(
-        el(
-          'div',
-          { style: 'font-size:12px;color:var(--color-text-muted);margin-bottom:6px' },
-          'Already synced — pick one to use it here:'
-        ),
-        el(
-          'div',
-          { style: 'display:flex;gap:6px;flex-wrap:wrap' },
-          elsewhere.map((name) =>
-            el(
-              'button',
-              { class: 'btn', style: 'padding:5px 14px;font-size:13px',
-                onclick: () => switchTo(name, { migrate: false }) },
-              name
-            )
-          )
-        )
+  async function importLegacy(name) {
+    const records = listProgressIds(name)
+      .map((id) => loadLocal(name, id))
+      .filter(Boolean);
+    const stats = loadStatsLocal(name);
+    try {
+      const result = await api.post('import-local', { records, stats });
+      const ok = await confirmDialog(
+        `Imported ${result.imported} puzzle${result.imported === 1 ? '' : 's'} and ${result.solves} new solve${
+          result.solves === 1 ? '' : 's'
+        } into your account${result.skipped ? ` (${result.skipped} skipped)` : ''}. Remove “${name}”’s copy from this browser?`,
+        { confirmLabel: 'Remove local copy', title: 'Imported' }
       );
-    });
-  }
-
-  async function removeProfile(name, summary) {
-    const bits = [];
-    if (summary.solves) bits.push(`${summary.solves} solved`);
-    if (summary.started) bits.push(`${summary.started} in progress`);
-    const what = bits.length
-      ? `This deletes “${name}” and its saved puzzles (${bits.join(', ')}).`
-      : `Remove “${name}” from this device?`;
-    const ok = await confirmDialog(
-      `${what} This only affects this browser — anything already synced stays in the data repo.`,
-      { confirmLabel: 'Remove profile', title: `Remove ${name}?` }
-    );
-    if (!ok) return;
-    deleteUserData(name);
-    removeLocalProfile(name);
-    toast(`Removed “${name}”.`);
-    close();
-    location.reload();
-  }
-
-  async function switchTo(name, { migrate }) {
-    addLocalProfile(name);
-    if (migrate && name !== active) {
-      const moved = migrateUserData(active, name);
-      if (moved.puzzles || moved.solves) {
-        toast(`Moved ${moved.puzzles} puzzle${moved.puzzles === 1 ? '' : 's'} to “${name}”.`);
-      }
-      // Push the adopted solve log now so the stats page and other devices
-      // see it without waiting for the next completed puzzle. Individual
-      // progress records sync as each puzzle is opened.
-      setActiveUser(name);
-      const sync = new Sync(name);
-      if (sync.active) {
-        try {
-          await sync.ensureProfile();
-          await sync.pushStats(loadStatsLocal(name));
-        } catch {
-          /* the next solve will retry */
-        }
-      }
-    } else {
-      setActiveUser(name);
+      if (ok) deleteUserData(name);
+      close();
+      location.reload();
+    } catch (err) {
+      toast(err.message, { error: true });
     }
-    close();
-    location.reload();
   }
+}
+
+function openPasswordModal() {
+  const current = el('input', { type: 'password', autocomplete: 'current-password', style: inputStyle });
+  const next = el('input', { type: 'password', autocomplete: 'new-password', style: inputStyle });
+  const again = el('input', { type: 'password', autocomplete: 'new-password', style: inputStyle });
+  const error = el('div', { style: 'color:#b3261e;font-size:13px;min-height:18px;margin-top:6px' });
+  const row = (label, input) =>
+    el('label', { style: 'display:block;margin-bottom:10px;font-size:13px' }, [
+      el('div', { style: 'margin-bottom:3px;font-weight:600' }, label),
+      input,
+    ]);
+  showModal({
+    title: 'Change password',
+    body: el('div', { style: 'text-align:left' }, [
+      row('Current password', current),
+      row('New password (8+ characters)', next),
+      row('New password again', again),
+      error,
+    ]),
+    actions: [
+      { label: 'Cancel' },
+      {
+        label: 'Change',
+        primary: true,
+        keepOpen: true,
+        onClick: async (e) => {
+          if (next.value !== again.value) {
+            error.textContent = 'The new passwords don’t match.';
+            return;
+          }
+          try {
+            await api.post('me/password', { current: current.value, next: next.value });
+            e.target.closest('.overlay')?.remove();
+            toast('Password changed. Other devices were signed out.');
+          } catch (err) {
+            error.textContent = err.message;
+          }
+        },
+      },
+    ],
+  });
 }
