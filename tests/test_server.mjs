@@ -392,3 +392,66 @@ test('proxy: cookies are Secure when the public URL is https', () => {
   assert.equal(secureCookiesFor(fakeReq({}), { ...proxied, publicUrl: null }), false);
   assert.equal(secureCookiesFor(fakeReq({ 'x-forwarded-proto': 'https' }), { ...proxied, publicUrl: null }), true);
 });
+
+// ---------- admin account management over HTTP ----------
+
+test('admin api: admins reset passwords and add accounts; others cannot', async () => {
+  const { createServer } = await import('../server/server.mjs');
+  const store = new Store(':memory:');
+  store.createUser({ name: 'sean', pwHash: hashPassword('sean-pass-1'), isAdmin: true });
+  store.createUser({ name: 'devon', pwHash: hashPassword('devon-old-1') });
+  const cfg = {
+    puzzlesDir: path.join(here, 'fixtures'), sessionDays: 30, trustProxy: false,
+    clientIpHeader: null, secureCookies: false, publicUrl: null,
+  };
+  const { server } = createServer(cfg, { store, puzzles: { model: async () => null }, hub: new Hub({ store, puzzles: {}, log: quiet }) });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}/api/`;
+  const call = async (method, p, body, cookie) => {
+    const r = await fetch(base + p, {
+      method,
+      headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(cookie ? { Cookie: cookie } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return { status: r.status, json: await r.json(), cookie: r.headers.get('set-cookie')?.split(';')[0] };
+  };
+  const login = (name, password) => call('POST', 'login', { name, password });
+  try {
+    const admin = (await login('sean', 'sean-pass-1')).cookie;
+    const devonOld = await login('devon', 'devon-old-1');
+    assert.equal(devonOld.status, 200);
+
+    // non-admins are refused
+    assert.equal((await call('GET', 'admin/users', null, devonOld.cookie)).status, 403);
+    assert.equal((await call('POST', 'admin/users/sean/password', {}, devonOld.cookie)).status, 403);
+
+    // temporary password: returned once, old password and sessions gone
+    const reset = await call('POST', 'admin/users/devon/password', {}, admin);
+    assert.equal(reset.status, 200);
+    assert.match(reset.json.password, /^[a-z2-9]{4}(-[a-z2-9]{4}){3}$/);
+    assert.equal((await login('devon', 'devon-old-1')).status, 401);
+    assert.equal((await call('GET', 'me', null, devonOld.cookie)).status, 401, 'signed out everywhere');
+    assert.equal((await login('devon', reset.json.password)).status, 200);
+
+    // chosen password, validated
+    assert.equal((await call('POST', 'admin/users/devon/password', { password: 'short' }, admin)).status, 400);
+    const chosen = await call('POST', 'admin/users/devon/password', { password: 'devon-new-22' }, admin);
+    assert.equal(chosen.json.password, undefined, 'a chosen password is not echoed back');
+    assert.equal((await login('devon', 'devon-new-22')).status, 200);
+
+    // own password goes through the account menu instead
+    assert.equal((await call('POST', 'admin/users/sean/password', {}, admin)).status, 400);
+    assert.equal((await call('POST', 'admin/users/nobody/password', {}, admin)).status, 404);
+
+    // add an account
+    const added = await call('POST', 'admin/users', { name: 'tom', display_name: 'Tom' }, admin);
+    assert.equal(added.status, 201);
+    assert.equal((await login('tom', added.json.password)).status, 200);
+    assert.equal((await call('POST', 'admin/users', { name: 'tom' }, admin)).status, 409);
+    assert.equal((await call('POST', 'admin/users', { name: 'Bad Name!' }, admin)).status, 400);
+    const list = await call('GET', 'admin/users', null, admin);
+    assert.deepEqual(list.json.users.map((u) => u.name), ['devon', 'sean', 'tom']);
+  } finally {
+    server.close();
+  }
+});

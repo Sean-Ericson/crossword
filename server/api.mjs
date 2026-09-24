@@ -9,6 +9,7 @@ import {
   verifyPassword,
   hashPassword,
   validatePassword,
+  tempPassword,
   startSession,
   sessionCookie,
   clearedCookie,
@@ -102,6 +103,20 @@ export function originAllowed(req, cfg) {
 export function makeApi(ctx) {
   const { cfg, store, hub, puzzles, limiter } = ctx;
   const secureFor = (req) => secureCookiesFor(req, cfg);
+
+  const requireAdmin = (user) => {
+    if (!user?.is_admin) throw new HttpError(403, 'Only admins can do that.');
+  };
+
+  /** A chosen password (validated) or a fresh temporary one. */
+  const passwordFromBody = (body) => {
+    if (body.password == null || body.password === '') return { password: tempPassword(), generated: true };
+    const problem = validatePassword(body.password);
+    if (problem) throw new HttpError(400, problem);
+    return { password: body.password, generated: false };
+  };
+
+  const adminView = (u) => ({ ...publicUser(u), created_at: u.created_at });
 
   const userByNameOr404 = (name) => {
     const u = store.userByName(String(name || ''));
@@ -239,6 +254,46 @@ export function makeApi(ctx) {
       }
       const result = await puzzles.fetch(puzzleId);
       send(res, 200, result);
+    }],
+
+    // ----- admin: manage accounts from the website -----
+
+    ['GET', /^\/api\/admin\/users$/, async (req, res, _p, user) => {
+      requireAdmin(user);
+      send(res, 200, { users: store.listUsers().map(adminView) });
+    }],
+
+    ['POST', /^\/api\/admin\/users$/, async (req, res, _p, user) => {
+      requireAdmin(user);
+      const body = await readJson(req, 10_000);
+      const name = String(body.name || '').trim().toLowerCase();
+      if (store.userByName(name)) throw new HttpError(409, `“${name}” already exists.`);
+      const { password, generated } = passwordFromBody(body);
+      let created;
+      try {
+        created = store.createUser({
+          name,
+          displayName: String(body.display_name || '').trim() || name,
+          pwHash: hashPassword(password),
+          isAdmin: !!body.is_admin,
+        });
+      } catch (err) {
+        throw new HttpError(400, err.message);
+      }
+      ctx.log.info?.(`admin ${user.name} created account ${name}`);
+      send(res, 201, { user: adminView(created), ...(generated ? { password } : {}) });
+    }],
+
+    ['POST', /^\/api\/admin\/users\/([a-z0-9-]+)\/password$/, async (req, res, [name], user) => {
+      requireAdmin(user);
+      const target = userByNameOr404(name);
+      if (target.id === user.id) throw new HttpError(400, 'Use “Change password” in your account menu for your own.');
+      const body = await readJson(req, 10_000);
+      const { password, generated } = passwordFromBody(body);
+      store.setPassword(target.id, hashPassword(password)); // also signs them out everywhere
+      limiter.succeed([`user:${target.name}`]); // a fresh password gets a fresh set of tries
+      ctx.log.info?.(`admin ${user.name} reset the password for ${target.name}`);
+      send(res, 200, { ok: true, ...(generated ? { password } : {}) });
     }],
 
     // One-time upload of progress saved in this browser before the move to

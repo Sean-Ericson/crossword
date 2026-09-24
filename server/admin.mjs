@@ -13,10 +13,9 @@
  */
 
 import path from 'node:path';
-import { randomBytes } from 'node:crypto';
 import { loadConfig } from './config.mjs';
 import { Store } from './db.mjs';
-import { hashPassword, validatePassword } from './auth.mjs';
+import { hashPassword, validatePassword, tempPassword } from './auth.mjs';
 
 function usage(msg) {
   if (msg) console.error(msg + '\n');
@@ -32,18 +31,6 @@ function usage(msg) {
 function option(args, flag) {
   const i = args.indexOf(flag);
   return i >= 0 ? args[i + 1] : undefined;
-}
-
-function tempPassword() {
-  // 4 groups of 4 unambiguous chars: easy to read out, ~80 bits
-  const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
-  const bytes = randomBytes(16);
-  let out = '';
-  for (let i = 0; i < 16; i++) {
-    out += alphabet[bytes[i] % alphabet.length];
-    if (i % 4 === 3 && i < 15) out += '-';
-  }
-  return out;
 }
 
 function passwordFrom(args) {

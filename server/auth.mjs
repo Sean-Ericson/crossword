@@ -23,6 +23,18 @@ export function verifyPassword(password, stored) {
   return timingSafeEqual(expected, actual);
 }
 
+/** Temporary password: 4 groups of 4 unambiguous characters (~80 bits), easy to read out. */
+export function tempPassword() {
+  const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
+  const bytes = randomBytes(16);
+  let out = '';
+  for (let i = 0; i < 16; i++) {
+    out += alphabet[bytes[i] % alphabet.length];
+    if (i % 4 === 3 && i < 15) out += '-';
+  }
+  return out;
+}
+
 export function validatePassword(password) {
   if (typeof password !== 'string' || password.length < 8) return 'Passwords need at least 8 characters.';
   if (password.length > 200) return 'That password is too long.';
