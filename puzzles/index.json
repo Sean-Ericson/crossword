@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-24T00:15:51Z",
+  "generated_at": "2026-09-24T05:25:25Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-24",
+      "file": "puzzles/mini-2026-09-24.puz",
+      "type": "mini",
+      "date": "2026-09-24",
+      "title": "NY Times, Thursday, September 24, 2026",
+      "author": "Christina Iverson / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-24",
+      "file": "puzzles/midi-2026-09-24.puz",
+      "type": "midi",
+      "date": "2026-09-24",
+      "title": "NY Times, Thursday, September 24, 2026 ON TRACK",
+      "author": "Aaron Gee and Avery Gee Katz / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-09-24",
+      "file": "puzzles/2026-09-24.puz",
+      "type": "daily",
+      "date": "2026-09-24",
+      "title": "Times, Thursday, September 24, 2026",
+      "author": "Jeff Stillman / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-09-23",
       "file": "puzzles/mini-2026-09-23.puz",
