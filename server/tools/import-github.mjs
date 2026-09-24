@@ -4,7 +4,7 @@
  *
  *   node server/tools/import-github.mjs [--repo owner/name | --dir PATH]
  *        [--coop-profile co-op --coop-members sean,devon,kam]
- *        [--include-guest] [--dry-run]
+ *        [--include-guest] [--no-fetch] [--dry-run]
  *
  * --repo  read through the GitHub API with the `gh` CLI (default
  *         Sean-Ericson/crossword-data); --dir reads a local clone instead.
@@ -16,6 +16,11 @@
  * temporary password), imports progress/<yyyy>/<id>.json as the user's solo
  * solve (merged with anything already there, same rules as ever), and
  * stats.json into the solo solve log. Safe to re-run.
+ *
+ * Progress for a puzzle that isn't in puzzles/ yet is downloaded from NYT
+ * first (the same on-demand fetch the site uses), so nobody's grids are
+ * dropped; --no-fetch skips that, and anything that still can't be had is
+ * listed at the end.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -89,6 +94,26 @@ async function main() {
   const source = dir ? dirSource(dir) : githubSource(repo);
   const store = new Store(path.join(cfg.dataDir, 'crossword.db'));
   const puzzles = new Puzzles(cfg, { log: {} });
+  const noFetch = has('--no-fetch');
+  const unavailable = []; // [user, puzzleId, why]
+
+  /**
+   * The puzzle for a progress record, downloading it first if it's not in
+   * the archive. -> {id, model} (id differs when a monthly bonus is archived
+   * under the day it actually ran), or null.
+   */
+  async function puzzleFor(puzzleId) {
+    const model = await puzzles.model(puzzleId);
+    if (model) return { id: puzzleId, model };
+    if (dryRun || noFetch) return null;
+    process.stdout.write(`  fetching ${puzzleId}... `);
+    const result = await puzzles.fetch(puzzleId);
+    console.log(result.status + (result.message ? ` (${result.message})` : ''));
+    if (result.status !== 'done') return null;
+    const id = result.id || puzzleId;
+    const fetched = await puzzles.model(id);
+    return fetched ? { id, model: fetched } : null;
+  }
 
   const byUser = new Map();
   for (const p of source.list()) {
@@ -137,12 +162,15 @@ async function main() {
     let skipped = 0;
     for (const f of files.filter((x) => x.startsWith('progress/') && x.endsWith('.json'))) {
       const record = source.read(`users/${name}/${f}`);
-      const puzzleId = record?.puzzle_id || path.basename(f, '.json');
-      const model = await puzzles.model(puzzleId);
+      const requestedId = record?.puzzle_id || path.basename(f, '.json');
+      const found = await puzzleFor(requestedId);
+      const model = found?.model;
       if (!model || !recordFitsModel(record, model)) {
+        unavailable.push([name, requestedId, model ? 'grid size does not match the puzzle file' : 'puzzle not in the archive']);
         skipped++;
         continue;
       }
+      const puzzleId = found.id;
       if (dryRun) {
         isCoop ? coop++ : solo++;
         continue;
@@ -151,10 +179,10 @@ async function main() {
         const sameMembers = (s) => [...s.members].sort().join() === [...coopMembers].sort().join();
         const exists = store.solvesForUser(memberIds[0], puzzleId).some((s) => s.kind === 'coop' && sameMembers(s));
         if (exists) continue;
-        store.createSolve({ puzzleId, kind: 'coop', createdBy: memberIds[0], memberIds, record: { ...record, user: 'coop' } });
+        store.createSolve({ puzzleId, kind: 'coop', createdBy: memberIds[0], memberIds, record: { ...record, user: 'coop', puzzle_id: puzzleId } });
         coop++;
       } else {
-        const incoming = { ...record, user: name };
+        const incoming = { ...record, user: name, puzzle_id: puzzleId };
         const existing = store.soloSolve(owner.id, puzzleId);
         if (!existing) {
           store.createSolve({ puzzleId, kind: 'solo', ownerId: owner.id, createdBy: owner.id, memberIds: [owner.id], record: incoming });
@@ -181,7 +209,7 @@ async function main() {
     console.log(
       `${name}${isCoop ? ` -> co-op (${coopMembers.join(', ')})` : ''}: ` +
         `${isCoop ? `${coop} co-op solves` : `${solo} puzzles, ${solves} solves logged`}` +
-        (skipped ? `, ${skipped} skipped (puzzle not in archive)` : '')
+        (skipped ? `, ${skipped} skipped (listed below)` : '')
     );
   }
 
@@ -190,6 +218,11 @@ async function main() {
     `\n${dryRun ? '[dry run] would import' : 'imported'} ${totals.solo} solo puzzles, ${totals.coop} co-op solves, ${totals.solves} logged solves` +
       (totals.skipped ? `; skipped ${totals.skipped}` : '')
   );
+  if (unavailable.length) {
+    console.log('\nProgress not imported:');
+    for (const [user, id, why] of unavailable) console.log(`  ${user.padEnd(12)} ${id.padEnd(20)} ${why}`);
+    if (dryRun) console.log('  (a real run downloads missing puzzles first, unless --no-fetch)');
+  }
   if (created.length) {
     console.log('\nNew accounts (share these privately; they can change them after signing in):');
     for (const [name, pw] of created) console.log(`  ${name.padEnd(20)} ${pw}`);
