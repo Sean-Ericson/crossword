@@ -2,8 +2,9 @@
  * server.mjs — the self-hosted crossword site: static pages, the REST API
  * (api.mjs), and live solves over WebSocket (/ws, rooms.mjs).
  *
- * Meant to run behind a reverse proxy (Caddy, see deploy/) that terminates
- * HTTPS; it listens on 127.0.0.1 by default.
+ * Meant to sit behind Cloudflare (or another proxy) that terminates HTTPS
+ * and forwards plain HTTP here; see DEPLOY.md. Listens on 127.0.0.1 unless
+ * config says otherwise.
  *
  *   npm start                       (or: node server/server.mjs)
  *   node server/admin.mjs add-user <name>   to create accounts
@@ -21,7 +22,7 @@ import { Store } from './db.mjs';
 import { LoginLimiter, userFromRequest } from './auth.mjs';
 import { Puzzles, scheduleDaily } from './puzzles.mjs';
 import { Hub } from './rooms.mjs';
-import { makeApi } from './api.mjs';
+import { makeApi, originAllowed } from './api.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -139,15 +140,7 @@ export function createServer(cfg, { store, puzzles, hub } = {}) {
   server.on('upgrade', (req, socket, head) => {
     const url = new URL(req.url, 'http://local');
     const user = url.pathname === '/ws' ? userFromRequest(store, req) : null;
-    // Browsers always send Origin on WebSocket requests; refuse other sites
-    // so a page elsewhere can't ride a visitor's session cookie.
-    const origin = req.headers.origin;
-    let sameOrigin = false;
-    try {
-      sameOrigin = !!origin && new URL(origin).host === req.headers.host;
-    } catch {
-      sameOrigin = false;
-    }
+    const sameOrigin = originAllowed(req, cfg);
     if (!user || !sameOrigin) {
       socket.write(`HTTP/1.1 ${user ? 403 : 401} ${user ? 'Forbidden' : 'Unauthorized'}\r\nConnection: close\r\n\r\n`);
       socket.destroy();
@@ -226,7 +219,11 @@ async function main() {
   }
 
   server.listen(cfg.port, cfg.host, () => {
-    log.info(`crossword server on http://${cfg.host}:${cfg.port}  (data: ${cfg.dataDir})`);
+    log.info(
+      `crossword server on http://${cfg.host}:${cfg.port}` +
+        (cfg.publicUrl ? `, published as ${cfg.publicUrl}` : '') +
+        `  (data: ${cfg.dataDir})`
+    );
   });
 
   const shutdown = () => {

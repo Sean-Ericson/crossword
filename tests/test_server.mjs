@@ -364,3 +364,31 @@ test('engine: deferCompletion leaves solving to the server', () => {
   assert.equal(record.completed, true);
   assert.equal(full.length, 1);
 });
+
+// ---------- behind Cloudflare ----------
+
+const { clientIp, originAllowed, secureCookiesFor } = await import('../server/api.mjs');
+const fakeReq = (headers, remote = '192.168.1.20') => ({ headers, socket: { remoteAddress: remote } });
+const proxied = { trustProxy: true, clientIpHeader: 'cf-connecting-ip', secureCookies: 'auto', publicUrl: 'https://crossword.ho.house' };
+
+test('proxy: visitor IP from CF-Connecting-IP, else X-Forwarded-For, else socket', () => {
+  assert.equal(clientIp(fakeReq({ 'cf-connecting-ip': '203.0.113.9', 'x-forwarded-for': '1.1.1.1' }), proxied), '203.0.113.9');
+  assert.equal(clientIp(fakeReq({ 'x-forwarded-for': 'spoofed, 198.51.100.4' }), proxied), '198.51.100.4');
+  assert.equal(clientIp(fakeReq({}), proxied), '192.168.1.20');
+  assert.equal(clientIp(fakeReq({ 'cf-connecting-ip': '203.0.113.9' }), { ...proxied, trustProxy: false }), '192.168.1.20');
+});
+
+test('proxy: WebSocket origin accepted for publicUrl even when Host is rewritten', () => {
+  const origin = 'https://crossword.ho.house';
+  assert.ok(originAllowed(fakeReq({ origin, host: '192.168.1.50:8080' }), proxied));
+  assert.ok(originAllowed(fakeReq({ origin: 'http://127.0.0.1:8080', host: '127.0.0.1:8080' }), proxied));
+  assert.ok(!originAllowed(fakeReq({ origin: 'https://evil.example', host: '192.168.1.50:8080' }), proxied));
+  assert.ok(!originAllowed(fakeReq({ host: '192.168.1.50:8080' }), proxied), 'no Origin, no entry');
+  assert.ok(!originAllowed(fakeReq({ origin, host: '192.168.1.50:8080' }), { ...proxied, publicUrl: null }));
+});
+
+test('proxy: cookies are Secure when the public URL is https', () => {
+  assert.equal(secureCookiesFor(fakeReq({}), proxied), true);
+  assert.equal(secureCookiesFor(fakeReq({}), { ...proxied, publicUrl: null }), false);
+  assert.equal(secureCookiesFor(fakeReq({ 'x-forwarded-proto': 'https' }), { ...proxied, publicUrl: null }), true);
+});

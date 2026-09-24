@@ -7,6 +7,5 @@ node_modules/
 # server state and local settings (see DEPLOY.md)
 server/data/
 server/config.json
-deploy/deploy.env
 logs/
 DataPassword.txt

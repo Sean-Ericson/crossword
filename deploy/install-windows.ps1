@@ -1,25 +1,33 @@
 # install-windows.ps1 - run the crossword site on this Windows PC.
 #
-# Registers scheduled tasks for the current user:
-#   "Crossword server"  - node server\server.mjs, at logon, restarted on failure
-#   "Crossword Caddy"   - HTTPS front door (deploy\Caddyfile), at logon
-#   "Crossword DuckDNS" - keeps the DuckDNS name pointed here, every 5 minutes
-# and removes the GitHub-era tasks ("Crossword daily update", "Crossword
-# fetch watcher"), whose jobs the server now does itself.
+# Registers the "Crossword server" scheduled task for the current user
+# (node server\server.mjs, started at logon, restarted if it stops), and
+# removes the GitHub-era tasks ("Crossword daily update", "Crossword fetch
+# watcher"), whose jobs the server now does itself.
 #
-# Prerequisites (see DEPLOY.md): Node 22.13+, `npm install` done, Caddy
-# (winget install CaddyServer.Caddy, or caddy.exe placed in deploy\),
-# deploy\deploy.env filled in, ports 80+443 forwarded to this PC.
+# Run from an *elevated* PowerShell and it also opens the server's port in
+# Windows Firewall, so the Cloudflare tunnel/proxy on the LAN can reach it.
+# Pass -AllowFrom <ip> to accept connections only from that machine
+# (recommended: the roommate's server); the default is the local subnet.
 #
-# Usage (normal PowerShell, in the site folder):
-#   powershell -ExecutionPolicy Bypass -File deploy\install-windows.ps1
-#   ... -Uninstall   to remove the tasks again
+# Prerequisites (see DEPLOY.md): Node 22.13+, `npm install` done,
+# server\config.json with "host": "0.0.0.0" and "publicUrl".
+#
+# Usage (in the site folder):
+#   powershell -ExecutionPolicy Bypass -File deploy\install-windows.ps1 [-AllowFrom 192.168.1.20]
+#   ... -Uninstall   to remove the task and firewall rule again
 
-param([switch]$Uninstall)
+param(
+  [switch]$Uninstall,
+  [string]$AllowFrom = 'LocalSubnet'
+)
 $ErrorActionPreference = 'Stop'
 $deploy = $PSScriptRoot
 $site = Split-Path $deploy -Parent
-$names = 'Crossword server', 'Crossword Caddy', 'Crossword DuckDNS'
+$taskName = 'Crossword server'
+$ruleName = 'Crossword server (Cloudflare proxy)'
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
+  [Security.Principal.WindowsBuiltInRole]::Administrator)
 
 function Remove-Task($name) {
   if (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue) {
@@ -28,50 +36,63 @@ function Remove-Task($name) {
   }
 }
 
+function Remove-Rule {
+  if ($isAdmin -and (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
+    Remove-NetFirewallRule -DisplayName $ruleName
+    Write-Host "removed firewall rule: $ruleName"
+  }
+}
+
 if ($Uninstall) {
-  $names | ForEach-Object { Remove-Task $_ }
+  Remove-Task $taskName
+  Remove-Rule
   return
 }
 
-if (-not (Test-Path (Join-Path $deploy 'deploy.env'))) {
-  throw 'deploy\deploy.env is missing - copy deploy.env.example and fill it in first.'
-}
 if (-not (Test-Path (Join-Path $site 'node_modules\ws'))) {
   throw "Run 'npm install' in $site first."
 }
+$configFile = Join-Path $site 'server\config.json'
+if (-not (Test-Path $configFile)) {
+  throw 'server\config.json is missing - copy server\config.example.json and fill it in first.'
+}
+$config = Get-Content $configFile -Raw | ConvertFrom-Json
+$port = 8080
+if ($null -ne $config.port) { $port = [int]$config.port }
+if ($config.host -ne '0.0.0.0') {
+  Write-Warning "config.json has host '$($config.host)' - the proxy on the LAN can only reach the server with ""host"": ""0.0.0.0""."
+}
 
+# ----- scheduled task -----
 $user = "$env:USERDOMAIN\$env:USERNAME"
 $settings = New-ScheduledTaskSettingsSet `
   -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
   -ExecutionTimeLimit ([TimeSpan]::Zero) `
   -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) `
   -StartWhenAvailable
-$logon = New-ScheduledTaskTrigger -AtLogOn -User $user
-
-function Register($name, $action, $trigger) {
-  Remove-Task $name
-  Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger `
-    -Settings $settings -User $user -RunLevel Limited | Out-Null
-  Write-Host "registered task: $name"
-}
-
 # cmd /c start /min keeps a console from popping up in your face
-Register 'Crossword server' `
-  (New-ScheduledTaskAction -Execute 'cmd.exe' -Argument "/c start `"`" /min `"$deploy\run-server.cmd`"") $logon
-Register 'Crossword Caddy' `
-  (New-ScheduledTaskAction -Execute 'cmd.exe' -Argument "/c start `"`" /min `"$deploy\run-caddy.cmd`"") $logon
-
-$every5 = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5)
-Register 'Crossword DuckDNS' `
-  (New-ScheduledTaskAction -Execute 'powershell.exe' `
-    -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$deploy\duckdns-update.ps1`"") $every5
+$action = New-ScheduledTaskAction -Execute 'cmd.exe' -Argument "/c start `"`" /min `"$deploy\run-server.cmd`""
+Remove-Task $taskName
+Register-ScheduledTask -TaskName $taskName -Action $action `
+  -Trigger (New-ScheduledTaskTrigger -AtLogOn -User $user) `
+  -Settings $settings -User $user -RunLevel Limited | Out-Null
+Write-Host "registered task: $taskName"
 
 # the GitHub-era jobs are the server's now
 Remove-Task 'Crossword daily update'
 Remove-Task 'Crossword fetch watcher'
 
+# ----- firewall -----
+if ($isAdmin) {
+  Remove-Rule
+  New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Action Allow `
+    -Protocol TCP -LocalPort $port -RemoteAddress $AllowFrom | Out-Null
+  Write-Host "firewall: TCP $port open to $AllowFrom"
+} else {
+  Write-Warning ('Not elevated, so the firewall was left alone. To let the proxy reach the server, run as administrator:' +
+    "`n  New-NetFirewallRule -DisplayName '$ruleName' -Direction Inbound -Action Allow -Protocol TCP -LocalPort $port -RemoteAddress $AllowFrom")
+}
+
 Write-Host ''
-Write-Host 'Starting everything now...'
-$names | ForEach-Object { Start-ScheduledTask -TaskName $_ }
-Write-Host 'Done. Logs: logs\server.log and logs\caddy.log.'
-Write-Host 'If Windows asks whether Caddy may accept connections, allow it on private and public networks.'
+Start-ScheduledTask -TaskName $taskName
+Write-Host "Started. Log: logs\server.log. Check http://127.0.0.1:$port from this PC."

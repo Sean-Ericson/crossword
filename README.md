@@ -33,7 +33,8 @@ Run the tests. They need Node 22.13+ and Python 3.9+.
 npm test
 ```
 
-To put the site on the internet (home PC, HTTPS, DuckDNS), see
+To put the site on the internet (home machine behind Cloudflare, published
+as https://crossword.ho.house), see
 **[DEPLOY.md](DEPLOY.md)**.
 
 ## Accounts
@@ -152,7 +153,7 @@ js/                   browser ES modules: parser, model, engine, views, net
 server/               Node server: server.mjs (HTTP + WebSocket), api.mjs,
                       rooms.mjs (live solves), db.mjs (SQLite), auth.mjs,
                       puzzles.mjs, admin.mjs, tools/import-github.mjs
-deploy/               Caddy, DuckDNS, Windows tasks, systemd unit
+deploy/               Windows task installer, systemd unit
 puzzles/              .puz files + generated index.json
 tools/                puzzle download/index scripts (Python)
 tests/                node test runner + Python cross-check

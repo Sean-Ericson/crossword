@@ -55,8 +55,11 @@ async function readJson(req, limit = 2_000_000) {
   }
 }
 
+/** The visitor's address (for the login limiter), as the proxy reports it. */
 export function clientIp(req, cfg) {
   if (cfg.trustProxy) {
+    const direct = cfg.clientIpHeader && req.headers[cfg.clientIpHeader.toLowerCase()];
+    if (direct) return String(direct).trim();
     const fwd = req.headers['x-forwarded-for'];
     // the proxy appends the address it saw; earlier entries are client-supplied
     if (fwd) return fwd.split(',').at(-1).trim();
@@ -68,12 +71,37 @@ export function isHttps(req, cfg) {
   return cfg.trustProxy ? req.headers['x-forwarded-proto'] === 'https' : !!req.socket.encrypted;
 }
 
+export function secureCookiesFor(req, cfg) {
+  if (cfg.secureCookies !== 'auto') return !!cfg.secureCookies;
+  if (cfg.publicUrl?.startsWith('https:')) return true;
+  return isHttps(req, cfg);
+}
+
+/**
+ * Is a WebSocket upgrade coming from one of our own pages? Browsers always
+ * send Origin on WebSocket requests; refusing other sites keeps a page
+ * elsewhere from riding a visitor's session cookie. Accepted: the Host the
+ * request arrived with, the proxy's X-Forwarded-Host, and publicUrl.
+ */
+export function originAllowed(req, cfg) {
+  let host;
+  try {
+    host = new URL(req.headers.origin).host;
+  } catch {
+    return false;
+  }
+  const allowed = [req.headers.host];
+  if (cfg.trustProxy && req.headers['x-forwarded-host']) allowed.push(req.headers['x-forwarded-host']);
+  if (cfg.publicUrl) allowed.push(new URL(cfg.publicUrl).host);
+  return allowed.includes(host);
+}
+
 /**
  * @param {{cfg, store, hub, puzzles, limiter, log}} ctx
  */
 export function makeApi(ctx) {
   const { cfg, store, hub, puzzles, limiter } = ctx;
-  const secureFor = (req) => (cfg.secureCookies === 'auto' ? isHttps(req, cfg) : !!cfg.secureCookies);
+  const secureFor = (req) => secureCookiesFor(req, cfg);
 
   const userByNameOr404 = (name) => {
     const u = store.userByName(String(name || ''));

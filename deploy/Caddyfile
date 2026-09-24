@@ -1,9 +1,0 @@
-# Caddy: HTTPS in front of the crossword server.
-# The domain comes from XWORD_DOMAIN (deploy/deploy.env); Caddy obtains and
-# renews its certificate by itself. Needs ports 80 and 443 forwarded here.
-# WebSockets (/ws) are proxied without any extra configuration.
-
-{$XWORD_DOMAIN} {
-	encode zstd gzip
-	reverse_proxy 127.0.0.1:8080
-}

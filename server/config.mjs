@@ -13,10 +13,15 @@ export const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
 export const SITE_DIR = path.dirname(SERVER_DIR);
 
 const DEFAULTS = {
-  // Listen on loopback only: Caddy (or another reverse proxy) is the one
-  // thing exposed to the internet and forwards here.
+  // Loopback by default (local testing). When the site is published
+  // through Cloudflare, set "0.0.0.0" so the tunnel/proxy on the LAN can
+  // reach it; see DEPLOY.md.
   host: '127.0.0.1',
   port: 8080,
+  // The address people use, e.g. "https://crossword.ho.house". When set:
+  // cookies are marked Secure if it's https, and WebSocket connections
+  // from pages served there are accepted even if the proxy rewrites Host.
+  publicUrl: null,
   dataDir: path.join(SERVER_DIR, 'data'),
   puzzlesDir: path.join(SITE_DIR, 'puzzles'),
   // Python + nytxw_puz do the NYT downloading (tools/*.py).
@@ -31,9 +36,13 @@ const DEFAULTS = {
   backupAt: '04:00',
   keepBackups: 14,
   sessionDays: 30,
-  // Trust X-Forwarded-For / -Proto from the reverse proxy in front of us.
+  // Trust forwarding headers from the proxy in front of us: the real
+  // client address comes from `clientIpHeader` (Cloudflare sets
+  // CF-Connecting-IP), else X-Forwarded-For; https from X-Forwarded-Proto.
   trustProxy: true,
-  // 'auto' = Secure cookies whenever the request came in over https.
+  clientIpHeader: 'cf-connecting-ip',
+  // 'auto' = Secure cookies when publicUrl is https, or the request came in
+  // over https.
   secureCookies: 'auto',
 };
 
@@ -57,6 +66,8 @@ export function loadConfig(overrides = {}) {
   if (process.env.XWORD_PORT) cfg.port = Number(process.env.XWORD_PORT);
   if (process.env.XWORD_HOST) cfg.host = process.env.XWORD_HOST;
   if (process.env.XWORD_DATA_DIR) cfg.dataDir = process.env.XWORD_DATA_DIR;
+  if (process.env.XWORD_PUBLIC_URL) cfg.publicUrl = process.env.XWORD_PUBLIC_URL;
+  if (cfg.publicUrl) cfg.publicUrl = new URL(cfg.publicUrl).origin; // validate + normalize
   if (!cfg.python) cfg.python = detectPython();
   // relative paths in config.json are relative to the site folder
   for (const key of ['dataDir', 'puzzlesDir', 'nytxwPath']) {

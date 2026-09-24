@@ -1,5 +1,7 @@
 {
+  "host": "0.0.0.0",
   "port": 8080,
+  "publicUrl": "https://crossword.ho.house",
   "nytBrowser": "Firefox",
   "dailyUpdateAt": "23:30",
   "backupAt": "04:00",
