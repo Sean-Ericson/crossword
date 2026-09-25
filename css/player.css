@@ -511,7 +511,13 @@ body.player-page {
   .play-area {
     flex-direction: column;
     align-items: center;
+    justify-content: flex-start; /* centered overflow would clip the top when it scrolls */
     height: auto;
+  }
+
+  .board-col,
+  .clue-lists {
+    flex-shrink: 0;
   }
 
   .board-col {
@@ -651,4 +657,209 @@ body.player-page {
   left: 0;
   right: auto;
   min-width: 240px;
+}
+
+/* ---------- phones: compact header, toolbar and lists ---------- */
+
+@media (max-width: 600px) {
+  /* one line: date and byline (the title is always "The Crossword") */
+  .puzzle-header {
+    gap: 10px;
+    padding: 5px 12px 0;
+    white-space: nowrap;
+  }
+
+  .puzzle-header .puzzle-title {
+    display: none;
+  }
+
+  .puzzle-header .puzzle-date,
+  .puzzle-header .puzzle-theme {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .puzzle-header .puzzle-byline {
+    font-size: 12px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .toolbar {
+    flex-wrap: wrap; /* only if co-op presence chips crowd it */
+    gap: 0;
+    padding: 2px 6px;
+  }
+
+  .toolbar .timer-box {
+    min-width: 0;
+    padding: 6px;
+  }
+
+  .toolbar .timer-box .pause-icon {
+    display: none; /* tapping the time still pauses */
+  }
+
+  .tool-btn {
+    padding: 7px 5px;
+    font-size: 13px;
+  }
+
+  .tool-btn .btn-label {
+    display: none;
+  }
+
+  /* just the green dot when all is well; "Reconnecting…" stays spelled out */
+  .live-dot.live {
+    font-size: 0;
+  }
+
+  .live-dot.live::before {
+    font-size: 12px;
+    margin-right: 0;
+  }
+
+  .play-area {
+    padding: 8px 8px 0;
+    gap: 14px;
+  }
+
+  .clue-lists {
+    min-width: 0;
+    gap: 12px;
+  }
+
+  .clue-list {
+    min-width: 0;
+  }
+
+  .clue-item {
+    font-size: 13px;
+  }
+}
+
+/* ---------- touch devices: on-screen keyboard docked at the bottom ---------- */
+
+@media (max-width: 600px) {
+  body.touch {
+    --header-height: 44px;
+  }
+}
+
+/* stacked layout: the grid gets the play area's full height, so it fits
+   between the toolbar and the keyboard; the clue lists scroll up below it */
+@media (max-width: 1020px) {
+  body.touch:not(.solved) .board-col {
+    height: 100%;
+  }
+}
+
+.clue-bar-main {
+  cursor: pointer;
+}
+
+body.player-page.touch {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body.touch .site-header,
+body.touch .puzzle-header,
+body.touch .toolbar {
+  flex: 0 0 auto;
+}
+
+/* the play area scrolls between the toolbar and the keyboard */
+body.touch .play-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* the keyboard has its own Rebus key */
+body.touch #rebus-btn {
+  display: none;
+}
+
+body.touch .toast-host {
+  bottom: auto;
+  top: calc(var(--header-height) + 12px);
+}
+
+.kb-dock {
+  flex: 0 0 auto;
+  background: #e8eaed;
+  border-top: 1px solid var(--color-border);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+/* nothing left to type once it's solved; the clue bar stays for browsing */
+body.solved .touch-kb {
+  display: none;
+}
+
+/* the clue bar moves into the dock, full width (overrides the board-width sync) */
+.kb-dock .clue-bar {
+  width: auto !important;
+  max-width: 720px;
+  margin: 0 auto 6px;
+  min-height: 40px;
+}
+
+.touch-kb {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.touch-kb-row {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.touch-kb-key {
+  flex: 1 1 0;
+  max-width: 64px;
+  height: 42px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: 19px;
+  font-weight: 500;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-kb-key.wide {
+  flex-grow: 1.6;
+  max-width: 100px;
+  font-size: 14px;
+  background: #d5d8dc;
+}
+
+.touch-kb-key.down {
+  background: #c4c8cd;
+}
+
+@media (max-height: 640px) {
+  .touch-kb-key {
+    height: 38px;
+  }
 }

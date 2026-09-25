@@ -11,9 +11,10 @@ export class CluesView {
    *   barEl: HTMLElement, model: import('./model.js').PuzzleModel,
    *   onSelectWord: (word: object) => void,
    *   onBarNav: (delta: number) => void,
+   *   onBarTap?: () => void,
    * }} opts
    */
-  constructor({ acrossEl, downEl, barEl, model, onSelectWord, onBarNav }) {
+  constructor({ acrossEl, downEl, barEl, model, onSelectWord, onBarNav, onBarTap }) {
     this.model = model;
     this.itemsByWordId = new Map();
     this.active = null;
@@ -45,7 +46,7 @@ export class CluesView {
     buildList(acrossEl, 'Across', model.words.A);
     buildList(downEl, 'Down', model.words.D);
 
-    // current-clue bar: ‹ [num+dir  text] ›
+    // current-clue bar: ‹ [num+dir  text] ›  (tapping the text flips direction)
     this.barNum = el('span', { class: 'clue-bar-num' });
     this.barText = el('span', { class: 'clue-bar-text' });
     barEl.append(
@@ -54,7 +55,7 @@ export class CluesView {
         { class: 'clue-bar-nav', 'aria-label': 'Previous clue', onclick: () => onBarNav(-1) },
         '‹'
       ),
-      el('div', { class: 'clue-bar-main' }, [this.barNum, this.barText]),
+      el('div', { class: 'clue-bar-main', onclick: () => onBarTap?.() }, [this.barNum, this.barText]),
       el(
         'button',
         { class: 'clue-bar-nav', 'aria-label': 'Next clue', onclick: () => onBarNav(1) },

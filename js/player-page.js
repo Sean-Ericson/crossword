@@ -21,6 +21,7 @@ import { tryLoadPuzzle, fetchOnDemand, isFetchable } from './fetch-puzzle.js';
 import { loadSettings, saveSettings, SETTING_LABELS } from './settings.js';
 import { loadMe } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
+import { TouchKeyboard, isTouchDevice } from './touch-keyboard.js';
 import {
   el,
   qs,
@@ -116,6 +117,7 @@ async function main() {
     model,
     onSelectWord: (word) => engine.selectWord(word),
     onBarNav: (delta) => engine.nextClue(delta),
+    onBarTap: () => engine.toggleDirection(),
   });
 
   const progressEl = qs('#progress-pct');
@@ -203,6 +205,7 @@ async function main() {
     presence = msg.presence;
     applyTimer(msg.timer);
     gridView.setCompleted(record.completed);
+    document.body.classList.toggle('solved', record.completed); // hides the touch keyboard
     ready = true;
     renderSolveInfo();
     renderPresence();
@@ -588,6 +591,7 @@ async function main() {
       closeOverlay();
       veil(false);
       gridView.setCompleted(true);
+      document.body.classList.add('solved');
       showFinalTime();
       if (settings.playSound) playJingle();
       const partners = isCoop() ? solve.members.filter((m) => m.name !== user).map((m) => m.display_name) : [];
@@ -617,46 +621,56 @@ async function main() {
   });
 
   // ----- keyboard -----
+  // Physical keys and the on-screen keyboard both land here. Returns true
+  // if the key did something.
+  function handleKey(key, shift = false) {
+    if (document.querySelector('.overlay')) return false; // a modal is up
+    if (!ready) return false;
+
+    if (/^[a-zA-Z0-9]$/.test(key)) {
+      if (!record.completed && !active) resumeGame();
+      engine.typeLetter(key);
+    } else if (key === 'Backspace') {
+      engine.backspace();
+    } else if (key === 'Delete') {
+      engine.deleteKey();
+    } else if (key === ' ') {
+      engine.space();
+    } else if (key === 'ArrowLeft') {
+      engine.moveArrow(0, -1);
+    } else if (key === 'ArrowRight') {
+      engine.moveArrow(0, 1);
+    } else if (key === 'ArrowUp') {
+      engine.moveArrow(-1, 0);
+    } else if (key === 'ArrowDown') {
+      engine.moveArrow(1, 0);
+    } else if (key === 'Tab' || key === 'Enter') {
+      engine.nextClue(shift ? -1 : 1);
+    } else if (key === 'Escape' || key === 'Insert') {
+      openRebusInput();
+    } else {
+      return false;
+    }
+    return true;
+  }
+
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const t = e.target;
     if (t.matches?.('input, textarea, select') || t.isContentEditable) return;
-    if (document.querySelector('.overlay')) return; // a modal is up
-    if (!ready) return;
-
-    if (/^[a-zA-Z0-9]$/.test(e.key)) {
-      e.preventDefault();
-      if (!record.completed && !active) resumeGame();
-      engine.typeLetter(e.key);
-    } else if (e.key === 'Backspace') {
-      e.preventDefault();
-      engine.backspace();
-    } else if (e.key === 'Delete') {
-      e.preventDefault();
-      engine.deleteKey();
-    } else if (e.key === ' ') {
-      e.preventDefault();
-      engine.space();
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      engine.moveArrow(0, -1);
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      engine.moveArrow(0, 1);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      engine.moveArrow(-1, 0);
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      engine.moveArrow(1, 0);
-    } else if (e.key === 'Tab' || e.key === 'Enter') {
-      e.preventDefault();
-      engine.nextClue(e.shiftKey ? -1 : 1);
-    } else if (e.key === 'Escape' || e.key === 'Insert') {
-      e.preventDefault();
-      openRebusInput();
-    }
+    if (handleKey(e.key, e.shiftKey)) e.preventDefault();
   });
+
+  // Phones and tablets: tapping a square can't raise the system keyboard
+  // (the grid isn't a text field), so dock our own under the play area,
+  // with the current clue just above it.
+  if (isTouchDevice()) {
+    document.body.classList.add('touch');
+    const dock = el('div', { class: 'kb-dock' });
+    dock.append(qs('#clue-bar'));
+    new TouchKeyboard(dock, { onKey: (key) => handleKey(key) });
+    document.body.append(dock);
+  }
 
   // ----- rebus input -----
   let rebusInput = null;

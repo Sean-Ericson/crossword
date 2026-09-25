@@ -32,6 +32,7 @@ and the switch-over. This file covers what you need to change code safely.
 | `js/net.js` | WebSocket client (`LiveSolve`): optimistic edits, a pending-op queue, and replay on reconnect. **The wire protocol is documented at the top of this file.** |
 | `js/player-page.js` | Player controller: wires the engine, views, net, presence, remote cursors, the solo/co-op menu, and the shared timer |
 | `js/grid-view.js`, `js/clues-view.js` | DOM rendering. Remote cursors are drawn as child elements (`setRemoteCursor`), kept apart from the local `sel-*` classes |
+| `js/touch-keyboard.js` | On-screen keyboard, shown only on touch-first devices (`body.touch`). Keys go through the same `handleKey` in `player-page.js` as physical keys. The clue bar is moved into its dock |
 | `js/state.js` | Progress record schema, `mergeProgress` (newest `updated_at` wins, max elapsed), and `mergeStats` (earliest solve wins). Shared by client and server |
 | `js/api.js`, `js/profiles.js`, `js/profile-ui.js` | REST client (a 401 redirects to login), the current user (`loadMe()` must run first on every page), and the account menu |
 | `server/server.mjs` | HTTP: static allowlist (pages, `css/`, `js/`, and `puzzles/` only when signed in), `/ws` upgrade with an origin check, schedulers |

@@ -4,7 +4,9 @@ A self-hosted, NYT-style crossword site with **real-time co-op**. It plays
 `.puz` files with the full NYT Games experience: keyboard behavior,
 check/reveal/autocheck, pencil mode, rebus entry, a timer with pause, and
 clean-solve gold stars. It also has a puzzle archive with a calendar, solve
-statistics, and comparisons between users.
+statistics, and comparisons between users. On phones and tablets the puzzle
+page docks an on-screen keyboard (with the current clue above it) under the
+grid, since tapping a square can't raise the system keyboard.
 
 Co-op works like Google Docs. Any group of people can open a shared solve of
 a puzzle, and each person sees the others' letters as they type, their
