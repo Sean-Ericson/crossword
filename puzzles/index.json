@@ -1,7 +1,27 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-22T05:08:43Z",
+  "generated_at": "2026-09-24T20:44:22Z",
   "puzzles": [
+    {
+      "id": "2026-09-24",
+      "file": "puzzles/2026-09-24.puz",
+      "type": "daily",
+      "date": "2026-09-24",
+      "title": "Times, Thursday, September 24, 2026",
+      "author": "Jeff Stillman / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2026-09-23",
+      "file": "puzzles/2026-09-23.puz",
+      "type": "daily",
+      "date": "2026-09-23",
+      "title": "NY Times, Wednesday, September 23, 2026",
+      "author": "Dana Edwards / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-09-22",
       "file": "puzzles/mini-2026-09-22.puz",
@@ -2083,6 +2103,16 @@
       "height": 15
     },
     {
+      "id": "2026-01-07",
+      "file": "puzzles/2026-01-07.puz",
+      "type": "daily",
+      "date": "2026-01-07",
+      "title": "NY Times, Wednesday, January 7, 2026",
+      "author": "Adrianne Baik / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
       "id": "bonus-2026-01-01",
       "file": "puzzles/bonus-2026-01-01.puz",
       "type": "bonus",
@@ -2239,6 +2269,26 @@
       "date": "2016-08-18",
       "title": "NY Times, Thursday, August 18, 2016",
       "author": "Jeff Chen, Parker Lewis / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "bonus-2015-08-01",
+      "file": "puzzles/bonus-2015-08-01.puz",
+      "type": "bonus",
+      "date": "2015-08-01",
+      "title": "NY Times, Saturday, August 1, 2015 INDIAN INDEPENDENCE DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "bonus-2015-01-01",
+      "file": "puzzles/bonus-2015-01-01.puz",
+      "type": "bonus",
+      "date": "2015-01-01",
+      "title": "NY Times, Thursday, January 1, 2015 NATIONAL NOTHING DAY",
+      "author": "Fred Piscop",
       "width": 15,
       "height": 15
     },
