@@ -2,7 +2,7 @@
 
 The site runs on an always-on computer at home, either this Windows PC or a
 Linux box, and is published through Cloudflare as
-**https://crossword.ho.house**:
+**https://cross.ho.house**:
 
 ```
 browser ──https──▶ Cloudflare ──▶ roommate's tunnel/proxy (LAN) ──http──▶ crossword server :8080 (this machine, fixed LAN IP)
@@ -27,7 +27,7 @@ puzzle download and the nightly database backup itself.
 - **WebSockets** must be allowed. The live co-op sync uses `/ws`. Cloudflare
   and cloudflared allow them by default; if there's an nginx-style proxy
   in between, it needs the `Upgrade`/`Connection` headers passed through.
-- **Headers:** keep `Host` as `crossword.ho.house` if he can. Either way,
+- **Headers:** keep `Host` as `cross.ho.house` if he can. Either way,
   pass `X-Forwarded-Proto` and `CF-Connecting-IP` through. Cloudflare and
   cloudflared set both.
 - **Timeouts:** the server pings every 30 seconds, so Cloudflare's 100-second
@@ -75,14 +75,14 @@ The example is already set up for this deployment:
 {
   "host": "0.0.0.0",
   "port": 8080,
-  "publicUrl": "https://crossword.ho.house"
+  "publicUrl": "https://cross.ho.house"
 }
 ```
 
 - `host: "0.0.0.0"` lets the proxy reach the server over the LAN. The
   default, `127.0.0.1`, only accepts connections from this machine.
 - `publicUrl` marks sign-in cookies Secure, and it lets WebSocket
-  connections from pages on crossword.ho.house through even if the proxy
+  connections from pages on cross.ho.house through even if the proxy
   rewrites `Host`.
 
 Other settings you might change:
@@ -177,7 +177,7 @@ at all.
 - On this machine, open `http://127.0.0.1:8080`. You should get the sign-in
   page.
 - From a phone **on cellular** (not your home Wi-Fi), open
-  `https://crossword.ho.house` and sign in.
+  `https://cross.ho.house` and sign in.
 - Sign in on two devices, start a co-op solve, and type. The letters and
   cursors should show up on the other device immediately, and the header
   should say **● Live**. If it keeps saying *Reconnecting…*, WebSockets
@@ -185,6 +185,82 @@ at all.
 - Reboot the machine and confirm the site comes back by itself.
 - The next day, look for `daily puzzle update` and `backup written` lines
   in the server log. On Linux, use `journalctl -u crossword`.
+
+## Running alongside the old GitHub site (switch-over week)
+
+While both sites are up, the server keeps solo progress and stats in sync
+with the old site's data repo (`crossword-data`), in both directions. Only
+people with the same name on both sites take part. Co-op solves exist only
+on the new site.
+
+### Turn the sync on
+
+Add this to `server/config.json`, then restart the server:
+
+```json
+"githubSync": {
+  "repo": "Sean-Ericson/crossword-data",
+  "branch": "main",
+  "token": "github_pat_…",
+  "intervalSec": 120
+}
+```
+
+The token needs Contents read/write on `crossword-data`. The token the old
+site uses works. If you leave `token` out, the server tries the
+`XWORD_GITHUB_TOKEN` environment variable, then `gh auth token`.
+
+The server log shows `github sync with … every 120s` at startup. After
+that, it logs a `github sync: pulled …, pushed …` line whenever something
+moved.
+
+### What people will see
+
+- **Progress:** the new site picks up changes from the old site within
+  about 2 minutes. The old site picks up changes from the new site the
+  next time that puzzle is opened there.
+- **Conflicts:** if the same puzzle was played on both sites, the more
+  recently edited copy wins. Time spent is never lost. These are the same
+  rules the old site used between devices.
+- **Open puzzles:** a puzzle someone has open on the new site isn't
+  updated from GitHub until they close it.
+
+### Keep new puzzles coming on the old site
+
+The server downloads puzzles for the new site only. The old site gets its
+puzzles by pushing them to GitHub, which its own scheduled tasks did. Run
+those tasks from a separate checkout of `main` during the overlap:
+
+1. Make the checkout next to `nytxw_puz`, so the old tools can find it:
+
+   ```powershell
+   cd <folder that holds crossword-site and nytxw_puz>
+   git clone https://github.com/Sean-Ericson/crossword crossword-old
+   ```
+
+2. Register the old tasks under new names. `install-windows.ps1` deletes
+   the old names, so reusing them would get them removed:
+
+   ```powershell
+   schtasks /create /tn "Crossword old-site daily" /tr "\"$PWD\crossword-old\daily_update.bat\"" /sc daily /st 23:35 /rl limited /f
+   schtasks /create /tn "Crossword old-site fetcher" /tr "\"$PWD\crossword-old\fetch_watch.bat\"" /sc onlogon /f
+   ```
+
+That checkout pushes to GitHub, so it needs git credentials (`gh auth
+login`) and the `.github_token` file described in its `SETUP-SCHEDULED.md`.
+
+### When the week is over
+
+1. Remove `githubSync` from `server/config.json` and restart the server.
+2. Delete the two old-site tasks:
+
+   ```powershell
+   schtasks /delete /tn "Crossword old-site daily" /f
+   schtasks /delete /tn "Crossword old-site fetcher" /f
+   ```
+
+3. Turn off GitHub Pages: repo → Settings → Pages. Then merge `self-host`
+   into `main`.
 
 ## Backups and restore
 

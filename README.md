@@ -34,7 +34,7 @@ npm test
 ```
 
 To put the site on the internet (home machine behind Cloudflare, published
-as https://crossword.ho.house), see
+as https://cross.ho.house), see
 **[DEPLOY.md](DEPLOY.md)**.
 
 ## Accounts
