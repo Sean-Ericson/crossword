@@ -266,3 +266,43 @@ a {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* ---------- "we're moving" notice (js/move-banner.js) ---------- */
+
+.move-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 44px 8px 16px;
+  position: relative;
+  background: #fff4cc;
+  border-bottom: 1px solid #f0d77a;
+  color: #5c4500;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.move-banner a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.move-banner-close {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.move-banner-close:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
