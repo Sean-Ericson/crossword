@@ -1,21 +1,25 @@
-# install-windows.ps1 - run the crossword site on this Windows PC.
+# install-windows.ps1 - run the crossword site on this Windows PC as a
+# background service (a scheduled task).
 #
-# Registers the "Crossword server" scheduled task for the current user
-# (node server\server.mjs, started at logon, restarted if it stops), and
-# removes the GitHub-era tasks ("Crossword daily update", "Crossword fetch
-# watcher"), whose jobs the server now does itself.
+# The "Crossword server" task:
+#   - starts when the PC boots, whether or not anyone logs in, with no window
+#   - runs node.exe directly, so Windows knows it's the task: "End"/Stop in
+#     Task Scheduler stops the server, "Run" starts it
+#   - restarts the server within a minute if it crashes
+#   - logs to logs\server.log (rotated at ~5 MB)
+# It runs as your user account but without storing your password ("S4U"),
+# which means it can't use things unlocked by your Windows login, like
+# `gh auth` or Chrome's cookie store - see DEPLOY.md.
 #
-# Run from an *elevated* PowerShell and it also opens the server's port in
-# Windows Firewall, so the Cloudflare tunnel/proxy on the LAN can reach it.
-# Pass -AllowFrom <ip> to accept connections only from that machine
-# (recommended: the roommate's server); the default is the local subnet.
+# Also opens the server's port in Windows Firewall (so the Cloudflare
+# tunnel/proxy on the LAN can reach it) and removes the GitHub-era tasks.
 #
-# Prerequisites (see DEPLOY.md): Node 22.13+, `npm install` done,
-# server\config.json with "host": "0.0.0.0" and "publicUrl".
-#
-# Usage (in the site folder):
+# Run from an *elevated* PowerShell, in the site folder:
 #   powershell -ExecutionPolicy Bypass -File deploy\install-windows.ps1 [-AllowFrom 192.168.1.20]
 #   ... -Uninstall   to remove the task and firewall rule again
+#
+# Restart after a `git pull` or config change:
+#   Stop-ScheduledTask 'Crossword server'; Start-ScheduledTask 'Crossword server'
 
 param(
   [switch]$Uninstall,
@@ -28,16 +32,20 @@ $taskName = 'Crossword server'
 $ruleName = 'Crossword server (Cloudflare proxy)'
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
   [Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+  throw 'Run this from an elevated PowerShell (right-click PowerShell -> Run as administrator).'
+}
 
 function Remove-Task($name) {
   if (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue) {
+    Stop-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
     Unregister-ScheduledTask -TaskName $name -Confirm:$false
     Write-Host "removed task: $name"
   }
 }
 
 function Remove-Rule {
-  if ($isAdmin -and (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue)) {
+  if (Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue) {
     Remove-NetFirewallRule -DisplayName $ruleName
     Write-Host "removed firewall rule: $ruleName"
   }
@@ -49,6 +57,7 @@ if ($Uninstall) {
   return
 }
 
+# ----- checks -----
 if (-not (Test-Path (Join-Path $site 'node_modules\ws'))) {
   throw "Run 'npm install' in $site first."
 }
@@ -62,37 +71,45 @@ if ($null -ne $config.port) { $port = [int]$config.port }
 if ($config.host -ne '0.0.0.0') {
   Write-Warning "config.json has host '$($config.host)' - the proxy on the LAN can only reach the server with ""host"": ""0.0.0.0""."
 }
+$node = (Get-Command node.exe -ErrorAction SilentlyContinue).Source
+if (-not $node) { $node = Join-Path $env:ProgramFiles 'nodejs\node.exe' }
+if (-not (Test-Path $node)) { throw 'node.exe not found - install Node.js (winget install OpenJS.NodeJS.LTS).' }
+
+# ----- stop whatever is running now (old-style task or a hand-started server) -----
+Remove-Task $taskName
+Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
+  ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
 
 # ----- scheduled task -----
-$user = "$env:USERDOMAIN\$env:USERNAME"
+$action = New-ScheduledTaskAction -Execute $node `
+  -Argument "server\server.mjs --log logs\server.log" -WorkingDirectory $site
+$principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType S4U -RunLevel Limited
 $settings = New-ScheduledTaskSettingsSet `
   -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
   -ExecutionTimeLimit ([TimeSpan]::Zero) `
   -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) `
-  -StartWhenAvailable
-# cmd /c start /min keeps a console from popping up in your face
-$action = New-ScheduledTaskAction -Execute 'cmd.exe' -Argument "/c start `"`" /min `"$deploy\run-server.cmd`""
-Remove-Task $taskName
-Register-ScheduledTask -TaskName $taskName -Action $action `
-  -Trigger (New-ScheduledTaskTrigger -AtLogOn -User $user) `
-  -Settings $settings -User $user -RunLevel Limited | Out-Null
-Write-Host "registered task: $taskName"
+  -MultipleInstances IgnoreNew -StartWhenAvailable
+Register-ScheduledTask -TaskName $taskName -Action $action -Principal $principal `
+  -Trigger (New-ScheduledTaskTrigger -AtStartup) -Settings $settings | Out-Null
+Write-Host "registered task: $taskName (starts at boot, restarts on crash)"
 
 # the GitHub-era jobs are the server's now
 Remove-Task 'Crossword daily update'
 Remove-Task 'Crossword fetch watcher'
 
 # ----- firewall -----
-if ($isAdmin) {
-  Remove-Rule
-  New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Action Allow `
-    -Protocol TCP -LocalPort $port -RemoteAddress $AllowFrom | Out-Null
-  Write-Host "firewall: TCP $port open to $AllowFrom"
-} else {
-  Write-Warning ('Not elevated, so the firewall was left alone. To let the proxy reach the server, run as administrator:' +
-    "`n  New-NetFirewallRule -DisplayName '$ruleName' -Direction Inbound -Action Allow -Protocol TCP -LocalPort $port -RemoteAddress $AllowFrom")
-}
+Remove-Rule
+New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Action Allow `
+  -Protocol TCP -LocalPort $port -RemoteAddress $AllowFrom | Out-Null
+Write-Host "firewall: TCP $port open to $AllowFrom"
 
-Write-Host ''
+# ----- start + check -----
 Start-ScheduledTask -TaskName $taskName
-Write-Host "Started. Log: logs\server.log. Check http://127.0.0.1:$port from this PC."
+Start-Sleep -Seconds 3
+$state = (Get-ScheduledTask -TaskName $taskName).State
+Write-Host ''
+if ($state -eq 'Running') {
+  Write-Host "Running. Log: $site\logs\server.log - check http://127.0.0.1:$port"
+} else {
+  Write-Warning "The task is '$state', not running - see the end of logs\server.log."
+}

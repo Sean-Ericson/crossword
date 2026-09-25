@@ -140,16 +140,37 @@ powershell -ExecutionPolicy Bypass -File deploy\install-windows.ps1 -AllowFrom <
 
 The script:
 
-- registers the **Crossword server** task, which starts at logon, restarts
-  if the server stops, and logs to `logs\server.log`;
+- registers the **Crossword server** task. The task starts the server when
+  the PC boots, with no window and no login needed. If the server crashes,
+  the task restarts it within a minute. It logs to `logs\server.log`;
 - opens TCP 8080 in Windows Firewall to that one IP. Leave out `-AllowFrom`
   to allow the whole local subnet instead;
 - removes the old GitHub-era tasks ("Crossword daily update" and
   "Crossword fetch watcher").
 
-The task starts when you log in, so set the PC to sign in automatically, or
-just stay logged in. To remove the task and the firewall rule, run the
-script again with `-Uninstall`.
+To remove the task and the firewall rule, run the script again with
+`-Uninstall`.
+
+**Restarting the server.** Restart it after a `git pull` or after changing
+`server\config.json`, since it only reads them at startup. In PowerShell:
+
+```powershell
+Stop-ScheduledTask 'Crossword server'; Start-ScheduledTask 'Crossword server'
+```
+
+You can also do it in the Task Scheduler app: select **Crossword server**,
+choose **End**, then **Run**.
+
+**Things that don't work in the background.** The task runs under your
+account without storing your password. Because of that, it can't use
+anything that's unlocked by your Windows login:
+
+- **GitHub:** `gh auth` isn't available to it, so put the token in
+  `server\config.json` (`githubSync.token`).
+- **NYT cookies:** reading Firefox's cookies still works. If the log shows
+  NYT downloads failing because of cookies, which is likely with Chrome or
+  Edge, set `"nytBrowser": "Cached Cookies"` so it uses the cookie file
+  nytxw_puz saves on each normal run.
 
 ### Linux
 
@@ -182,7 +203,8 @@ at all.
   cursors should show up on the other device immediately, and the header
   should say **● Live**. If it keeps saying *Reconnecting…*, WebSockets
   aren't making it through the proxy.
-- Reboot the machine and confirm the site comes back by itself.
+- Reboot the machine and confirm the site comes back by itself. You don't
+  need to log in.
 - The next day, look for `daily puzzle update` and `backup written` lines
   in the server log. On Linux, use `journalctl -u crossword`.
 

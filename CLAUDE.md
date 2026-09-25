@@ -20,7 +20,11 @@ and the switch-over. This file covers what you need to change code safely.
   done, `self-host` is merged into `main` and Pages is turned off. See
   DEPLOY.md "When the week is over".
 - The home PC runs the server from a clone on `self-host`. To deploy:
-  `git pull` there, then restart the "Crossword server" scheduled task.
+  `git pull` there, then run
+  `Stop-ScheduledTask 'Crossword server'; Start-ScheduledTask 'Crossword server'`.
+  The task runs `node.exe` directly at boot under S4U, so it has no window
+  and can't use `gh auth` or DPAPI-protected secrets. Its log is
+  `logs/server.log`.
   `server/config.json` is gitignored and lives only there; it has
   `host 0.0.0.0` and `publicUrl`, and during the overlap `githubSync` too.
 

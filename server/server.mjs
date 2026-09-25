@@ -11,7 +11,8 @@
  */
 
 import http from 'node:http';
-import { createReadStream } from 'node:fs';
+import { createReadStream, createWriteStream, mkdirSync, renameSync, statSync } from 'node:fs';
+import { format } from 'node:util';
 import { stat, readdir, unlink, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -45,10 +46,28 @@ const PAGES = new Set(['/index.html', '/puzzle.html', '/stats.html', '/login.htm
 const PUBLIC_DIRS = ['/css/', '/js/'];
 const PRIVATE_DIRS = ['/puzzles/']; // NYT content: members only
 
+// Console, plus a file when started with `--log <path>` (the Windows task
+// runs node directly, so nothing else would capture its output).
+let logFile = null;
 const log = {
-  info: (...a) => console.log(new Date().toISOString(), ...a),
-  error: (...a) => console.error(new Date().toISOString(), 'ERROR', ...a),
+  info: (...a) => write(console.log, [new Date().toISOString(), ...a]),
+  error: (...a) => write(console.error, [new Date().toISOString(), 'ERROR', ...a]),
 };
+function write(toConsole, parts) {
+  toConsole(...parts);
+  logFile?.write(format(...parts) + '\n');
+}
+
+/** Append to `file`, starting over (keeping one .old) once it passes ~5 MB. */
+function openLogFile(file) {
+  mkdirSync(path.dirname(file), { recursive: true });
+  try {
+    if (statSync(file).size > 5_000_000) renameSync(file, `${file}.old`);
+  } catch {
+    /* no log yet */
+  }
+  logFile = createWriteStream(file, { flags: 'a' });
+}
 
 export function createServer(cfg, { store, puzzles, hub } = {}) {
   store ??= new Store(path.join(cfg.dataDir, 'crossword.db'));
@@ -206,6 +225,17 @@ export async function backup(store, cfg) {
 }
 
 async function main() {
+  const logArg = process.argv.indexOf('--log');
+  if (logArg > 0 && process.argv[logArg + 1]) openLogFile(path.resolve(process.argv[logArg + 1]));
+  // a crash should leave a trace, then exit non-zero so the service restarts it
+  const die = (err) => {
+    log.error('fatal:', err?.stack || err);
+    if (logFile) logFile.end(() => process.exit(1));
+    else process.exit(1);
+  };
+  process.on('uncaughtException', die);
+  process.on('unhandledRejection', die);
+
   const cfg = loadConfig();
   const app = createServer(cfg);
   const { server, store, hub, puzzles } = app;
