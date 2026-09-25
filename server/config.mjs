@@ -18,7 +18,7 @@ const DEFAULTS = {
   // reach it; see DEPLOY.md.
   host: '127.0.0.1',
   port: 8080,
-  // The address people use, e.g. "https://crossword.ho.house". When set:
+  // The address people use, e.g. "https://cross.ho.house". When set:
   // cookies are marked Secure if it's https, and WebSocket connections
   // from pages served there are accepted even if the proxy rewrites Host.
   publicUrl: null,

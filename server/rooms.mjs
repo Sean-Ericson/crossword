@@ -412,6 +412,15 @@ export class Hub {
     this.rooms.get(solveId)?.refreshMembers();
   }
 
+  /** Open (or being opened) right now: its grid lives in memory, not the DB. */
+  isBusy(solveId) {
+    return this.rooms.has(solveId) || this.opening.has(solveId);
+  }
+
+  liveRecord(solveId) {
+    return this.rooms.get(solveId)?.record ?? null;
+  }
+
   isLive(solveId) {
     return this.rooms.has(solveId);
   }

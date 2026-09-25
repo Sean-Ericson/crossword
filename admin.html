@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Accounts — Crossword</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧩</text></svg>">
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./index.html">🧩 Crossword</a>
+    <nav>
+      <a href="./index.html">Archive</a>
+      <a href="./stats.html">Stats</a>
+    </nav>
+    <span class="spacer"></span>
+    <span id="profile-chip" class="badge"></span>
+  </header>
+
+  <main class="admin-main">
+    <h1>Accounts</h1>
+    <p class="admin-note" id="admin-note"></p>
+    <table class="admin-table" id="user-table" hidden>
+      <thead><tr><th>Name</th><th>Display name</th><th>Since</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <section class="admin-add" id="add-section" hidden>
+      <h2>Add someone</h2>
+      <form id="add-form">
+        <label>Name <span class="hint">lowercase, used to sign in</span>
+          <input name="name" required pattern="[a-z0-9-]{1,24}" autocapitalize="none" spellcheck="false">
+        </label>
+        <label>Display name <span class="hint">optional</span>
+          <input name="display_name">
+        </label>
+        <label>Password <span class="hint">leave blank for a temporary one</span>
+          <input name="password" type="text" autocomplete="off" spellcheck="false">
+        </label>
+        <label class="check"><input name="is_admin" type="checkbox"> Admin</label>
+        <button class="btn btn-primary" type="submit">Add account</button>
+      </form>
+    </section>
+  </main>
+
+  <script type="module" src="./js/admin-page.js"></script>
+</body>
+</html>

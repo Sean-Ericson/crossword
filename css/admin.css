@@ -1,0 +1,108 @@
+/* admin.css — account management page. */
+
+.admin-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+
+.admin-main h1 {
+  font-size: 26px;
+  margin: 0 0 6px;
+}
+
+.admin-main h2 {
+  font-size: 18px;
+  margin: 32px 0 10px;
+}
+
+.admin-note {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-table th {
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--color-text-muted);
+  border-bottom: 2px solid var(--color-text);
+  padding: 6px 8px;
+}
+
+.admin-table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 8px;
+  vertical-align: middle;
+}
+
+.admin-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.admin-table .tag {
+  font-size: 11px;
+  background: var(--color-bg-muted);
+  border-radius: 8px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  color: var(--color-text-muted);
+}
+
+.admin-table .btn {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+.admin-add form {
+  display: grid;
+  gap: 10px;
+  max-width: 360px;
+}
+
+.admin-add label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-add .hint {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.admin-add input:not([type='checkbox']) {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  font-size: 15px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.admin-add label.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 400;
+}
+
+.new-password {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+  background: var(--color-bg-muted);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin: 10px 0;
+  user-select: all;
+}

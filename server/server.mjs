@@ -23,6 +23,7 @@ import { LoginLimiter, userFromRequest } from './auth.mjs';
 import { Puzzles, scheduleDaily } from './puzzles.mjs';
 import { Hub } from './rooms.mjs';
 import { makeApi, originAllowed } from './api.mjs';
+import { GitHubRepo, GitHubSync, resolveToken } from './github-sync.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -40,7 +41,7 @@ const MIME = {
 
 // Only these are ever served; tools/, server/, secrets etc. never are.
 const PUBLIC_PAGES = new Set(['/login.html']);
-const PAGES = new Set(['/index.html', '/puzzle.html', '/stats.html', '/login.html']);
+const PAGES = new Set(['/index.html', '/puzzle.html', '/stats.html', '/login.html', '/admin.html']);
 const PUBLIC_DIRS = ['/css/', '/js/'];
 const PRIVATE_DIRS = ['/puzzles/']; // NYT content: members only
 
@@ -211,6 +212,19 @@ async function main() {
 
   scheduleDaily(cfg.dailyUpdateAt, () => puzzles.dailyUpdate(), { log });
   scheduleDaily(cfg.backupAt, () => backup(store, cfg), { log });
+
+  // Two-way sync with the old GitHub Pages site's data repo, for the
+  // overlap period. See github-sync.mjs.
+  if (cfg.githubSync?.repo) {
+    const token = resolveToken(cfg.githubSync);
+    if (!token) {
+      log.error('githubSync is configured but no token was found (config token, XWORD_GITHUB_TOKEN, or gh auth)');
+    } else {
+      const gh = new GitHubRepo({ ...cfg.githubSync, token });
+      new GitHubSync({ store, hub, puzzles, gh, log }).start(cfg.githubSync.intervalSec ?? 120);
+      log.info(`github sync with ${cfg.githubSync.repo} every ${cfg.githubSync.intervalSec ?? 120}s`);
+    }
+  }
   setInterval(() => store.pruneSessions(), 6 * 3600_000).unref();
 
   const users = store.listUsers();

@@ -45,6 +45,9 @@ export function openAccountModal() {
       me.display_name && me.display_name !== me.name ? ` (${me.name})` : '',
     ]),
     el('button', { class: 'btn', style: 'margin-right:8px', onclick: () => openPasswordModal() }, 'Change password'),
+    me.is_admin
+      ? el('a', { class: 'btn', style: 'margin-right:8px;text-decoration:none;display:inline-block', href: './admin.html' }, 'Manage accounts')
+      : null,
     el(
       'button',
       {

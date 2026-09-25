@@ -369,7 +369,7 @@ test('engine: deferCompletion leaves solving to the server', () => {
 
 const { clientIp, originAllowed, secureCookiesFor } = await import('../server/api.mjs');
 const fakeReq = (headers, remote = '192.168.1.20') => ({ headers, socket: { remoteAddress: remote } });
-const proxied = { trustProxy: true, clientIpHeader: 'cf-connecting-ip', secureCookies: 'auto', publicUrl: 'https://crossword.ho.house' };
+const proxied = { trustProxy: true, clientIpHeader: 'cf-connecting-ip', secureCookies: 'auto', publicUrl: 'https://cross.ho.house' };
 
 test('proxy: visitor IP from CF-Connecting-IP, else X-Forwarded-For, else socket', () => {
   assert.equal(clientIp(fakeReq({ 'cf-connecting-ip': '203.0.113.9', 'x-forwarded-for': '1.1.1.1' }), proxied), '203.0.113.9');
@@ -379,7 +379,7 @@ test('proxy: visitor IP from CF-Connecting-IP, else X-Forwarded-For, else socket
 });
 
 test('proxy: WebSocket origin accepted for publicUrl even when Host is rewritten', () => {
-  const origin = 'https://crossword.ho.house';
+  const origin = 'https://cross.ho.house';
   assert.ok(originAllowed(fakeReq({ origin, host: '192.168.1.50:8080' }), proxied));
   assert.ok(originAllowed(fakeReq({ origin: 'http://127.0.0.1:8080', host: '127.0.0.1:8080' }), proxied));
   assert.ok(!originAllowed(fakeReq({ origin: 'https://evil.example', host: '192.168.1.50:8080' }), proxied));
@@ -391,4 +391,172 @@ test('proxy: cookies are Secure when the public URL is https', () => {
   assert.equal(secureCookiesFor(fakeReq({}), proxied), true);
   assert.equal(secureCookiesFor(fakeReq({}), { ...proxied, publicUrl: null }), false);
   assert.equal(secureCookiesFor(fakeReq({ 'x-forwarded-proto': 'https' }), { ...proxied, publicUrl: null }), true);
+});
+
+// ---------- admin account management over HTTP ----------
+
+test('admin api: admins reset passwords and add accounts; others cannot', async () => {
+  const { createServer } = await import('../server/server.mjs');
+  const store = new Store(':memory:');
+  store.createUser({ name: 'sean', pwHash: hashPassword('sean-pass-1'), isAdmin: true });
+  store.createUser({ name: 'devon', pwHash: hashPassword('devon-old-1') });
+  const cfg = {
+    puzzlesDir: path.join(here, 'fixtures'), sessionDays: 30, trustProxy: false,
+    clientIpHeader: null, secureCookies: false, publicUrl: null,
+  };
+  const { server } = createServer(cfg, { store, puzzles: { model: async () => null }, hub: new Hub({ store, puzzles: {}, log: quiet }) });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}/api/`;
+  const call = async (method, p, body, cookie) => {
+    const r = await fetch(base + p, {
+      method,
+      headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(cookie ? { Cookie: cookie } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return { status: r.status, json: await r.json(), cookie: r.headers.get('set-cookie')?.split(';')[0] };
+  };
+  const login = (name, password) => call('POST', 'login', { name, password });
+  try {
+    const admin = (await login('sean', 'sean-pass-1')).cookie;
+    const devonOld = await login('devon', 'devon-old-1');
+    assert.equal(devonOld.status, 200);
+
+    // non-admins are refused
+    assert.equal((await call('GET', 'admin/users', null, devonOld.cookie)).status, 403);
+    assert.equal((await call('POST', 'admin/users/sean/password', {}, devonOld.cookie)).status, 403);
+
+    // temporary password: returned once, old password and sessions gone
+    const reset = await call('POST', 'admin/users/devon/password', {}, admin);
+    assert.equal(reset.status, 200);
+    assert.match(reset.json.password, /^[a-z2-9]{4}(-[a-z2-9]{4}){3}$/);
+    assert.equal((await login('devon', 'devon-old-1')).status, 401);
+    assert.equal((await call('GET', 'me', null, devonOld.cookie)).status, 401, 'signed out everywhere');
+    assert.equal((await login('devon', reset.json.password)).status, 200);
+
+    // chosen password, validated
+    assert.equal((await call('POST', 'admin/users/devon/password', { password: 'short' }, admin)).status, 400);
+    const chosen = await call('POST', 'admin/users/devon/password', { password: 'devon-new-22' }, admin);
+    assert.equal(chosen.json.password, undefined, 'a chosen password is not echoed back');
+    assert.equal((await login('devon', 'devon-new-22')).status, 200);
+
+    // own password goes through the account menu instead
+    assert.equal((await call('POST', 'admin/users/sean/password', {}, admin)).status, 400);
+    assert.equal((await call('POST', 'admin/users/nobody/password', {}, admin)).status, 404);
+
+    // add an account
+    const added = await call('POST', 'admin/users', { name: 'tom', display_name: 'Tom' }, admin);
+    assert.equal(added.status, 201);
+    assert.equal((await login('tom', added.json.password)).status, 200);
+    assert.equal((await call('POST', 'admin/users', { name: 'tom' }, admin)).status, 409);
+    assert.equal((await call('POST', 'admin/users', { name: 'Bad Name!' }, admin)).status, 400);
+    const list = await call('GET', 'admin/users', null, admin);
+    assert.deepEqual(list.json.users.map((u) => u.name), ['devon', 'sean', 'tom']);
+  } finally {
+    server.close();
+  }
+});
+
+// ---------- two-way sync with the old GitHub data repo ----------
+
+const { GitHubSync, ConflictError, progressPath } = await import('../server/github-sync.mjs');
+
+/** In-memory stand-in for the GitHub data repo. */
+class FakeRepo {
+  constructor() {
+    this.files = new Map(); // path -> {sha, obj}
+    this.n = 0;
+    this.puts = [];
+  }
+  write(path, obj) {
+    const sha = `sha${++this.n}`;
+    this.files.set(path, { sha, obj: structuredClone(obj) });
+    return sha;
+  }
+  async tree() {
+    return new Map([...this.files].map(([p, f]) => [p, f.sha]));
+  }
+  async readJson(sha) {
+    return structuredClone([...this.files.values()].find((f) => f.sha === sha).obj);
+  }
+  async putJson(path, obj, sha) {
+    if ((this.files.get(path)?.sha ?? null) !== sha) throw new ConflictError('stale sha');
+    this.puts.push(path);
+    return this.write(path, obj);
+  }
+}
+
+function syncSetup() {
+  const env = setup();
+  const repo = new FakeRepo();
+  const sync = new GitHubSync({ store: env.store, hub: env.hub, puzzles: { model: async (id) => (id === PUZZLE ? model : null) }, gh: repo, log: quiet });
+  const path = progressPath('sean', PUZZLE);
+  const remoteRecord = (fillIdx, updated_at, extra = {}) => {
+    const r = newProgress(model, PUZZLE, 'sean');
+    for (const i of fillIdx) r.fill[i] = 'A';
+    return { ...r, updated_at, ...extra };
+  };
+  return { ...env, repo, sync, path, remoteRecord };
+}
+
+test('github sync: old-site progress is pulled in once and not echoed back', async () => {
+  const { store, users, repo, sync, path, remoteRecord } = syncSetup();
+  repo.write(path, remoteRecord([open[0]], '2026-09-20T10:00:00.000Z', { elapsed: 30 }));
+  repo.write('users/devon/profile.json', { name: 'devon' });
+  const first = await sync.cycle();
+  assert.equal(first.pulled, 1);
+  const solve = store.soloSolve(users[0].id, PUZZLE);
+  assert.equal(solve.record.fill[open[0]], 'A');
+  assert.equal(solve.record.elapsed, 30);
+  const second = await sync.cycle();
+  assert.deepEqual([second.pulled, second.pushed], [0, 0]);
+  assert.deepEqual(repo.puts, []);
+});
+
+test('github sync: server progress is pushed; the newer side wins either way', async () => {
+  const { store, users, repo, sync, path, remoteRecord } = syncSetup();
+  repo.write(path, remoteRecord([open[0]], '2026-09-20T10:00:00.000Z'));
+  await sync.cycle();
+  const solve = store.soloSolve(users[0].id, PUZZLE);
+  // played on the new site
+  store.saveRecord(solve.id, { ...solve.record, fill: solve.record.fill.map((v, i) => (i === open[1] ? 'B' : v)), updated_at: '2026-09-21T10:00:00.000Z' });
+  assert.equal((await sync.cycle()).pushed, 1);
+  assert.equal(repo.files.get(path).obj.fill[open[1]], 'B');
+  assert.equal((await sync.cycle()).pushed, 0);
+  // then on the old site, later
+  repo.write(path, remoteRecord([open[2]], '2026-09-22T10:00:00.000Z'));
+  await sync.cycle();
+  const after = store.soloSolve(users[0].id, PUZZLE).record;
+  assert.equal(after.fill[open[2]], 'A');
+  assert.equal(after.fill[open[1]], '', 'whole-record newest-wins, as the old site always did');
+  assert.equal((await sync.cycle()).pushed, 0);
+});
+
+test('github sync: a solve open on the new site waits until it closes', async () => {
+  const { store, hub, users, repo, sync, path, remoteRecord } = syncSetup();
+  const a = client(hub, users[0]);
+  await hub.handle(a.conn, { type: 'join', puzzle: PUZZLE }); // creates + opens the solo solve
+  repo.write(path, remoteRecord([open[3]], '2026-09-25T10:00:00.000Z'));
+  const busy = await sync.cycle();
+  assert.equal(busy.pulled, 0);
+  assert.equal(busy.pushed, 0, 'never overwrite remote without merging it first');
+  hub.disconnect(a.conn);
+  assert.equal((await sync.cycle()).pulled, 1);
+  assert.equal(store.soloSolve(users[0].id, PUZZLE).record.fill[open[3]], 'A');
+});
+
+test('github sync: stats merge both ways; co-op and server-only users stay put', async () => {
+  const { store, users, repo, sync } = syncSetup();
+  const entry = (completed_at, seconds) => ({ seconds, completed_at, clean: true, used_check: false, used_reveal: false });
+  repo.write('users/sean/stats.json', { schema: 1, user: 'sean', solves: { '2026-01-02': entry('2026-01-02T00:00:00Z', 100) } });
+  store.recordSoloSolve(users[0].id, '2026-01-03', entry('2026-01-03T00:00:00Z', 200));
+  // kam exists only on the server; a co-op solve exists too
+  store.recordSoloSolve(users[2].id, '2026-01-04', entry('2026-01-04T00:00:00Z', 50));
+  store.createSolve({ puzzleId: PUZZLE, kind: 'coop', createdBy: users[0].id, memberIds: [users[0].id, users[1].id],
+    record: { ...newProgress(model, PUZZLE, 'coop'), updated_at: '2026-09-01T00:00:00Z' } });
+  await sync.cycle();
+  assert.ok(store.statsDoc(users[0]).solves['2026-01-02'], 'old-site solve pulled');
+  assert.deepEqual(Object.keys(repo.files.get('users/sean/stats.json').obj.solves).sort(), ['2026-01-02', '2026-01-03']);
+  assert.ok(![...repo.files.keys()].some((p) => p.startsWith('users/kam/')), 'server-only user not pushed');
+  assert.ok(![...repo.files.keys()].some((p) => p.includes('/progress/')), 'co-op solve not pushed');
+  assert.equal((await sync.cycle()).stats, 0);
 });

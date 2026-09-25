@@ -1,7 +1,27 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-24T20:44:22Z",
+  "generated_at": "2026-09-25T06:21:24Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-24",
+      "file": "puzzles/mini-2026-09-24.puz",
+      "type": "mini",
+      "date": "2026-09-24",
+      "title": "NY Times, Thursday, September 24, 2026",
+      "author": "Christina Iverson / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-24",
+      "file": "puzzles/midi-2026-09-24.puz",
+      "type": "midi",
+      "date": "2026-09-24",
+      "title": "NY Times, Thursday, September 24, 2026 ON TRACK",
+      "author": "Aaron Gee and Avery Gee Katz / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
     {
       "id": "2026-09-24",
       "file": "puzzles/2026-09-24.puz",
@@ -11,6 +31,26 @@
       "author": "Jeff Stillman / Will Shortz",
       "width": 15,
       "height": 15
+    },
+    {
+      "id": "mini-2026-09-23",
+      "file": "puzzles/mini-2026-09-23.puz",
+      "type": "mini",
+      "date": "2026-09-23",
+      "title": "NY Times, Wednesday, September 23, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-23",
+      "file": "puzzles/midi-2026-09-23.puz",
+      "type": "midi",
+      "date": "2026-09-23",
+      "title": "NY Times, Wednesday, September 23, 2026 START THE MUSIC!",
+      "author": "Tarun Krishnamurthy / Ian Livengood",
+      "width": 9,
+      "height": 9
     },
     {
       "id": "2026-09-23",
@@ -2299,6 +2339,76 @@
       "date": "2014-09-10",
       "title": "NY Times, Wednesday, September 10, 2014",
       "author": "Jim Peredo / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "bonus-2014-07-01",
+      "file": "puzzles/bonus-2014-07-01.puz",
+      "type": "bonus",
+      "date": "2014-07-01",
+      "title": "NY Times, Tuesday, July 1, 2014 NATIONAL HOT DOG MONTH",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "bonus-2014-06-01",
+      "file": "puzzles/bonus-2014-06-01.puz",
+      "type": "bonus",
+      "date": "2014-06-01",
+      "title": "NY Times, Sunday, June 1, 2014 THEIR FINEST HOUR",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "bonus-2014-05-01",
+      "file": "puzzles/bonus-2014-05-01.puz",
+      "type": "bonus",
+      "date": "2014-05-01",
+      "title": "NY Times, Thursday, May 1, 2014 THE MERRY MONTH OF MAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "bonus-2014-04-01",
+      "file": "puzzles/bonus-2014-04-01.puz",
+      "type": "bonus",
+      "date": "2014-04-01",
+      "title": "NY Times, Tuesday, April 1, 2014 EASTER EGGS",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "bonus-2014-03-01",
+      "file": "puzzles/bonus-2014-03-01.puz",
+      "type": "bonus",
+      "date": "2014-03-01",
+      "title": "NY Times, Saturday, March 1, 2014 NATIONAL SAVE A SPIDER DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "bonus-2014-02-01",
+      "file": "puzzles/bonus-2014-02-01.puz",
+      "type": "bonus",
+      "date": "2014-02-01",
+      "title": "NY Times, Saturday, February 1, 2014 NATIONAL WEAR RED DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "bonus-2014-01-01",
+      "file": "puzzles/bonus-2014-01-01.puz",
+      "type": "bonus",
+      "date": "2014-01-01",
+      "title": "NY Times, Wednesday, January 1, 2014 RING IN THE NEW",
+      "author": "Fred Piscop",
       "width": 15,
       "height": 15
     },

@@ -34,7 +34,7 @@ npm test
 ```
 
 To put the site on the internet (home machine behind Cloudflare, published
-as https://crossword.ho.house), see
+as https://cross.ho.house), see
 **[DEPLOY.md](DEPLOY.md)**.
 
 ## Accounts
@@ -49,6 +49,11 @@ node server/admin.mjs list
 node server/admin.mjs set-admin devon on|off
 node server/admin.mjs delete-user devon
 ```
+
+Admins can do the same from anywhere on the web: account chip → **Manage
+accounts** (`admin.html`) lists everyone, resets passwords (temporary or
+chosen; the person is signed out everywhere), and adds accounts. Make
+someone an admin with `set-admin` or the checkbox when adding them.
 
 Each person can change their own password from the account chip in the top
 right. The same menu can import progress that was saved in that browser
@@ -125,6 +130,7 @@ To add puzzles by hand, drop `.puz` files into `puzzles/` and run
 | `puzzle.html?id=…[&solve=…]` | The player (solo, or a co-op solve) |
 | `stats.html` | Solved counts, clean solves, streaks, average and best times by weekday, and multi-user comparison, plus your co-op solves |
 | `login.html` | Sign in |
+| `admin.html` | Accounts (admins only): reset passwords, add people |
 
 ## Player reference
 

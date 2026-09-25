@@ -17,7 +17,7 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 // Okabe-Ito-ish palette: distinct under common color-vision deficiencies,
 // dark enough to read as a cursor border on white.
@@ -105,6 +105,13 @@ export class Store {
         used_check   INTEGER NOT NULL,
         used_reveal  INTEGER NOT NULL,
         PRIMARY KEY (user_id, puzzle_id)
+      );
+      -- github-sync.mjs: what each file in the old GitHub data repo held when
+      -- last synced (blob sha), and the server record's updated_at then
+      CREATE TABLE IF NOT EXISTS gh_sync (
+        path             TEXT PRIMARY KEY,
+        sha              TEXT,
+        local_updated_at TEXT
       );
       PRAGMA user_version = ${SCHEMA_VERSION};
     `);
@@ -224,6 +231,14 @@ export class Store {
         .prepare("SELECT * FROM solves WHERE kind = 'solo' AND owner_id = ? AND puzzle_id = ?")
         .get(userId, puzzleId)
     );
+  }
+
+  /** A user's solo solves with their full records. */
+  soloSolvesOf(userId) {
+    return this.db
+      .prepare("SELECT * FROM solves WHERE kind = 'solo' AND owner_id = ?")
+      .all(userId)
+      .map((row) => this.hydrate(row));
   }
 
   isMember(solveId, userId) {
@@ -352,6 +367,18 @@ export class Store {
         completed_at: s.solved_at,
         clean: s.clean,
       }));
+  }
+
+  // ---------- GitHub data repo sync state ----------
+
+  ghSyncRow(path) {
+    return this.db.prepare('SELECT * FROM gh_sync WHERE path = ?').get(path) ?? null;
+  }
+
+  setGhSyncRow(path, sha, localUpdatedAt) {
+    this.db
+      .prepare('INSERT OR REPLACE INTO gh_sync (path, sha, local_updated_at) VALUES (?, ?, ?)')
+      .run(path, sha, localUpdatedAt);
   }
 
   /** Online backup to a single file (safe while the server is running). */
