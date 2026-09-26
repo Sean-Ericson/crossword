@@ -38,6 +38,9 @@ and the switch-over. This file covers what you need to change code safely.
 | `js/grid-view.js`, `js/clues-view.js` | DOM rendering. Remote cursors are drawn as child elements (`setRemoteCursor`), kept apart from the local `sel-*` classes |
 | `js/theme.js`, `css/base.css` | Light/dark mode. `theme.js` is a classic script in each page's `<head>` (a module would run too late and flash white); it sets `data-theme` on `<html>` from `localStorage['xw:theme']` or the system. Every color is a `--color-*` token in `base.css`, with dark values in `:root[data-theme='dark']`. A new color needs a token with a dark value too, not a hex in page CSS or an inline style |
 | `js/touch-keyboard.js` | On-screen keyboard, shown only on touch-first devices (`body.touch`). Keys go through the same `handleKey` in `player-page.js` as physical keys. The clue bar is moved into its dock |
+| `js/stats-page.js`, `js/stats/*.js` | The stats page: the shell (selector, filter bar, section tabs, a context object built from `GET /api/stats-all` + `puzzles/index.json`) and one module per section. `js/analysis-page.js` is the one-puzzle breakdown with the replay (it reuses `GridView`) |
+| `js/stats-data.js`, `js/stats-math.js`, `js/stats-model.js` | Pure, unit-tested. Data: a row per solve with its puzzle's features and time relative to the person's usual. Math: descriptive stats, regression, correlations, Wilcoxon, bootstrap (checked against scipy). Model: log time = weekday + solver + puzzle (skill and difficulty), Elo, Bradley–Terry, co-op synergy |
+| `js/charts.js`, `css/charts.css` | The SVG chart kit: `chartCard` (title, legend, Table toggle with CSV) and the chart types. Colors come only from `--color-chart-*`, `--color-seq-0..6` and `--color-div-0..6` tokens plus people's colors; more than three people on a scatter get one highlighted and the rest gray |
 | `js/state.js` | Progress record schema, `mergeProgress` (newest `updated_at` wins, max elapsed), and `mergeStats` (earliest solve wins). Shared by client and server |
 | `js/api.js`, `js/profiles.js`, `js/profile-ui.js` | REST client (a 401 redirects to login), the current user (`loadMe()` must run first on every page), and the account menu |
 | `js/people.js`, `js/people-picker.js` | Showing people, built for 30+ accounts. `people.js` (shared with the server) holds `USER_PALETTE` (8 colors, so accounts share them), `distinctColors` (colors that differ within one view: a co-op room or a stats comparison; pass `keep` so nobody already shown changes color) and `listNames` ("Devon, Kam and 3 others"). `people-picker.js` is the one dialog for choosing people. Past 8 people it adds search and a "recent partners" group (`last_together` from `GET /api/users`). Any new list of people should reuse these |
@@ -51,6 +54,7 @@ and the switch-over. This file covers what you need to change code safely.
 | `server/puzzles.mjs`, `tools/fetch_one.py`, `tools/update_puzzles.py` | Puzzle loading and NYT downloads. Python and `../nytxw_puz` do the fetching |
 | `server/admin.mjs`, `admin.html` | Account management from the CLI or the web (admins only) |
 | `server/tools/import-github.mjs` | One-time import from `crossword-data` |
+| `server/tools/seed-demo.mjs` | Fills a scratch `XWORD_DATA_DIR` with six made-up solvers played through the real `Hub` on a fake clock (logs and summaries included); password `test-pass-1`. The only way to see the stats pages with data locally |
 
 ## Invariants — don't break these
 
@@ -77,6 +81,10 @@ npm test                                   # node tests/run_tests.mjs (async-cap
 XWORD_DATA_DIR=<scratch> XWORD_PORT=8099 node server/server.mjs   # throwaway local server
 XWORD_DATA_DIR=<scratch> node server/admin.mjs add-user sean --admin --password test-pass-1
 python tools/build_index.py                # rebuild puzzles/index.json
+```
+
+```bash
+XWORD_DATA_DIR=<scratch> node server/tools/seed-demo.mjs   # demo data for the stats pages
 ```
 
 **Testing pattern:**

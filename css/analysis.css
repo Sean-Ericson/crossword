@@ -1,0 +1,183 @@
+/* analysis.css — the puzzle breakdown page (analysis.html): header,
+   spoiler banner, replay and its controls. Tables, tiles and charts come
+   from stats.css / charts.css, the grid from player.css. */
+
+.analysis-head h1 {
+  font-size: 26px;
+  margin: 0 0 2px;
+}
+
+.analysis-head .theme-title {
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 4px;
+}
+
+.analysis-head .facts {
+  font-size: 13.5px;
+  color: var(--color-text-muted);
+  margin: 0 0 6px;
+}
+
+.analysis-head .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 14px;
+  margin: 8px 0 18px;
+}
+
+.analysis-head .actions a {
+  color: var(--color-link);
+}
+
+.spoiler-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-muted);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  margin: 0 0 18px;
+}
+
+.solve-pick {
+  font: inherit;
+  font-size: 14px;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  max-width: 100%;
+}
+
+/* ---------- replay ---------- */
+
+.replay {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  gap: 18px;
+  align-items: start;
+}
+
+.replay-board {
+  min-width: 0;
+}
+
+.replay .board-wrap {
+  width: 100%;
+  max-width: 560px;
+  min-height: 120px;
+}
+
+.replay-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+
+.replay-controls input[type='range'] {
+  flex: 1;
+  min-width: 80px;
+  accent-color: var(--color-accent);
+}
+
+.replay-play {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  flex: 0 0 auto;
+}
+
+.replay-play:hover {
+  background: var(--color-hover-tint);
+}
+
+.replay-time {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
+.replay-speed {
+  font: inherit;
+  font-size: 13px;
+  padding: 3px 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.replay-side h3 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: 0 0 6px;
+}
+
+.replay-clue {
+  min-height: 3.2em;
+  font-size: 15px;
+  line-height: 1.35;
+  margin-bottom: 14px;
+}
+
+.replay-clue .who {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.moments {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 13.5px;
+}
+
+.moments li {
+  margin: 0 0 4px;
+}
+
+.moments button {
+  border: none;
+  background: none;
+  padding: 2px 0;
+  color: var(--color-link);
+  font: inherit;
+  text-align: left;
+}
+
+.moments button:hover {
+  text-decoration: underline;
+}
+
+.moments .t {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  margin-right: 6px;
+}
+
+.heat-modes {
+  margin-bottom: 10px;
+}
+
+@media (max-width: 760px) {
+  .replay {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

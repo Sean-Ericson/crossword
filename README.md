@@ -3,8 +3,10 @@
 A self-hosted, NYT-style crossword site with **real-time co-op**. It plays
 `.puz` files with the full NYT Games experience: keyboard behavior,
 check/reveal/autocheck, pencil mode, rebus entry, a timer with pause, and
-clean-solve gold stars. It also has a puzzle archive with a calendar, solve
-statistics, and comparisons between users. On phones and tablets the puzzle
+clean-solve gold stars. It also has a puzzle archive with a calendar, and
+deep solve statistics: trends, distributions, habits, correlations with
+puzzle features, skill ratings, head-to-head tests, replays of every solve
+and more, for one person or any group. On phones and tablets the puzzle
 page docks an on-screen keyboard (with the current clue above it) under the
 grid, since tapping a square can't raise the system keyboard. There is a
 dark mode: it follows the system setting until you flip the ☾/☀ toggle in
@@ -85,8 +87,40 @@ before accounts existed.
   Check and reveal work in co-op exactly as they do solo; if anyone uses
   them, the solve loses its gold star.
 - **Stats:** solo solves drive streaks, averages, and best times. Co-op
-  solves are listed in their own section of the stats page and never mix
-  into the solo numbers.
+  solves have their own section of the stats page and never mix into the
+  solo numbers.
+- **Every solve is recorded move by move** (since the stats update): each
+  letter typed or erased and its direction, checks and reveals, which entry
+  each person is on, pauses. That drives replays, time per entry, typo and
+  fix counts, fill-order heatmaps and co-op credit. Older solves only have
+  their time.
+
+### Stats
+
+`stats.html` has a filter bar (date range, weekdays, clean only, and
+"relative" times: each solve against that person's usual for the weekday)
+over eight sections. **Overview**: headline tiles, records by weekday,
+recent solves, a prediction for the newest puzzle. **Trends**: every solve
+over time with a rolling median, the improvement rate with its confidence
+interval, per-weekday personal-record staircases. **Distributions**:
+histograms, box and violin plots, percentiles, consistency. **Habits**: a
+calendar, a solving-hour punchcard, how soon after release, sittings,
+unfinished puzzles. **Puzzles**: every puzzle with its grid features and
+difficulty, constructors (your nemesis and favorite), a correlation matrix.
+**Solve style** (from the recordings): pace, first letter, typos, typo
+hunts, across vs down, the average progress curve, letter mix-ups,
+most-missed answers. **Compare**: skill ratings from a model of everyone's
+times, Elo and Bradley–Terry, win and speed matrices with significance
+tests, a paired scatter for any two people. **Co-op**: synergy (the team
+against its members' predicted solo times), who filled what, who fixed
+whose mistakes. Every chart has a Table toggle with the numbers and a CSV
+download.
+
+`analysis.html?puzzle=…` breaks one puzzle down: everyone's results against
+what the model expected, the race between every recorded solve, a replay on
+the real grid with each person's cursor, grid heatmaps and an entry-by-entry
+table. If you haven't solved the puzzle yet, letters, answers and clues are
+hidden until you click "Show anyway".
 
 ### How live sync works
 
@@ -138,7 +172,8 @@ To add puzzles by hand, drop `.puz` files into `puzzles/` and run
 |---|---|
 | `index.html` | Archive: co-op solves in progress, the latest-puzzle hero, and a month calendar with each day's status (◐ in progress, ★ solved, gold ★ clean solve, 👥 co-op) |
 | `puzzle.html?id=…[&solve=…]` | The player (solo, or a co-op solve) |
-| `stats.html` | Solved counts, clean solves, streaks, average and best times by weekday, and comparison with any number of people (from four people up it's a sortable leaderboard and tables), plus your co-op solves |
+| `stats.html` | Statistics for one person or a group in eight sections (see Stats above), with a filter bar and a CSV of everything |
+| `analysis.html?puzzle=…[&solve=…]` | One puzzle broken down: results, the race, a replay, grid heatmaps, entries. Linked from the stats tables and the “Congratulations” dialog |
 | `login.html` | Sign in |
 | `admin.html` | Accounts (admins only): reset passwords, add people |
 
@@ -162,13 +197,16 @@ To add puzzles by hand, drop `.puz` files into `puzzles/` and run
 ## Repo layout
 
 ```
-index.html puzzle.html stats.html login.html   pages
+index.html puzzle.html stats.html analysis.html login.html   pages
 css/                  base + per-page styles
 js/                   browser ES modules: parser, model, engine, views, net
-                      (live sync), api client, stats, page controllers
+                      (live sync), api client, page controllers; stats:
+                      solve-analysis, stats-data/-math/-model, charts,
+                      stats/ (one module per stats section)
 server/               Node server: server.mjs (HTTP + WebSocket), api.mjs,
                       rooms.mjs (live solves), db.mjs (SQLite), auth.mjs,
-                      puzzles.mjs, admin.mjs, tools/import-github.mjs
+                      puzzles.mjs, admin.mjs, tools/import-github.mjs,
+                      tools/seed-demo.mjs (made-up solvers for development)
 deploy/               Windows task installer, systemd unit
 puzzles/              .puz files + generated index.json
 tools/                puzzle download/index scripts (Python)

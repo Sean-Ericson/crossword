@@ -253,6 +253,21 @@ test('rooms: reconnect replays unacknowledged edits', async () => {
   assert.equal(again.room.record.fill[open[0]], 'Q', 'server got it after reconnect');
 });
 
+test('rooms: after a reset the clock waits for Begin', async () => {
+  const { hub, users, tick } = setup();
+  const a = client(hub, users[0]);
+  await hub.handle(a.conn, { type: 'join', puzzle: PUZZLE });
+  a.recv();
+  a.live.setActive(true);
+  await drain([a], hub);
+  tick(5_000);
+  a.live.reset();
+  await drain([a], hub); // the reset snapshot must not re-announce the tab as solving
+  tick(5_000);
+  assert.equal(Math.round(a.conn.room.elapsed()), 0);
+  assert.equal(a.conn.room.timerState().running, false);
+});
+
 test('rooms: shared timer runs while anyone is active; pause stops everyone', async () => {
   const { store, hub, users, tick } = setup();
   const coop = store.createSolve({

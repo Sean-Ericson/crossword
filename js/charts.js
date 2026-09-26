@@ -991,9 +991,10 @@ export function calendarChart(width, { from, to, day, scale, label = '' }) {
  * A heatmap shaped like the puzzle.
  * @param {{model:{width:number, height:number, cells:Array<{isBlack:boolean, number:number}>},
  *          value:(i)=>number|null, scale:object, text?:(i)=>string|null, tip?:(i)=>object|null,
- *          maxCell?:number, label?:string}} opts
+ *          fill?:(i)=>string|null, maxCell?:number, label?:string}} opts  `fill` overrides the
+ *          scale with a color per square (e.g. a person's)
  */
-export function gridHeatmap(width, { model, value, scale, text = null, tip = null, maxCell = 34, label = '' }) {
+export function gridHeatmap(width, { model, value = () => null, scale = { type: 'seq', min: 0, max: 1 }, text = null, tip = null, fill: fillOf = null, maxCell = 34, label = '' }) {
   const size = Math.max(6, Math.min(maxCell, Math.floor((width - 2) / model.width)));
   const w = size * model.width + 2;
   const h = size * model.height + 2;
@@ -1007,8 +1008,7 @@ export function gridHeatmap(width, { model, value, scale, text = null, tip = nul
       svg.append(s('rect', { x, y, width: size, height: size, class: 'ch-black' }));
       return;
     }
-    const v = value(i);
-    const fill = scaleFill(scale, v);
+    const fill = fillOf?.(i) ?? scaleFill(scale, value(i));
     const rect = s('rect', { x, y, width: size, height: size, style: `fill:${fill}`, class: 'ch-square' });
     svg.append(rect);
     if (c.number && size >= 18) svg.append(s('text', { x: x + 2, y: y + 8, class: 'ch-num', style: `fill:${inkOn(fill)}` }, c.number));

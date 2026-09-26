@@ -42,7 +42,7 @@ const MIME = {
 
 // Only these are ever served; tools/, server/, secrets etc. never are.
 const PUBLIC_PAGES = new Set(['/login.html']);
-const PAGES = new Set(['/index.html', '/puzzle.html', '/stats.html', '/login.html', '/admin.html']);
+const PAGES = new Set(['/index.html', '/puzzle.html', '/stats.html', '/analysis.html', '/login.html', '/admin.html']);
 const PUBLIC_DIRS = ['/css/', '/js/'];
 const PRIVATE_DIRS = ['/puzzles/']; // NYT content: members only
 

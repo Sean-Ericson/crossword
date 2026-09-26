@@ -180,6 +180,9 @@ export class LiveSolve {
   reset() {
     this.pending = [];
     this.inflight.clear();
+    // the fresh snapshot must not re-announce this tab as solving: the
+    // clock waits for Begin
+    this.active = false;
     this.send({ type: 'reset' });
   }
 

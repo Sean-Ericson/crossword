@@ -648,6 +648,9 @@ async function main() {
         ]),
         actions: [
           { label: 'Back to archive', onClick: () => (location.href = './index.html') },
+          ...(solve?.id
+            ? [{ label: 'See the breakdown', onClick: () => (location.href = `./analysis.html?puzzle=${encodeURIComponent(id)}&solve=${encodeURIComponent(solve.id)}`) }]
+            : []),
           { label: 'Admire the puzzle', primary: true },
         ],
       });
