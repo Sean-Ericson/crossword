@@ -15,17 +15,26 @@
  * puzzle open, un-paused, tab visible). Pausing in a co-op solve pauses
  * everyone.
  *
+ * Event log: every change the room applies is also logged (Room.log ->
+ * solve_events), stamped with the solve's own clock, for the stats pages:
+ * replays, time per entry, errors, who filled what. The kinds are listed
+ * in js/solve-analysis.js. When a solve completes its log is summarized
+ * into solve_summaries.
+ *
  * Wire messages are documented in js/net.js.
  */
 
 import { SolveEngine } from '../js/engine.js';
 import { newProgress, recordFitsModel } from '../js/state.js';
 import { distinctColors } from '../js/people.js';
+import { replayGrid, summarize, ANALYSIS_VERSION } from '../js/solve-analysis.js';
 import { newId, nowIso } from './db.mjs';
 import { publicUser } from './auth.mjs';
 
 const MAX_FILL_LEN = 12;
 const FILL_RE = /^[^\s.]*$/u;
+const ASSIST_RE = /^(?:(?:check|reveal):(?:letter|word|puzzle)|autocheck:(?:on|off))$/;
+const dirOrNull = (d) => (d === 'A' || d === 'D' ? d : null);
 
 const oldestFirst = (members) => [...members].sort((a, b) => a.id - b.id);
 
@@ -60,6 +69,9 @@ class Room {
     this.timerSince = null; // ms timestamp while running
     this.flushTimer = null;
     this.dirty = false;
+    this.seq = hub.store.maxEventSeq(this.id);
+    this.eventBuf = []; // logged, not yet written
+    this.noteBaseline();
   }
 
   now() {
@@ -73,6 +85,56 @@ class Room {
 
   timerState() {
     return { elapsed: this.elapsed(), running: this.timerSince != null };
+  }
+
+  /**
+   * Log one event (see js/solve-analysis.js for the kinds). Written to the
+   * DB with the next flush.
+   */
+  log(kind, user, { cell = null, value = null, marks = null, dir = null } = {}) {
+    this.eventBuf.push({
+      seq: ++this.seq,
+      t: Math.round(this.elapsed() * 1000),
+      at: this.now(),
+      userId: user?.id ?? null,
+      kind,
+      cell,
+      value,
+      marks,
+      dir,
+    });
+    this.markDirty();
+  }
+
+  /**
+   * The log has to add up to the grid. If the grid changed where the log
+   * can't see (progress from before logging began, or from the old site's
+   * sync), log where it stands now so analysis knows what it missed.
+   */
+  noteBaseline() {
+    if (this.record.completed) return;
+    const logged = replayGrid(this.model, this.seq ? this.hub.store.events(this.id) : []);
+    const same = logged.fill.every((v, i) => v === this.record.fill[i]) && logged.marks.every((m, i) => m === this.record.marks[i]);
+    if (!same) this.log('b', null, { value: JSON.stringify({ fill: this.record.fill, marks: this.record.marks }) });
+  }
+
+  /** Log the entry someone is on, when it changes, while they're solving. */
+  noteFocus(conn) {
+    if (!conn.active || !conn.cursor || this.record.completed) return;
+    const { index, dir } = conn.cursor;
+    const word = this.model.wordAt(index, dir) ?? this.model.wordAt(index, dir === 'A' ? 'D' : 'A');
+    const id = word?.id ?? null;
+    if (id === conn.focus) return;
+    conn.focus = id;
+    this.log('w', conn.user, { cell: index, value: id, dir });
+  }
+
+  /** Log someone starting or stopping (the entry they're on restarts too). */
+  noteActive(conn) {
+    conn.focus = null;
+    if (this.record.completed) return;
+    this.log('p', conn.user, { value: conn.active ? '1' : '0' });
+    this.noteFocus(conn);
   }
 
   broadcast(msg, except = null) {
@@ -126,7 +188,12 @@ class Room {
   }
 
   remove(conn) {
-    if (!this.conns.delete(conn)) return;
+    if (!this.conns.has(conn)) return;
+    if (conn.active) {
+      conn.active = false;
+      this.noteActive(conn);
+    }
+    this.conns.delete(conn);
     conn.room = null;
     this.updateTimer();
     this.broadcast({ type: 'presence', presence: this.presence() });
@@ -146,6 +213,7 @@ class Room {
       this.record.elapsed = Math.floor(this.timerBase);
       this.markDirty();
     }
+    this.log('s', null, { value: shouldRun ? 'start' : 'stop' });
     this.broadcast({ type: 'timer', ...this.timerState() });
   }
 
@@ -163,11 +231,13 @@ class Room {
     this.dirty = false;
     if (!this.record.completed) this.record.elapsed = Math.floor(this.elapsed());
     this.hub.store.saveRecord(this.id, this.record);
+    this.hub.store.appendEvents(this.id, this.eventBuf.splice(0));
   }
 
   // ---------- operations ----------
 
-  applyCells(conn, opId, changes) {
+  /** `dir` is the direction the sender was typing in, for the log. */
+  applyCells(conn, opId, changes, dir = null) {
     if (!Array.isArray(changes) || changes.length > this.model.cells.length) {
       throw new RoomError('bad-op', 'changes must be an array');
     }
@@ -184,6 +254,9 @@ class Room {
       let fill = typeof ch.fill === 'string' ? ch.fill.toUpperCase() : '';
       if (fill.length > MAX_FILL_LEN || !FILL_RE.test(fill)) fill = rec.fill[i];
       const marks = Number.isInteger(ch.marks) && ch.marks >= 0 && ch.marks <= 0x0f ? ch.marks : rec.marks[i];
+      if (fill !== rec.fill[i] || marks !== rec.marks[i]) {
+        this.log('c', conn.user, { cell: i, value: fill, marks, dir: dirOrNull(dir) });
+      }
       rec.fill[i] = fill;
       rec.marks[i] = marks;
       applied.push({ i, fill, marks });
@@ -199,7 +272,7 @@ class Room {
       changes: applied,
     });
     this.markDirty();
-    this.checkComplete();
+    this.checkComplete(conn);
   }
 
   applyFlags(conn, flags) {
@@ -225,7 +298,16 @@ class Room {
     this.markDirty();
   }
 
-  checkComplete() {
+  /** An assist (check, reveal, autocheck) only goes in the log. */
+  logAssist(conn, { kind, scope, index, dir }) {
+    if (this.record.completed) return;
+    const value = `${kind}:${scope}`;
+    if (!ASSIST_RE.test(value)) throw new RoomError('bad-op', 'unknown assist');
+    const cell = Number.isInteger(index) && index >= 0 && index < this.model.cells.length ? index : null;
+    this.log('a', conn.user, { cell, value, dir: dirOrNull(dir) });
+  }
+
+  checkComplete(conn) {
     const rec = this.record;
     if (rec.completed || !this.checker.isFull()) return;
     const scrambled = this.model.puz.scrambled;
@@ -237,6 +319,7 @@ class Room {
     rec.clean = !rec.used_check && !rec.used_reveal && !scrambled;
     rec.elapsed = Math.floor(this.timerBase);
     rec.updated_at = rec.solved_at;
+    this.log('d', conn?.user ?? null);
     this.broadcast({
       type: 'completed',
       solved_at: rec.solved_at,
@@ -254,18 +337,21 @@ class Room {
         used_reveal: rec.used_reveal,
       });
     }
+    this.hub.saveSummary(this.id, this.model);
   }
 
   setCursor(conn, index, dir) {
     if (!Number.isInteger(index) || index < 0 || index >= this.model.cells.length) return;
     conn.cursor = { index, dir: dir === 'D' ? 'D' : 'A' };
     this.broadcast({ type: 'cursor', conn: conn.id, user: conn.user.name, ...conn.cursor }, conn);
+    this.noteFocus(conn);
   }
 
   setActive(conn, on) {
     const was = conn.active;
     conn.active = !!on;
     if (was !== conn.active) {
+      this.noteActive(conn);
       this.updateTimer();
       this.broadcast({ type: 'presence', presence: this.presence() });
     }
@@ -273,23 +359,34 @@ class Room {
 
   /** Co-op pause button: stops everyone. */
   pauseAll(conn) {
-    for (const c of this.conns) c.active = false;
+    for (const c of this.conns) {
+      if (!c.active) continue;
+      c.active = false;
+      this.noteActive(c);
+    }
     this.updateTimer();
     this.broadcast({ type: 'paused', by: conn.user.name, conn: conn.id });
     this.broadcast({ type: 'presence', presence: this.presence() });
   }
 
-  /** Erase the grid and the clock ("Reset puzzle & timer"). */
-  reset() {
+  /**
+   * Erase the grid and the clock ("Reset puzzle & timer"). The log keeps
+   * the earlier attempt; 'r' starts the next one.
+   */
+  reset(conn = null) {
     this.record = newProgress(this.model, this.puzzleId, this.record.user);
     this.record.updated_at = nowIso();
     this.checker = new SolveEngine(this.model, this.record, {});
     this.timerBase = 0;
     this.timerSince = null;
     this.version++;
+    this.log('r', conn?.user ?? null);
     this.dirty = true;
     this.flush();
-    for (const c of this.conns) c.active = false;
+    for (const c of this.conns) {
+      c.active = false;
+      c.focus = null;
+    }
     for (const c of this.conns) c.send({ ...this.snapshot(c), reset: true });
   }
 
@@ -345,6 +442,8 @@ export class Hub {
       conn.close?.();
     }
     const shared = [...this.rooms.values()].filter((room) => room.members.some((m) => m.id === userId));
+    // their logged events reference the account, so they go in before it goes
+    for (const room of shared) room.flush();
     remove();
     for (const room of shared) room.refreshMembers();
   }
@@ -386,6 +485,31 @@ export class Hub {
     return p;
   }
 
+  /**
+   * Summarize a completed solve's log into solve_summaries. The first
+   * completion's summary stands unless `replace` (a newer ANALYSIS_VERSION).
+   */
+  saveSummary(solveId, model, { replace = false } = {}) {
+    try {
+      this.store.saveSummary(solveId, summarize(model, this.store.events(solveId)), { replace });
+    } catch (err) {
+      this.log.error?.(`summary for solve ${solveId}: ${err.stack || err}`);
+    }
+  }
+
+  /** Recompute summaries missing or made by an older analysis (at startup). */
+  async refreshSummaries() {
+    let count = 0;
+    for (const { id, puzzle_id } of this.store.solvesNeedingSummary(ANALYSIS_VERSION)) {
+      const model = await this.puzzles.model(puzzle_id);
+      if (!model) continue;
+      this.saveSummary(id, model, { replace: true });
+      count++;
+    }
+    if (count) this.log.info?.(`summarized ${count} solve log${count === 1 ? '' : 's'}`);
+    return count;
+  }
+
   closeRoom(room) {
     room.flush();
     if (this.rooms.get(room.id) === room) this.rooms.delete(room.id);
@@ -420,7 +544,10 @@ export class Hub {
       if (!room) throw new RoomError('not-joined', 'join a solve first');
       switch (msg.type) {
         case 'cells':
-          room.applyCells(conn, msg.opId ?? null, msg.changes);
+          room.applyCells(conn, msg.opId ?? null, msg.changes, msg.dir);
+          break;
+        case 'assist':
+          room.logAssist(conn, msg);
           break;
         case 'flags':
           room.applyFlags(conn, msg);
@@ -435,7 +562,7 @@ export class Hub {
           room.pauseAll(conn);
           break;
         case 'reset':
-          room.reset();
+          room.reset(conn);
           break;
         case 'ping':
           conn.send({ type: 'pong', t: msg.t });

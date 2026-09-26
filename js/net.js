@@ -3,8 +3,13 @@
  *
  * Client -> server:
  *   {type:'join', solve?:id, puzzle?:id}    solo solves join by puzzle id
- *   {type:'cells', opId, changes:[{i, fill, marks}]}
+ *   {type:'cells', opId, changes:[{i, fill, marks}], dir?}
+ *                                           dir: the direction being typed in
  *   {type:'flags', used_check?, used_reveal?, autocheck?}
+ *   {type:'assist', kind, scope, index, dir}
+ *                                           check/reveal letter|word|puzzle,
+ *                                           or autocheck on|off; only logged
+ *                                           (sent just before its cells)
  *   {type:'cursor', index, dir}
  *   {type:'active', on}                     this tab is solving (timer runs)
  *   {type:'pause'}                          pause everyone
@@ -138,9 +143,10 @@ export class LiveSolve {
   // ---------- outgoing ----------
 
   /** Queue + send local cell edits. */
-  sendCells(changes) {
+  /** @param {{dir?: 'A'|'D'}} [meta] the typist's direction, for the solve log */
+  sendCells(changes, { dir } = {}) {
     if (!changes.length) return;
-    const op = { opId: this.nextOp++, changes };
+    const op = { opId: this.nextOp++, changes, ...(dir ? { dir } : {}) };
     this.pending.push(op);
     for (const { i } of changes) this.inflight.set(i, (this.inflight.get(i) ?? 0) + 1);
     this.send({ type: 'cells', ...op });
@@ -149,6 +155,11 @@ export class LiveSolve {
   sendFlags(flags) {
     this.pendingFlags = { ...this.pendingFlags, ...flags };
     if (this.send({ type: 'flags', ...this.pendingFlags })) this.pendingFlags = null;
+  }
+
+  /** A check, reveal or autocheck toggle, for the solve log. Not queued. */
+  sendAssist(kind, scope, index, dir) {
+    this.send({ type: 'assist', kind, scope, index, dir });
   }
 
   sendCursor(index, dir) {

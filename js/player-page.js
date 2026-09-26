@@ -162,7 +162,10 @@ async function main() {
     cluesView.updateFilled(record);
     updateProgress();
     if (!meta.remote) {
-      live.sendCells(indexes.map((i) => ({ i, fill: record.fill[i], marks: record.marks[i] })));
+      live.sendCells(
+        indexes.map((i) => ({ i, fill: record.fill[i], marks: record.marks[i] })),
+        { dir: engine.sel.dir }
+      );
     }
   });
   // check / reveal / autocheck change the assist flags
@@ -800,26 +803,44 @@ async function main() {
     },
   ]);
 
+  // Assists go to the solve log first, so it reads "check word" before the
+  // squares that check marked.
+  const assist = (kind, scope) => {
+    if (record.completed || (kind !== 'autocheck' && model.puz.scrambled)) return;
+    live.sendAssist(kind, scope, engine.sel.index, engine.sel.dir);
+  };
+  const check = (scope) => {
+    assist('check', scope);
+    engine.check(scope);
+  };
+  const reveal = (scope) => {
+    assist('reveal', scope);
+    engine.reveal(scope);
+  };
+
   makeMenu(qs('#check-btn'), () => [
     {
       label: 'Autocheck',
       checked: record.autocheck,
-      action: () => engine.setAutocheck(!record.autocheck),
+      action: () => {
+        assist('autocheck', record.autocheck ? 'off' : 'on');
+        engine.setAutocheck(!record.autocheck);
+      },
     },
     'hr',
-    { label: 'Check letter', action: () => engine.check('letter') },
-    { label: 'Check word', action: () => engine.check('word') },
-    { label: 'Check puzzle', action: () => engine.check('puzzle') },
+    { label: 'Check letter', action: () => check('letter') },
+    { label: 'Check word', action: () => check('word') },
+    { label: 'Check puzzle', action: () => check('puzzle') },
   ]);
 
   makeMenu(qs('#reveal-btn'), () => [
-    { label: 'Reveal letter', action: () => engine.reveal('letter') },
-    { label: 'Reveal word', action: () => engine.reveal('word') },
+    { label: 'Reveal letter', action: () => reveal('letter') },
+    { label: 'Reveal word', action: () => reveal('word') },
     {
       label: 'Reveal puzzle',
       action: async () => {
         if (await confirmDialog('Reveal the entire puzzle? You will lose the clean-solve star.', { confirmLabel: 'Reveal all' })) {
-          engine.reveal('puzzle');
+          reveal('puzzle');
         }
       },
     },

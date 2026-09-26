@@ -18,7 +18,7 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { USER_PALETTE } from '../js/people.js';
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 export const USER_NAME_RE = /^[a-z0-9-]{1,24}$/;
 
@@ -107,6 +107,28 @@ export class Store {
         path             TEXT PRIMARY KEY,
         sha              TEXT,
         local_updated_at TEXT
+      );
+      -- every change to a live solve, in order (see Room.log in rooms.mjs):
+      -- t is the solve's own clock in ms, at the wall clock in ms
+      CREATE TABLE IF NOT EXISTS solve_events (
+        solve_id TEXT NOT NULL REFERENCES solves(id) ON DELETE CASCADE,
+        seq      INTEGER NOT NULL,
+        t        INTEGER NOT NULL,
+        at       INTEGER NOT NULL,
+        user_id  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        kind     TEXT NOT NULL,
+        cell     INTEGER,
+        value    TEXT,
+        marks    INTEGER,
+        dir      TEXT,
+        PRIMARY KEY (solve_id, seq)
+      ) WITHOUT ROWID;
+      -- js/solve-analysis.js summarize() of a completed solve's log
+      CREATE TABLE IF NOT EXISTS solve_summaries (
+        solve_id TEXT PRIMARY KEY REFERENCES solves(id) ON DELETE CASCADE,
+        v        INTEGER NOT NULL,
+        scalars  TEXT NOT NULL,
+        detail   TEXT NOT NULL
       );
       PRAGMA user_version = ${SCHEMA_VERSION};
     `);
@@ -387,6 +409,77 @@ export class Store {
         completed_at: s.solved_at,
         clean: s.clean,
       }));
+  }
+
+  // ---------- solve event log ----------
+
+  /** Highest event number logged for a solve (0 when there are none). */
+  maxEventSeq(solveId) {
+    return this.db.prepare('SELECT MAX(seq) AS seq FROM solve_events WHERE solve_id = ?').get(solveId).seq ?? 0;
+  }
+
+  /** @param {Array<{seq,t,at,userId,kind,cell,value,marks,dir}>} events */
+  appendEvents(solveId, events) {
+    if (!events.length) return;
+    const add = this.db.prepare(
+      `INSERT OR IGNORE INTO solve_events (solve_id, seq, t, at, user_id, kind, cell, value, marks, dir)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    );
+    this.db.exec('BEGIN');
+    try {
+      for (const e of events) {
+        add.run(solveId, e.seq, e.t, e.at, e.userId ?? null, e.kind, e.cell ?? null, e.value ?? null, e.marks ?? null, e.dir ?? null);
+      }
+      this.db.exec('COMMIT');
+    } catch (err) {
+      this.db.exec('ROLLBACK');
+      throw err;
+    }
+  }
+
+  /**
+   * A solve's log in order, with user names (null for deleted accounts):
+   * the shape js/solve-analysis.js reads.
+   */
+  events(solveId) {
+    return this.db
+      .prepare(
+        `SELECT seq, t, at, users.name AS user, kind, cell, value, marks, dir
+         FROM solve_events LEFT JOIN users ON users.id = solve_events.user_id
+         WHERE solve_id = ? ORDER BY seq`
+      )
+      .all(solveId);
+  }
+
+  // ---------- solve summaries ----------
+
+  /** First completion wins (`replace` is for recomputing a stale one). */
+  saveSummary(solveId, { v, scalars, detail }, { replace = false } = {}) {
+    this.db
+      .prepare(
+        `INSERT OR ${replace ? 'REPLACE' : 'IGNORE'} INTO solve_summaries (solve_id, v, scalars, detail) VALUES (?, ?, ?, ?)`
+      )
+      .run(solveId, v, JSON.stringify(scalars), JSON.stringify(detail));
+  }
+
+  summary(solveId) {
+    const row = this.db.prepare('SELECT * FROM solve_summaries WHERE solve_id = ?').get(solveId);
+    return row ? { v: row.v, scalars: JSON.parse(row.scalars), detail: JSON.parse(row.detail) } : null;
+  }
+
+  /**
+   * Completed solves that have a log but no summary at version `v`.
+   * @returns {Array<{id:string, puzzle_id:string}>}
+   */
+  solvesNeedingSummary(v) {
+    return this.db
+      .prepare(
+        `SELECT solves.id, solves.puzzle_id FROM solves
+         LEFT JOIN solve_summaries AS s ON s.solve_id = solves.id
+         WHERE solves.completed = 1 AND (s.v IS NULL OR s.v != ?)
+           AND EXISTS (SELECT 1 FROM solve_events AS e WHERE e.solve_id = solves.id)`
+      )
+      .all(v);
   }
 
   // ---------- GitHub data repo sync state ----------

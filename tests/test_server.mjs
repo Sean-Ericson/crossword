@@ -1,7 +1,8 @@
 /* Tests for the self-hosted server: auth, the SQLite store, live rooms
  * (convergence of concurrent edits, the shared timer, completion), and the
  * browser-side LiveSolve bookkeeping that pairs with them. */
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
@@ -364,6 +365,175 @@ test('rooms: bad cell values are ignored', async () => {
   assert.equal(room.record.fill[open[0]], '');
   assert.equal(room.record.fill[open[1]], 'X');
   assert.equal(room.record.marks[open[1]], 0);
+});
+
+// ---------- solve log ----------
+
+const answer = (i) => model.cells[i].solution.toUpperCase();
+const kinds = (events) => events.map((e) => e.kind).join('');
+
+test('log: a solo solve logs letters, focus, sittings and assists, then a summary', async () => {
+  const { store, hub, users, tick } = setup();
+  const a = client(hub, users[0]);
+  await hub.handle(a.conn, { type: 'join', puzzle: PUZZLE });
+  const room = a.conn.room;
+  const w1 = model.words.A[0];
+  await hub.handle(a.conn, { type: 'cursor', index: w1.cells[0], dir: 'A' }); // not solving yet: no 'w'
+  await hub.handle(a.conn, { type: 'active', on: true }); // p, w, s
+  await hub.handle(a.conn, { type: 'cursor', index: w1.cells[1], dir: 'A' }); // same entry: no 'w'
+  tick(3_000);
+  await hub.handle(a.conn, {
+    type: 'cells', opId: 1, dir: 'A',
+    changes: [{ i: w1.cells[0], fill: 'Q', marks: 0 }, { i: w1.cells[1], fill: answer(w1.cells[1]), marks: 0 }],
+  });
+  await hub.handle(a.conn, { type: 'cells', opId: 2, changes: [{ i: w1.cells[1], fill: answer(w1.cells[1]), marks: 0 }] }); // no change
+  await hub.handle(a.conn, { type: 'assist', kind: 'check', scope: 'word', index: w1.cells[0], dir: 'A' });
+  await hub.handle(a.conn, { type: 'assist', kind: 'nuke', scope: 'all' });
+  assert.equal(a.inbox.at(-1).type, 'error', 'unknown assists are refused');
+  const d1 = model.words.D.find((w) => w.cells[0] !== w1.cells[0]);
+  await hub.handle(a.conn, { type: 'cursor', index: d1.cells[0], dir: 'D' }); // new entry: 'w'
+  tick(2_000);
+  await hub.handle(a.conn, { type: 'active', on: false }); // p, s
+  tick(60_000); // away: the solve's clock doesn't move
+  await hub.handle(a.conn, { type: 'active', on: true });
+  tick(1_000);
+  const rest = open.map((i) => ({ i, fill: answer(i), marks: 0 }));
+  await hub.handle(a.conn, { type: 'cells', opId: 3, dir: 'D', changes: rest });
+
+  const events = store.events(room.id);
+  assert.equal(kinds(events.slice(0, 3)), 'pws');
+  assert.deepEqual(events.slice(3, 5).map((e) => [e.kind, e.t, e.user, e.value, e.dir]), [
+    ['c', 3000, 'sean', 'Q', 'A'],
+    ['c', 3000, 'sean', answer(w1.cells[1]), 'A'],
+  ]);
+  assert.deepEqual(events.slice(5, 7).map((e) => [e.kind, e.value]), [['a', 'check:word'], ['w', d1.id]]);
+  assert.equal(kinds(events.slice(7, 12)), 'psp' + 'ws');
+  const done = events.at(-1);
+  assert.equal(done.kind, 'd');
+  assert.equal(done.t, 6_000, 'solving time, not wall time');
+  assert.deepEqual(events.map((e) => e.seq), events.map((_, k) => k + 1));
+
+  const summary = store.summary(room.id);
+  assert.equal(summary.scalars.ms, 6_000);
+  assert.equal(summary.scalars.sittings, 2);
+  assert.equal(summary.scalars.wrong, 1, 'the Q');
+  assert.equal(summary.scalars.fixed, 1);
+  assert.equal(summary.scalars.checks.word, 1);
+  assert.equal(summary.scalars.partial, false);
+  assert.equal(summary.scalars.first_ms, 3_000);
+  assert.equal(summary.detail.curve.filled.at(-1), 100);
+});
+
+test('log: reset keeps the earlier attempt, and the first completion is summarized', async () => {
+  const { store, hub, users, tick } = setup();
+  const a = client(hub, users[0]);
+  await hub.handle(a.conn, { type: 'join', puzzle: PUZZLE });
+  const room = a.conn.room;
+  await hub.handle(a.conn, { type: 'active', on: true });
+  tick(10_000);
+  await hub.handle(a.conn, { type: 'cells', opId: 1, changes: open.map((i) => ({ i, fill: answer(i), marks: 0 })) });
+  const first = store.summary(room.id);
+  assert.equal(first.scalars.ms, 10_000);
+  await hub.handle(a.conn, { type: 'reset' });
+  await hub.handle(a.conn, { type: 'active', on: true });
+  tick(4_000);
+  await hub.handle(a.conn, { type: 'cells', opId: 2, changes: open.map((i) => ({ i, fill: answer(i), marks: 0 })) });
+  const events = store.events(room.id);
+  assert.equal(events.filter((e) => e.kind === 'r').length, 1);
+  assert.equal(events.filter((e) => e.kind === 'd').length, 2, 'both attempts kept');
+  assert.equal(store.summary(room.id).scalars.ms, 10_000, 'still the first');
+  assert.equal(store.statsDoc(users[0]).solves[PUZZLE].seconds, 10);
+});
+
+test('log: co-op letters are credited to whoever typed them, fixes included', async () => {
+  const { store, hub, users, tick } = setup();
+  const coop = store.createSolve({
+    puzzleId: PUZZLE, kind: 'coop', createdBy: users[0].id,
+    memberIds: [users[0].id, users[1].id], record: newProgress(model, PUZZLE, 'coop'),
+  });
+  const a = client(hub, users[0]);
+  const b = client(hub, users[1]);
+  await hub.handle(a.conn, { type: 'join', solve: coop.id });
+  await hub.handle(b.conn, { type: 'join', solve: coop.id });
+  await hub.handle(a.conn, { type: 'active', on: true });
+  await hub.handle(b.conn, { type: 'active', on: true });
+  const half = Math.floor(open.length / 2);
+  tick(1_000);
+  await hub.handle(a.conn, { type: 'cells', opId: 1, changes: [{ i: open[0], fill: answer(open[0]) === 'Z' ? 'Y' : 'Z', marks: 0 }] });
+  tick(1_000);
+  await hub.handle(b.conn, { type: 'cells', opId: 1, changes: open.slice(0, half).map((i) => ({ i, fill: answer(i), marks: 0 })) });
+  tick(1_000);
+  await hub.handle(a.conn, { type: 'cells', opId: 2, changes: open.slice(half).map((i) => ({ i, fill: answer(i), marks: 0 })) });
+  const s = store.summary(coop.id).scalars;
+  assert.equal(s.by.devon.fixed_others, 1, 'devon fixed sean’s letter');
+  assert.equal(s.by.sean.wrong, 1);
+  assert.equal(s.by.devon.final, half);
+  assert.equal(s.by.sean.final, open.length - half);
+  assert.deepEqual(store.summary(coop.id).detail.fixes, { 'devon>sean': 1 });
+});
+
+test('log: a grid changed outside the log gets a baseline; analysis calls it partial', async () => {
+  const { store, hub, users } = setup();
+  const record = newProgress(model, PUZZLE, 'sean');
+  record.fill[open[0]] = answer(open[0]); // progress from before logging began
+  const solve = store.createSolve({ puzzleId: PUZZLE, kind: 'solo', ownerId: users[0].id, createdBy: users[0].id, memberIds: [users[0].id], record });
+  const a = client(hub, users[0]);
+  await hub.handle(a.conn, { type: 'join', puzzle: PUZZLE });
+  hub.disconnect(a.conn);
+  let events = store.events(solve.id);
+  assert.equal(kinds(events), 'b');
+  // opened again with nothing changed: no second baseline
+  await hub.handle(a.conn, { type: 'join', puzzle: PUZZLE });
+  await hub.handle(a.conn, { type: 'cells', opId: 1, changes: open.map((i) => ({ i, fill: answer(i), marks: 0 })) });
+  events = store.events(solve.id);
+  assert.equal(events.filter((e) => e.kind === 'b').length, 1);
+  assert.equal(store.summary(solve.id).scalars.partial, true);
+});
+
+test('log: deleting someone mid-solve keeps their logged letters', async () => {
+  const { store, hub, users } = setup();
+  const coop = store.createSolve({
+    puzzleId: PUZZLE, kind: 'coop', createdBy: users[0].id,
+    memberIds: [users[0].id, users[1].id], record: newProgress(model, PUZZLE, 'coop'),
+  });
+  const a = client(hub, users[0]);
+  const b = client(hub, users[1]);
+  await hub.handle(a.conn, { type: 'join', solve: coop.id });
+  await hub.handle(b.conn, { type: 'join', solve: coop.id });
+  await hub.handle(b.conn, { type: 'cells', opId: 1, changes: [{ i: open[0], fill: 'Q', marks: 0 }] });
+  hub.dropUser(users[1].id, () => store.deleteUser(users[1].id));
+  hub.disconnect(a.conn);
+  const typed = store.events(coop.id).filter((e) => e.kind === 'c');
+  assert.equal(typed.length, 1);
+  assert.equal(typed[0].user, null, 'the account is gone, the letter stays');
+});
+
+test('log: summaries from an older analysis are recomputed', async () => {
+  const { store, hub, users } = setup();
+  const a = client(hub, users[0]);
+  await hub.handle(a.conn, { type: 'join', puzzle: PUZZLE });
+  await hub.handle(a.conn, { type: 'cells', opId: 1, changes: open.map((i) => ({ i, fill: answer(i), marks: 0 })) });
+  const id = a.conn.room.id;
+  store.db.prepare('UPDATE solve_summaries SET v = 0').run();
+  assert.equal(await hub.refreshSummaries(), 1);
+  assert.notEqual(store.summary(id).v, 0);
+  assert.equal(await hub.refreshSummaries(), 0);
+});
+
+test('store: a version 2 database gains the solve log and keeps its rows', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'xw-migrate-'));
+  const file = path.join(dir, 'x.db');
+  let store = new Store(file);
+  const u = store.createUser({ name: 'sean', pwHash: 'x' });
+  store.recordSoloSolve(u.id, PUZZLE, { seconds: 5, completed_at: '2026-01-01T00:00:00Z', clean: true });
+  store.db.exec('DROP TABLE solve_events; DROP TABLE solve_summaries; PRAGMA user_version = 2;');
+  store.close();
+  store = new Store(file);
+  assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 3);
+  assert.equal(store.statsDoc(u).solves[PUZZLE].seconds, 5);
+  assert.equal(store.maxEventSeq('nope'), 0);
+  store.close();
+  rmSync(dir, { recursive: true, force: true });
 });
 
 test('engine: remote cells leave the cursor alone and are tagged remote', () => {

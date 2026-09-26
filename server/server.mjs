@@ -260,6 +260,8 @@ async function main() {
     }
   }
   setInterval(() => store.pruneSessions(), 6 * 3600_000).unref();
+  // solve summaries made by an older js/solve-analysis.js are redone
+  hub.refreshSummaries().catch((err) => log.error(`summaries: ${err.stack || err}`));
 
   const users = store.listUsers();
   if (!users.length) {
