@@ -184,8 +184,13 @@ export function makeApi(ctx) {
       });
     }],
 
-    ['GET', /^\/api\/users$/, async (req, res) => {
-      send(res, 200, { users: store.listUsers().map(publicUser) });
+    // last_together: when you last shared a co-op solve with them (or null),
+    // so pickers can list your usual partners first
+    ['GET', /^\/api\/users$/, async (req, res, _p, user) => {
+      const partners = store.coopPartners(user.id);
+      send(res, 200, {
+        users: store.listUsers().map((u) => ({ ...publicUser(u), last_together: partners.get(u.id) ?? null })),
+      });
     }],
 
     // Everything the archive needs to draw status icons, in one call.
@@ -294,6 +299,28 @@ export function makeApi(ctx) {
       limiter.succeed([`user:${target.name}`]); // a fresh password gets a fresh set of tries
       ctx.log.info?.(`admin ${user.name} reset the password for ${target.name}`);
       send(res, 200, { ok: true, ...(generated ? { password } : {}) });
+    }],
+
+    // Admins can't change or delete their own account here, which also
+    // means there is always at least one admin left.
+    ['POST', /^\/api\/admin\/users\/([a-z0-9-]+)\/admin$/, async (req, res, [name], user) => {
+      requireAdmin(user);
+      const target = userByNameOr404(name);
+      if (target.id === user.id) throw new HttpError(400, 'You can’t change your own admin status.');
+      const body = await readJson(req, 10_000);
+      if (typeof body.is_admin !== 'boolean') throw new HttpError(400, 'is_admin must be true or false.');
+      store.updateUser(target.id, { isAdmin: body.is_admin });
+      ctx.log.info?.(`admin ${user.name} ${body.is_admin ? 'made' : 'removed'} ${target.name} ${body.is_admin ? 'an admin' : 'as admin'}`);
+      send(res, 200, { user: adminView(store.userById(target.id)) });
+    }],
+
+    ['DELETE', /^\/api\/admin\/users\/([a-z0-9-]+)$/, async (req, res, [name], user) => {
+      requireAdmin(user);
+      const target = userByNameOr404(name);
+      if (target.id === user.id) throw new HttpError(400, 'You can’t delete your own account.');
+      hub.dropUser(target.id, () => store.deleteUser(target.id));
+      ctx.log.info?.(`admin ${user.name} deleted account ${target.name}`);
+      send(res, 200, { ok: true });
     }],
 
     // One-time upload of progress saved in this browser before the move to

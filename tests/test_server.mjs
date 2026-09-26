@@ -316,6 +316,34 @@ test('rooms: co-op completion stays out of solo stats', async () => {
   assert.equal(coopStats[0].clean, false);
 });
 
+test('rooms: deleting a user hangs up on them; co-op partners keep the solve', async () => {
+  const { store, hub, users } = setup();
+  const coop = store.createSolve({
+    puzzleId: PUZZLE, kind: 'coop', createdBy: users[0].id,
+    memberIds: [users[0].id, users[1].id], record: newProgress(model, PUZZLE, 'coop'),
+  });
+  const a = client(hub, users[0]);
+  const b = client(hub, users[1]);
+  let closed = 0;
+  b.conn.close = () => closed++;
+  await hub.handle(a.conn, { type: 'join', solve: coop.id });
+  await hub.handle(b.conn, { type: 'join', solve: coop.id });
+  await hub.handle(b.conn, { type: 'cells', opId: 1, changes: [{ i: open[0], fill: 'Q', marks: 0 }] });
+  a.inbox.length = 0;
+
+  hub.dropUser(users[1].id, () => store.deleteUser(users[1].id));
+  assert.equal(closed, 1);
+  assert.equal(b.conn.room, null);
+  assert.equal(store.userById(users[1].id), null);
+  const room = hub.rooms.get(coop.id);
+  assert.deepEqual(room.members.map((m) => m.name), ['sean']);
+  assert.ok(a.inbox.some((m) => m.type === 'members' && m.members.length === 1));
+  assert.ok(a.inbox.some((m) => m.type === 'presence' && m.presence.length === 1));
+  assert.equal(room.record.fill[open[0]], 'Q', 'their edits stay');
+  hub.disconnect(a.conn);
+  assert.equal(store.solveById(coop.id).record.fill[open[0]], 'Q', 'flushed when the last person left');
+});
+
 test('rooms: bad cell values are ignored', async () => {
   const { hub, users } = setup();
   const a = client(hub, users[0]);
@@ -451,6 +479,29 @@ test('admin api: admins reset passwords and add accounts; others cannot', async 
     assert.equal((await call('POST', 'admin/users', { name: 'Bad Name!' }, admin)).status, 400);
     const list = await call('GET', 'admin/users', null, admin);
     assert.deepEqual(list.json.users.map((u) => u.name), ['devon', 'sean', 'tom']);
+
+    // grant and remove admin; takes effect on the next request
+    const tom = (await login('tom', added.json.password)).cookie;
+    assert.equal((await call('POST', 'admin/users/tom/admin', { is_admin: true }, devonOld.cookie)).status, 401);
+    assert.equal((await call('POST', 'admin/users/tom/admin', { is_admin: 'yes' }, admin)).status, 400);
+    const promoted = await call('POST', 'admin/users/tom/admin', { is_admin: true }, admin);
+    assert.equal(promoted.status, 200);
+    assert.equal(promoted.json.user.is_admin, true);
+    assert.equal((await call('GET', 'admin/users', null, tom)).status, 200);
+    assert.equal((await call('POST', 'admin/users/sean/admin', { is_admin: false }, admin)).status, 400, 'not your own');
+    assert.equal((await call('POST', 'admin/users/tom/admin', { is_admin: false }, admin)).status, 200);
+    assert.equal((await call('GET', 'admin/users', null, tom)).status, 403);
+    assert.equal((await call('POST', 'admin/users/nobody/admin', { is_admin: true }, admin)).status, 404);
+
+    // delete: non-admins refused, not yourself, and the account and its sessions are gone
+    assert.equal((await call('DELETE', 'admin/users/devon', null, tom)).status, 403);
+    assert.equal((await call('DELETE', 'admin/users/sean', null, admin)).status, 400);
+    assert.equal((await call('DELETE', 'admin/users/nobody', null, admin)).status, 404);
+    assert.equal((await call('DELETE', 'admin/users/tom', null, admin)).status, 200);
+    assert.equal((await call('GET', 'me', null, tom)).status, 401, 'signed out');
+    assert.equal((await login('tom', added.json.password)).status, 401);
+    const after = await call('GET', 'admin/users', null, admin);
+    assert.deepEqual(after.json.users.map((u) => u.name), ['devon', 'sean']);
   } finally {
     server.close();
   }

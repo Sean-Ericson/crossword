@@ -113,18 +113,28 @@ export class CluesView {
   }
 
   /**
-   * Colored dots on the clues other solvers are working on.
+   * Colored dots on the clues other solvers are working on. A crowd on one
+   * clue shows two dots and "+N" (the tooltip names everyone).
    * @param {Array<{wordId:string, color:string, label:string}>} markers
    */
   setRemoteMarkers(markers) {
-    for (const dot of this.remoteDots ?? []) dot.remove();
+    for (const group of this.remoteDots ?? []) group.remove();
     this.remoteDots = [];
-    for (const { wordId, color, label } of markers) {
+    const byWord = new Map();
+    for (const m of markers) {
+      if (!byWord.has(m.wordId)) byWord.set(m.wordId, []);
+      byWord.get(m.wordId).push(m);
+    }
+    for (const [wordId, here] of byWord) {
       const li = this.itemsByWordId.get(wordId);
       if (!li) continue;
-      const dot = el('span', { class: 'clue-remote', style: `background:${color}`, title: label });
-      li.append(dot);
-      this.remoteDots.push(dot);
+      const shown = here.length > 3 ? here.slice(0, 2) : here;
+      const group = el('span', { class: 'clue-remotes', title: here.map((m) => m.label).join(', ') }, [
+        ...shown.map(({ color }) => el('span', { class: 'clue-remote', style: `background:${color}` })),
+        shown.length < here.length ? el('span', { class: 'clue-remote-more' }, `+${here.length - shown.length}`) : null,
+      ]);
+      li.append(group);
+      this.remoteDots.push(group);
     }
   }
 }

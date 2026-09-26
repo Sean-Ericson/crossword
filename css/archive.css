@@ -87,7 +87,7 @@
 }
 
 .cal-nav:disabled {
-  color: #ccc;
+  color: var(--color-text-faint);
   cursor: default;
 }
 
@@ -128,13 +128,13 @@
 }
 
 .cal-day.no-puzzle {
-  color: #c3c3c3;
+  color: var(--color-text-faint);
   background: none;
 }
 
 /* published by NYT but not downloaded yet - opening it fetches it */
 .cal-day.fetchable {
-  color: #9a9a9a;
+  color: var(--color-text-subtle);
   border-style: dashed;
   cursor: pointer;
 }
@@ -147,7 +147,7 @@
 
 .cal-day.fetchable .day-status {
   font-size: 11px;
-  color: #b5b5b5;
+  color: var(--color-text-faint);
 }
 
 .cal-day.fetchable:hover .day-status {
@@ -177,12 +177,12 @@
 }
 
 .cal-day.st-solved-clean {
-  background: #fff8e1;
+  background: var(--color-solved-clean-bg);
   border-color: var(--color-gold);
 }
 
 .cal-day.st-solved {
-  background: #eaf3fb;
+  background: var(--color-solved-bg);
   border-color: var(--color-link);
 }
 
@@ -242,7 +242,7 @@
 /* published, but not downloaded yet */
 .special-item.fetchable {
   border-style: dashed;
-  color: #8e8e8e;
+  color: var(--color-text-subtle);
 }
 
 .special-item.fetchable:hover {
@@ -252,7 +252,7 @@
 }
 
 .special-item.fetchable .sp-status {
-  color: #b5b5b5;
+  color: var(--color-text-faint);
   font-size: 13px;
 }
 
@@ -262,7 +262,7 @@
 
 .special-item.unavailable {
   border-style: dashed;
-  color: #bdbdbd;
+  color: var(--color-text-faint);
   cursor: default;
 }
 
@@ -328,4 +328,18 @@
 .coop-item .coop-meta {
   font-size: 12px;
   color: var(--color-text-muted);
+}
+
+/* "Show N more" after the first few (archive-page.js STRIP_SHOWS) */
+.coop-item.coop-toggle {
+  justify-content: center;
+  background: none;
+  border-style: dashed;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.coop-item.coop-toggle:hover {
+  color: var(--color-text);
 }

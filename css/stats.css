@@ -56,6 +56,71 @@
   align-self: center;
 }
 
+/* long account lists: just the people compared, each removable */
+.user-chip .chip-name {
+  max-width: 16em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-chip .chip-x {
+  margin: -4px -8px -4px -2px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.user-chip .chip-x:hover {
+  background: var(--color-hover-tint);
+  color: var(--color-text);
+}
+
+.user-chip.compare-btn {
+  border-style: dashed;
+  color: var(--color-text);
+  font-family: inherit;
+}
+
+.user-chip.compare-btn:hover {
+  border-color: var(--color-text);
+}
+
+/* a person's color, wherever their name is */
+.stats-main .dot {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* a name in a table: long ones are cut short (the full one is the tooltip) */
+.who {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.who-name {
+  display: inline-block;
+  max-width: 12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+@media (max-width: 600px) {
+  .who-name {
+    max-width: 7em;
+  }
+}
+
 /* ---------- stat tiles ---------- */
 
 .stat-tiles {
@@ -183,7 +248,7 @@
 
 .wk-empty {
   font-size: 12px;
-  color: #c9c9c9;
+  color: var(--color-text-faint);
   padding-top: 1px;
 }
 
@@ -236,6 +301,69 @@
   font-weight: 700;
 }
 
+/* wide tables (many people) scroll sideways; the first column stays put */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll .h2h-table th,
+.table-scroll .h2h-table td {
+  white-space: nowrap;
+}
+
+.table-scroll .h2h-table td.with {
+  white-space: normal;
+}
+
+.table-scroll .h2h-table th:first-child,
+.table-scroll .h2h-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-bg);
+  box-shadow: inset -1px 0 0 var(--color-border); /* the edge columns slide under */
+}
+
+.h2h-table th.num,
+.h2h-table td.num {
+  text-align: right;
+}
+
+.h2h-table td.empty {
+  color: var(--color-text-faint);
+}
+
+.h2h-table tr.you td:first-child {
+  font-weight: 700;
+}
+
+.board {
+  margin-bottom: 34px;
+}
+
+.board h2 {
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+
+/* leaderboard headings sort the table */
+.sort-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  white-space: nowrap;
+}
+
+.sort-btn:hover,
+.sort-btn.active {
+  color: var(--color-text);
+}
+
 .h2h-table a {
   color: var(--color-link);
   text-decoration: none;
@@ -274,6 +402,12 @@
   height: 9px;
   border-radius: 50%;
   display: inline-block;
+}
+
+.coop-more {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 .h2h-table td.gold {

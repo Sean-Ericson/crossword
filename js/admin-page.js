@@ -1,6 +1,7 @@
 /*
- * admin-page.js — account management for admins (admin.html): reset
- * someone's password and add accounts, from anywhere. The server enforces
+ * admin-page.js — account management for admins (admin.html): add and
+ * delete accounts, reset passwords and grant or remove admin, from
+ * anywhere. Nobody can change their own account here. The server enforces
  * the admin check; this page just hides itself for everyone else.
  */
 
@@ -26,6 +27,29 @@ async function main() {
   qs('#user-table').hidden = false;
   qs('#add-section').hidden = false;
 
+  // A long list gets a filter box, a count, and a shortcut to the add form
+  // (which is below everyone).
+  const FILTER_ABOVE = 8;
+  const filter = qs('#user-filter');
+  filter.addEventListener('input', () => applyFilter());
+  qs('#jump-add').addEventListener('click', (e) => {
+    e.preventDefault();
+    qs('#add-section').scrollIntoView({ behavior: 'smooth' });
+    qs('#add-form [name=name]').focus({ preventScroll: true });
+  });
+
+  function applyFilter() {
+    const q = filter.value.trim().toLowerCase();
+    const rows = [...qs('#user-table tbody').rows];
+    let shown = 0;
+    for (const tr of rows) {
+      tr.hidden = !!q && !tr.dataset.search.includes(q);
+      if (!tr.hidden) shown++;
+    }
+    qs('#user-count').textContent = q ? `${shown} of ${rows.length}` : `${rows.length} accounts`;
+    qs('#no-match').hidden = shown > 0;
+  }
+
   async function render() {
     const { users } = await api.get('admin/users');
     const tbody = qs('#user-table tbody');
@@ -33,24 +57,105 @@ async function main() {
     for (const u of users) {
       const self = u.name === me.name;
       tbody.append(
-        el('tr', {}, [
-          el('td', {}, [
-            el('span', { class: 'user-dot', style: `background:${u.color};margin-right:6px` }),
-            u.name,
+        el('tr', { dataset: { search: `${u.name} ${u.display_name}`.toLowerCase() } }, [
+          el('td', {}, el('div', { class: 'acct' }, [
+            el('span', { class: 'user-dot', style: `background:${u.color}` }),
+            el('span', { class: 'acct-names' }, [
+              el('span', { class: 'acct-display' }, u.display_name),
+              // the sign-in name, unless it's just the display name in lowercase
+              u.display_name.toLowerCase() !== u.name ? el('span', { class: 'acct-login' }, u.name) : null,
+            ]),
             u.is_admin ? el('span', { class: 'tag' }, 'admin') : null,
-          ]),
-          el('td', {}, u.display_name),
-          el('td', {}, u.created_at ? new Date(u.created_at).toLocaleDateString() : ''),
+          ])),
+          el('td', { class: 'since' }, u.created_at ? new Date(u.created_at).toLocaleDateString() : ''),
           el(
             'td',
             {},
             self
               ? el('span', { style: 'font-size:12px;color:var(--color-text-muted)' }, 'you — use your account menu')
-              : el('button', { class: 'btn', onclick: () => resetFor(u) }, 'Reset password')
+              : el('div', { class: 'row-actions' }, [
+                  el('button', { class: 'btn', onclick: () => resetFor(u) }, 'Reset password'),
+                  el(
+                    'button',
+                    { class: 'btn', onclick: () => setAdmin(u, !u.is_admin) },
+                    u.is_admin ? 'Remove admin' : 'Make admin'
+                  ),
+                  el('button', { class: 'btn btn-danger', onclick: () => deleteUser(u) }, 'Delete'),
+                ])
           ),
         ])
       );
     }
+    const tools = qs('#admin-tools');
+    tools.hidden = users.length <= FILTER_ABOVE;
+    if (tools.hidden) filter.value = '';
+    applyFilter(); // the list is rebuilt after every change; keep the filter
+  }
+
+  function setAdmin(u, on) {
+    showModal({
+      title: on ? `Make ${u.display_name} an admin?` : `Remove ${u.display_name} as admin?`,
+      body: on
+        ? 'They’ll be able to add, reset, delete and promote accounts, including yours.'
+        : 'They’ll no longer be able to manage accounts.',
+      actions: [
+        { label: 'Cancel' },
+        {
+          label: on ? 'Make admin' : 'Remove admin',
+          primary: true,
+          onClick: async () => {
+            try {
+              await api.post(`admin/users/${encodeURIComponent(u.name)}/admin`, { is_admin: on });
+              toast(on ? `${u.name} is now an admin.` : `${u.name} is no longer an admin.`);
+              await render();
+            } catch (err) {
+              toast(err.message, { error: true });
+            }
+          },
+        },
+      ],
+    });
+  }
+
+  function deleteUser(u) {
+    const input = el('input', { type: 'text', autocomplete: 'off', spellcheck: 'false', style: inputStyle });
+    const error = el('div', { style: 'color:var(--color-error);font-size:13px;min-height:18px;margin-top:6px' });
+    showModal({
+      title: `Delete ${u.display_name}’s account?`,
+      body: el('div', { style: 'text-align:left' }, [
+        el(
+          'p',
+          { style: 'margin:0 0 10px' },
+          'This signs them out and permanently deletes their account, solo progress and stats. ' +
+            'Co-op solves stay for the other people in them. This can’t be undone.'
+        ),
+        el('label', { style: 'display:block;font-size:13px;font-weight:600' }, [`Type “${u.name}” to confirm`, input]),
+        error,
+      ]),
+      actions: [
+        { label: 'Cancel' },
+        {
+          label: 'Delete account',
+          primary: true,
+          keepOpen: true,
+          onClick: async (e) => {
+            if (input.value.trim().toLowerCase() !== u.name) {
+              error.textContent = `Type “${u.name}” exactly.`;
+              return;
+            }
+            try {
+              await api.del(`admin/users/${encodeURIComponent(u.name)}`);
+              e.target.closest('.overlay')?.remove();
+              toast(`Deleted ${u.name}.`);
+              await render();
+            } catch (err) {
+              error.textContent = err.message;
+            }
+          },
+        },
+      ],
+    });
+    input.focus();
   }
 
   function resetFor(u) {
@@ -61,7 +166,7 @@ async function main() {
       placeholder: 'leave blank for a temporary password',
       style: inputStyle,
     });
-    const error = el('div', { style: 'color:#b3261e;font-size:13px;min-height:18px;margin-top:6px' });
+    const error = el('div', { style: 'color:var(--color-error);font-size:13px;min-height:18px;margin-top:6px' });
     showModal({
       title: `Reset ${u.display_name}’s password`,
       body: el('div', { style: 'text-align:left' }, [

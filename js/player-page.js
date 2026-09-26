@@ -22,6 +22,8 @@ import { loadSettings, saveSettings, SETTING_LABELS } from './settings.js';
 import { loadMe } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
 import { TouchKeyboard, isTouchDevice } from './touch-keyboard.js';
+import { pickPeople } from './people-picker.js';
+import { listNames } from './people.js';
 import {
   el,
   qs,
@@ -35,8 +37,10 @@ import {
 const params = new URLSearchParams(location.search);
 
 const flagsOf = (r) => ({ used_check: !!r.used_check, used_reveal: !!r.used_reveal, autocheck: !!r.autocheck });
-const listNames = (names) =>
-  names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
+
+// Presence chips shown in the toolbar before the rest fold into "+N"
+const maxChips = () => (matchMedia('(max-width: 600px)').matches ? 3 : 6);
+const STATUS_TEXT = { solving: 'solving', here: 'here, paused', away: 'away' };
 
 async function main() {
   const me = await loadMe();
@@ -210,7 +214,10 @@ async function main() {
     renderSolveInfo();
     renderPresence();
     drawAllRemote();
-    if (firstTime) loadSolveList();
+    if (firstTime) {
+      loadSolveList();
+      loadDirectory().catch(() => {}); // display names in the solve menu
+    }
     if (record.completed) {
       showFinalTime();
       if (!firstTime && !wasCompleted) toast('Solved!');
@@ -238,8 +245,11 @@ async function main() {
     presence = msg.presence;
     const after = new Set(presence.filter((p) => p.user !== user).map((p) => p.user));
     if (ready && isCoop()) {
-      for (const name of after) if (!before.has(name)) toast(`${displayName(name)} joined`);
-      for (const name of before) if (!after.has(name)) toast(`${displayName(name)} left`);
+      // one toast per update, however many arrive at once
+      const joined = [...after].filter((n) => !before.has(n)).map(displayName);
+      const left = [...before].filter((n) => !after.has(n)).map(displayName);
+      if (joined.length) toast(`${listNames(joined, 3)} joined`);
+      if (left.length) toast(`${listNames(left, 3)} left`);
     }
     renderPresence();
     drawAllRemote();
@@ -261,6 +271,7 @@ async function main() {
     if (solve) solve.members = msg.members;
     renderSolveInfo();
     renderPresence();
+    if (overlayKind === 'start') showStartOverlay(); // "You're solving with …"
   });
   live.on('error', (msg) => {
     if (['not-member', 'no-solve', 'no-puzzle'].includes(msg.code)) {
@@ -277,29 +288,67 @@ async function main() {
     name;
 
   // ----- presence + remote cursors -----
-  const presenceEl = qs('#presence');
+  // One chip per member, the people who are here first. A big solve shows
+  // the first few and a "+N" chip; clicking opens the full list.
+  const presenceBtn = qs('#presence');
+
+  /** Solve members with their status: solving, then here, then away. */
+  function memberStates() {
+    const rank = { solving: 0, here: 1, away: 2 };
+    return solve.members
+      .map((m) => {
+        const conns = presence.filter((p) => p.user === m.name);
+        const status = conns.some((p) => p.active) ? 'solving' : conns.length ? 'here' : 'away';
+        const who = m.name === user ? `${m.display_name} (you)` : m.display_name;
+        return { ...m, status, who };
+      })
+      .sort((a, b) => rank[a.status] - rank[b.status]);
+  }
 
   function renderPresence() {
-    presenceEl.textContent = '';
+    presenceBtn.textContent = '';
+    presenceBtn.hidden = !isCoop();
     if (!isCoop()) return;
-    for (const m of solve.members) {
-      const conns = presence.filter((p) => p.user === m.name);
-      const online = conns.length > 0;
-      const solving = conns.some((p) => p.active);
-      const who = m.name === user ? `${m.display_name} (you)` : m.display_name;
-      presenceEl.append(
+    const members = memberStates();
+    const max = maxChips();
+    const shown = members.length > max ? members.slice(0, max - 1) : members;
+    for (const m of shown) {
+      presenceBtn.append(
         el(
           'span',
           {
-            class: `presence-chip${online ? '' : ' offline'}${online && !solving ? ' idle' : ''}`,
+            class: `presence-chip${m.status === 'away' ? ' offline' : ''}${m.status === 'here' ? ' idle' : ''}`,
             style: `--pc:${m.color}`,
-            title: `${who} — ${solving ? 'solving' : online ? 'here, paused' : 'away'}`,
+            title: `${m.who} — ${STATUS_TEXT[m.status]}`,
           },
           (m.display_name || m.name).slice(0, 1)
         )
       );
     }
+    const folded = members.length - shown.length;
+    if (folded) presenceBtn.append(el('span', { class: 'presence-chip more' }, `+${folded}`));
+    const here = members.filter((m) => m.status !== 'away').length;
+    presenceBtn.title = `${members.length} people in this solve, ${here} here now`;
+    presenceBtn.setAttribute('aria-label', `${presenceBtn.title}. Show everyone.`);
   }
+  matchMedia('(max-width: 600px)').addEventListener('change', () => ready && renderPresence());
+
+  makeMenu(presenceBtn, () => {
+    const members = memberStates();
+    const here = members.filter((m) => m.status !== 'away').length;
+    return [
+      { info: el('div', { class: 'menu-heading' }, `${members.length} in this solve · ${here} here now`) },
+      ...members.map((m) => ({
+        info: el('div', { class: 'menu-person' }, [
+          el('span', { class: 'user-dot', style: `background:${m.color}` }),
+          el('span', { class: 'menu-person-name' }, m.who),
+          el('span', { class: `menu-person-status ${m.status}` }, STATUS_TEXT[m.status]),
+        ]),
+      })),
+      'hr',
+      { label: 'Add people to this solve…', action: () => openAddPeople() },
+    ];
+  });
 
   function drawRemote(p) {
     if (p.conn === live.connId || !p.cursor) {
@@ -334,6 +383,7 @@ async function main() {
   // ----- solo / co-op switcher -----
   const solveBtn = qs('#solve-btn');
   let mySolves = [];
+  let directory = new Map(); // every account by name, for display names
 
   async function loadSolveList() {
     try {
@@ -343,14 +393,34 @@ async function main() {
     }
   }
 
+  /** Every account; the co-op pickers fetch a fresh copy each time. */
+  async function loadDirectory() {
+    const { users } = await api.get('users');
+    directory = new Map(users.map((u) => [u.name, u]));
+    return users;
+  }
+
+  const nameOf = (name) => directory.get(name)?.display_name || displayName(name);
+
   function renderSolveInfo() {
     if (!solve) return;
     const others = solve.members.filter((m) => m.name !== user).map((m) => m.display_name);
     solveBtn.textContent = '';
-    solveBtn.append(
-      el('span', { class: 'solve-kind' }, isCoop() ? `Co-op with ${listNames(others)}` : 'Solo'),
-      ' ▾'
-    );
+    if (!isCoop() || others.length <= 2) {
+      const label = !isCoop() ? 'Solo' : others.length ? `Co-op with ${listNames(others)}` : 'Co-op';
+      solveBtn.append(el('span', { class: 'solve-kind' }, label), '▾');
+      solveBtn.setAttribute('aria-label', label);
+    } else {
+      // a long first name gets cut short, never the count
+      solveBtn.append(
+        el('span', { class: 'solve-kind' }, `Co-op with ${others[0]}`),
+        el('span', { class: 'solve-kind solve-rest' }, `and ${others.length - 1} others`),
+        '▾'
+      );
+      solveBtn.setAttribute('aria-label', `Co-op with ${listNames(others, 2)}`);
+    }
+    solveBtn.title = isCoop() && others.length ? `Co-op with ${listNames(others)}` : 'Solo or co-op';
+    qs('.toolbar').classList.toggle('coop', isCoop()); // phones: tools and chips on a line of their own
     document.title = [isCoop() ? 'Co-op' : null, dateText, theme, typeLabel].filter(Boolean).join(' — ');
   }
 
@@ -361,11 +431,14 @@ async function main() {
     const coops = mySolves.filter((s) => s.kind === 'coop');
     const items = [
       { label: 'Solo', checked: !isCoop(), action: () => isCoop() && (location.href = solveHref(null)) },
-      ...coops.map((s) => ({
-        label: `With ${listNames(s.members.filter((n) => n !== user))} · ${s.completed ? 'solved' : `${s.pct}%`}`,
-        checked: solve?.id === s.id,
-        action: () => solve?.id !== s.id && (location.href = solveHref(s)),
-      })),
+      ...coops.map((s) => {
+        const others = s.members.filter((n) => n !== user).map(nameOf);
+        return {
+          label: `With ${others.length ? listNames(others, 3) : 'nobody else'} · ${s.completed ? 'solved' : `${s.pct}%`}`,
+          checked: solve?.id === s.id,
+          action: () => solve?.id !== s.id && (location.href = solveHref(s)),
+        };
+      }),
       'hr',
       { label: 'New co-op solve…', action: () => openNewCoop() },
     ];
@@ -382,10 +455,10 @@ async function main() {
     return items;
   });
 
-  async function pickPeople({ title, exclude, confirmLabel }) {
+  async function choosePeople({ title, exclude, confirmLabel }) {
     let users;
     try {
-      users = (await api.get('users')).users.filter((u) => !exclude.has(u.name));
+      users = (await loadDirectory()).filter((u) => !exclude.has(u.name));
     } catch (err) {
       toast(err.message, { error: true });
       return null;
@@ -394,44 +467,11 @@ async function main() {
       toast('Nobody else to invite — the admin can add accounts.', { error: true });
       return null;
     }
-    const chosen = new Set();
-    return new Promise((resolve) => {
-      let done = false;
-      showModal({
-        title,
-        body: el(
-          'div',
-          { style: 'text-align:left' },
-          users.map((u) =>
-            el('label', { style: 'display:flex;gap:10px;align-items:center;padding:6px 0;cursor:pointer;font-size:15px' }, [
-              el('input', {
-                type: 'checkbox',
-                onchange: (e) => (e.target.checked ? chosen.add(u.name) : chosen.delete(u.name)),
-              }),
-              el('span', { class: 'user-dot', style: `background:${u.color}` }),
-              u.display_name,
-              u.display_name !== u.name ? el('span', { style: 'color:var(--color-text-muted);font-size:12px' }, u.name) : null,
-            ])
-          )
-        ),
-        actions: [
-          { label: 'Cancel' },
-          {
-            label: confirmLabel,
-            primary: true,
-            onClick: () => {
-              done = true;
-              resolve([...chosen]);
-            },
-          },
-        ],
-        onClose: () => !done && resolve(null),
-      });
-    });
+    return pickPeople({ title, users, confirmLabel });
   }
 
   async function openNewCoop() {
-    const names = await pickPeople({
+    const names = await choosePeople({
       title: 'Solve with…',
       exclude: new Set([user]),
       confirmLabel: 'Start co-op solve',
@@ -446,7 +486,7 @@ async function main() {
   }
 
   async function openAddPeople() {
-    const names = await pickPeople({
+    const names = await choosePeople({
       title: 'Add people to this solve',
       exclude: new Set(solve.members.map((m) => m.name)),
       confirmLabel: 'Add',
@@ -454,7 +494,7 @@ async function main() {
     if (!names?.length) return;
     try {
       await api.post(`solves/${encodeURIComponent(solve.id)}/members`, { add: names });
-      toast(`Added ${listNames(names)}.`);
+      toast(`Added ${listNames(names.map(nameOf), 3)}.`);
       loadSolveList();
     } catch (err) {
       toast(err.message, { error: true });
@@ -532,7 +572,7 @@ async function main() {
     let body;
     let label;
     if (solvingNow.length) {
-      title = `${listNames(solvingNow)} ${solvingNow.length === 1 ? 'is' : 'are'} solving`;
+      title = `${listNames(solvingNow, 3)} ${solvingNow.length === 1 ? 'is' : 'are'} solving`;
       body = 'Jump in — everyone’s edits show up live.';
       label = 'Join';
     } else if (fresh) {
@@ -541,7 +581,8 @@ async function main() {
         idInfo.date && idInfo.type !== 'bonus'
           ? `The ${formatDateLong(idInfo.date)} ${idInfo.type === 'daily' ? 'crossword' : idInfo.type} awaits.`
           : 'The puzzle awaits.';
-      if (isCoop()) body += ` You’re solving with ${listNames(solve.members.filter((m) => m.name !== user).map((m) => m.display_name))}.`;
+      const partners = isCoop() ? solve.members.filter((m) => m.name !== user).map((m) => m.display_name) : [];
+      if (partners.length) body += ` You’re solving with ${listNames(partners, 4)}.`;
       label = 'Begin';
     } else {
       title = 'Keep going?';
@@ -598,7 +639,7 @@ async function main() {
       showModal({
         title: 'Congratulations!',
         body: el('div', {}, [
-          el('p', {}, partners.length ? `You solved it with ${listNames(partners)}.` : 'You solved the puzzle.'),
+          el('p', {}, partners.length ? `You solved it with ${listNames(partners, 4)}.` : 'You solved the puzzle.'),
           el('div', { class: 'solve-time' }, formatTime(record.elapsed)),
           clean ? el('div', { class: 'gold-star' }, '★ Clean solve') : null,
         ]),
@@ -900,7 +941,11 @@ function showFatal(message) {
   });
 }
 
-/** Dropdown menu on a toolbar button; items provided lazily each open. */
+/**
+ * Dropdown menu on a toolbar button; items provided lazily each open.
+ * An item is 'hr', {label, action, checked?}, or {info: node} for a line
+ * of text that isn't clickable.
+ */
 function makeMenu(button, getItems) {
   let panel = null;
   const close = () => {
@@ -922,6 +967,8 @@ function makeMenu(button, getItems) {
       getItems().map((item) =>
         item === 'hr'
           ? el('hr')
+          : item.info
+          ? item.info
           : el(
               'button',
               {
@@ -935,6 +982,12 @@ function makeMenu(button, getItems) {
       )
     );
     button.parentElement.append(panel);
+    // keep it on screen (the people list opens near the right edge on phones);
+    // not innerWidth: on phones the overflowing panel itself widens that
+    const { left, right } = panel.getBoundingClientRect();
+    const width = document.documentElement.clientWidth;
+    const shift = Math.max(Math.min(0, width - 8 - right), 8 - left);
+    if (shift) panel.style.transform = `translateX(${shift}px)`;
     document.addEventListener('mousedown', onOutside, true);
   });
 }

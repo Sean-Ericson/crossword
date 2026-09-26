@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Crossword</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧩</text></svg>">
+  <script src="./js/theme.js"></script>
   <link rel="stylesheet" href="./css/base.css">
   <link rel="stylesheet" href="./css/player.css">
 </head>
@@ -17,6 +18,7 @@
     </nav>
     <span class="spacer"></span>
     <span id="sync-badge" class="live-dot" hidden></span>
+    <button class="theme-toggle" type="button" title="Dark mode" aria-label="Dark mode" aria-pressed="false"></button>
     <span id="profile-chip" class="badge"></span>
   </header>
 
@@ -36,7 +38,9 @@
     <div class="menu-host menu-left">
       <button class="tool-btn solve-btn" id="solve-btn" title="Solo or co-op">Solo ▾</button>
     </div>
-    <span class="presence" id="presence"></span>
+    <div class="menu-host menu-left presence-host">
+      <button class="presence" id="presence" type="button" hidden></button>
+    </div>
     <span class="spacer"></span>
     <button class="tool-btn" id="pencil-btn" title="Pencil mode (entries in gray)">✎<span class="btn-label"> Pencil</span></button>
     <button class="tool-btn" id="rebus-btn" title="Enter multiple letters (Esc)">Rebus</button>

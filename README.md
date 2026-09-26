@@ -6,7 +6,9 @@ check/reveal/autocheck, pencil mode, rebus entry, a timer with pause, and
 clean-solve gold stars. It also has a puzzle archive with a calendar, solve
 statistics, and comparisons between users. On phones and tablets the puzzle
 page docks an on-screen keyboard (with the current clue above it) under the
-grid, since tapping a square can't raise the system keyboard.
+grid, since tapping a square can't raise the system keyboard. There is a
+dark mode: it follows the system setting until you flip the ☾/☀ toggle in
+the header, which each browser remembers.
 
 Co-op works like Google Docs. Any group of people can open a shared solve of
 a puzzle, and each person sees the others' letters as they type, their
@@ -53,9 +55,10 @@ node server/admin.mjs delete-user devon
 ```
 
 Admins can do the same from anywhere on the web: account chip → **Manage
-accounts** (`admin.html`) lists everyone, resets passwords (temporary or
-chosen; the person is signed out everywhere), and adds accounts. Make
-someone an admin with `set-admin` or the checkbox when adding them.
+accounts** (`admin.html`) lists everyone, adds and deletes accounts,
+resets passwords (temporary or chosen; the person is signed out
+everywhere), and makes people admins or removes them. Admins can't change
+or delete their own account there, so there's always at least one admin.
 
 Each person can change their own password from the account chip in the top
 right. The same menu can import progress that was saved in that browser
@@ -67,10 +70,15 @@ before accounts existed.
   It is saved on the server as you type, so it follows you between devices.
   You can even have it open on two devices at once.
 - To start a co-op solve, click **Solo ▾ → New co-op solve…** in the
-  toolbar and pick people. Everyone you pick gets the solve in the
+  toolbar and pick people. Once there are more than eight accounts, the
+  picker has a search box and lists the people you solved with recently
+  first. Everyone you pick gets the solve in the
   "Co-op solves in progress" strip on their archive page. The same menu
   switches between your solo solve and any co-op solves you're in for that
-  puzzle, and it can add more people to a co-op solve.
+  puzzle, and it can add more people to a co-op solve. In a co-op solve,
+  the colored chips next to it show who is there; click them for everyone
+  in the solve. There are only eight user colors, so people who share one
+  get different colors inside a solve.
 - The co-op timer is shared. It runs while at least one member is actively
   solving. The pause button pauses everyone. Switching tabs only pauses you.
 - Only the server can mark a solve complete, and it checks the grid itself.
@@ -130,7 +138,7 @@ To add puzzles by hand, drop `.puz` files into `puzzles/` and run
 |---|---|
 | `index.html` | Archive: co-op solves in progress, the latest-puzzle hero, and a month calendar with each day's status (◐ in progress, ★ solved, gold ★ clean solve, 👥 co-op) |
 | `puzzle.html?id=…[&solve=…]` | The player (solo, or a co-op solve) |
-| `stats.html` | Solved counts, clean solves, streaks, average and best times by weekday, and multi-user comparison, plus your co-op solves |
+| `stats.html` | Solved counts, clean solves, streaks, average and best times by weekday, and comparison with any number of people (from four people up it's a sortable leaderboard and tables), plus your co-op solves |
 | `login.html` | Sign in |
 | `admin.html` | Accounts (admins only): reset passwords, add people |
 

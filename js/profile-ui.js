@@ -113,7 +113,7 @@ function openPasswordModal() {
   const current = el('input', { type: 'password', autocomplete: 'current-password', style: inputStyle });
   const next = el('input', { type: 'password', autocomplete: 'new-password', style: inputStyle });
   const again = el('input', { type: 'password', autocomplete: 'new-password', style: inputStyle });
-  const error = el('div', { style: 'color:#b3261e;font-size:13px;min-height:18px;margin-top:6px' });
+  const error = el('div', { style: 'color:var(--color-error);font-size:13px;min-height:18px;margin-top:6px' });
   const row = (label, input) =>
     el('label', { style: 'display:block;margin-bottom:10px;font-size:13px' }, [
       el('div', { style: 'margin-bottom:3px;font-weight:600' }, label),

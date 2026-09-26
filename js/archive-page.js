@@ -17,6 +17,7 @@ import { loadMe } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
 import { api } from './api.js';
 import { ARCHIVE_START } from './config.js';
+import { listNames } from './people.js';
 
 const pad = (n) => String(n).padStart(2, '0');
 const TAB_KEY = 'xw:site:archive-tab';
@@ -43,6 +44,7 @@ async function main() {
 
   // your solo progress + the co-op solves you're in, for the status icons
   const progressReq = api.get('progress').catch(() => ({ solo: {}, coop: {} }));
+  const usersReq = api.get('users').catch(() => ({ users: [] })); // display names
   let index = null;
   try {
     const resp = await fetch('./puzzles/index.json', { cache: 'no-cache' });
@@ -51,6 +53,7 @@ async function main() {
     /* fall through to empty state */
   }
   const progress = await progressReq;
+  const displayNames = new Map((await usersReq).users.map((u) => [u.name, u.display_name]));
 
   const puzzles = (index?.puzzles ?? []).map((p) => ({
     ...p,
@@ -105,19 +108,27 @@ async function main() {
     return { record: null, status: solo.pct > 0 || solo.elapsed > 0 ? 'in-progress' : 'unsolved' };
   }
 
-  const others = (s) => s.members.filter((n) => n !== me.name).join(', ');
+  /** The other people in a co-op solve: "Devon, Kam and 3 others". */
+  const others = (s, max) =>
+    listNames(
+      s.members.filter((n) => n !== me.name).map((n) => displayNames.get(n) || n),
+      max
+    ) || 'nobody else';
 
   /** Small marker for days that have co-op solves you're part of. */
   function coopMarker(id) {
     const solves = progress.coop[id];
     if (!solves?.length) return null;
     const title = solves
-      .map((s) => `Co-op with ${others(s)} — ${s.completed ? 'solved' : `${s.pct}%`}`)
+      .map((s) => `Co-op with ${others(s, 6)} — ${s.completed ? 'solved' : `${s.pct}%`}`)
       .join('\n');
     return el('span', { class: 'day-coop' + (solves.some((s) => s.completed) ? ' done' : ''), title }, '👥');
   }
 
   // ----- co-op solves still in progress -----
+  const STRIP_SHOWS = matchMedia('(max-width: 600px)').matches ? 4 : 8; // then "Show N more"
+  let stripExpanded = false;
+
   function renderCoopStrip() {
     const host = qs('#coop-strip');
     const open = Object.values(progress.coop)
@@ -129,7 +140,8 @@ async function main() {
     if (!open.length) return;
     host.append(el('h2', {}, 'Co-op solves in progress'));
     const list = el('div', { class: 'coop-items' });
-    for (const s of open.slice(0, 8)) {
+    const shown = stripExpanded ? open : open.slice(0, STRIP_SHOWS);
+    for (const s of shown) {
       const info = parsePuzzleId(s.puzzle_id);
       const label = info.date
         ? `${formatDateLong(info.date)}${info.type !== 'daily' ? ` (${info.type})` : ''}`
@@ -143,8 +155,24 @@ async function main() {
           },
           [
             el('span', { class: 'coop-title' }, label),
-            el('span', { class: 'coop-meta' }, `with ${others(s)} · ${s.pct}% · ${formatTime(s.elapsed)}`),
+            el('span', { class: 'coop-meta' }, `with ${others(s, 3)} · ${s.pct}% · ${formatTime(s.elapsed)}`),
           ]
+        )
+      );
+    }
+    if (open.length > STRIP_SHOWS) {
+      list.append(
+        el(
+          'button',
+          {
+            class: 'coop-item coop-toggle',
+            type: 'button',
+            onclick: () => {
+              stripExpanded = !stripExpanded;
+              renderCoopStrip();
+            },
+          },
+          stripExpanded ? 'Show fewer' : `Show ${open.length - STRIP_SHOWS} more`
         )
       );
     }

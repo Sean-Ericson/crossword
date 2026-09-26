@@ -170,9 +170,13 @@ export function createServer(cfg, { store, puzzles, hub } = {}) {
   });
 
   function onSocket(ws, user) {
-    const conn = hub.connect(user, (msg) => {
-      if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
-    });
+    const conn = hub.connect(
+      user,
+      (msg) => {
+        if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
+      },
+      () => ws.close(4001, 'account removed')
+    );
     ws.isAlive = true;
     ws.on('pong', () => (ws.isAlive = true));
     // Messages are handled strictly in order: a join has to finish before

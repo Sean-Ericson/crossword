@@ -16,14 +16,9 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
+import { USER_PALETTE } from '../js/people.js';
 
 const SCHEMA_VERSION = 2;
-
-// Okabe-Ito-ish palette: distinct under common color-vision deficiencies,
-// dark enough to read as a cursor border on white.
-export const USER_PALETTE = [
-  '#0072B2', '#D55E00', '#009E73', '#CC79A7', '#E69F00', '#56B4E9', '#7B61FF', '#8C564B',
-];
 
 export const USER_NAME_RE = /^[a-z0-9-]{1,24}$/;
 
@@ -127,8 +122,14 @@ export class Store {
     if (!USER_NAME_RE.test(name)) {
       throw new Error('Names must be 1-24 chars: lowercase letters, digits, hyphens.');
     }
-    const count = this.db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
-    const color = USER_PALETTE[count % USER_PALETTE.length];
+    // the least-used palette color, so colors stay spread out as accounts
+    // come and go (people sharing one are told apart by distinctColors)
+    const uses = new Map(USER_PALETTE.map((c) => [c, 0]));
+    for (const { color: c } of this.db.prepare('SELECT color FROM users').all()) {
+      if (uses.has(c)) uses.set(c, uses.get(c) + 1);
+    }
+    const fewest = Math.min(...uses.values());
+    const color = USER_PALETTE.find((c) => uses.get(c) === fewest);
     const info = this.db
       .prepare(
         'INSERT INTO users (name, display_name, color, pw_hash, is_admin, created_at) VALUES (?, ?, ?, ?, ?, ?)'
@@ -147,6 +148,25 @@ export class Store {
 
   listUsers() {
     return this.db.prepare('SELECT id, name, display_name, color, is_admin, created_at FROM users ORDER BY name').all();
+  }
+
+  /**
+   * The last time `userId` shared a co-op solve with each other person
+   * (the solve's latest activity), for putting them first in pickers.
+   * @returns {Map<number, string>} user id -> ISO time
+   */
+  coopPartners(userId) {
+    const rows = this.db
+      .prepare(
+        `SELECT other.user_id AS id, MAX(solves.updated_at) AS last
+         FROM solve_members AS mine
+         JOIN solves ON solves.id = mine.solve_id AND solves.kind = 'coop'
+         JOIN solve_members AS other ON other.solve_id = mine.solve_id AND other.user_id != mine.user_id
+         WHERE mine.user_id = ?
+         GROUP BY other.user_id`
+      )
+      .all(userId);
+    return new Map(rows.map((r) => [r.id, r.last]));
   }
 
   setPassword(userId, pwHash) {

@@ -22,6 +22,10 @@
  *   members   {members}
  *   error     {code, message, re}
  *
+ * A member's or presence entry's `color` is their color in this solve: their
+ * account color, unless an older account in the solve has the same one
+ * (see distinctColors in people.js and Room in server/rooms.mjs).
+ *
  * Edits are applied locally first and kept in `pending` until the server
  * echoes them back. While a cell has an edit in flight, other people's
  * values for it are ignored: ours reaches the server later, so it wins

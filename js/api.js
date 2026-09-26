@@ -45,4 +45,5 @@ async function request(method, path, body, { redirectOn401 = true } = {}) {
 export const api = {
   get: (path, opts) => request('GET', path, undefined, opts),
   post: (path, body = {}, opts) => request('POST', path, body, opts),
+  del: (path, opts) => request('DELETE', path, undefined, opts),
 };

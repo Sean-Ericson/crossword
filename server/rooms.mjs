@@ -20,11 +20,14 @@
 
 import { SolveEngine } from '../js/engine.js';
 import { newProgress, recordFitsModel } from '../js/state.js';
+import { distinctColors } from '../js/people.js';
 import { newId, nowIso } from './db.mjs';
 import { publicUser } from './auth.mjs';
 
 const MAX_FILL_LEN = 12;
 const FILL_RE = /^[^\s.]*$/u;
+
+const oldestFirst = (members) => [...members].sort((a, b) => a.id - b.id);
 
 export class RoomError extends Error {
   constructor(code, message) {
@@ -42,6 +45,11 @@ class Room {
     this.ownerId = solve.owner_id;
     this.model = model;
     this.members = solve.members;
+    // Account colors repeat once there are more people than palette
+    // colors, so each solve gives its members colors they don't share.
+    // The older account keeps a shared color, so the same person gives
+    // way in every solve; refreshMembers keeps colors while the room is open.
+    this.colors = distinctColors(oldestFirst(this.members));
     this.record = recordFitsModel(solve.record, model)
       ? solve.record
       : newProgress(model, solve.puzzle_id, solve.kind === 'solo' ? solve.members[0]?.name : 'coop');
@@ -71,12 +79,21 @@ class Room {
     for (const c of this.conns) if (c !== except) c.send(msg);
   }
 
+  /** A person's color in this solve. */
+  colorOf(user) {
+    return this.colors.get(user.name) ?? user.color;
+  }
+
+  memberList() {
+    return this.members.map((m) => ({ ...publicUser(m), color: this.colorOf(m) }));
+  }
+
   presence() {
     return [...this.conns].map((c) => ({
       conn: c.id,
       user: c.user.name,
       display_name: c.user.display_name,
-      color: c.user.color,
+      color: this.colorOf(c.user),
       cursor: c.cursor,
       active: c.active,
     }));
@@ -90,7 +107,7 @@ class Room {
         id: this.id,
         kind: this.kind,
         puzzle_id: this.puzzleId,
-        members: this.members.map(publicUser),
+        members: this.memberList(),
       },
       record: this.record,
       version: this.version,
@@ -278,7 +295,9 @@ class Room {
 
   refreshMembers() {
     this.members = this.hub.store.members(this.id);
-    this.broadcast({ type: 'members', members: this.members.map(publicUser) });
+    // people already here keep their colors; newcomers get free ones
+    this.colors = distinctColors(oldestFirst(this.members), { keep: this.colors });
+    this.broadcast({ type: 'members', members: this.memberList() });
   }
 }
 
@@ -295,16 +314,39 @@ export class Hub {
     this.log = log;
     this.rooms = new Map(); // solveId -> Room
     this.opening = new Map(); // solveId -> Promise<Room>
+    this.conns = new Set(); // every connected client
     this.nextConnId = 1;
   }
 
-  /** Wrap a transport: `send(obj)` delivers one message to this client. */
-  connect(user, send) {
-    return { id: `c${this.nextConnId++}`, user, send, room: null, active: false, cursor: null };
+  /**
+   * Wrap a transport: `send(obj)` delivers one message to this client and
+   * `close()` (optional) hangs up on it.
+   */
+  connect(user, send, close) {
+    const conn = { id: `c${this.nextConnId++}`, user, send, close, room: null, active: false, cursor: null };
+    this.conns.add(conn);
+    return conn;
   }
 
   disconnect(conn) {
+    this.conns.delete(conn);
     conn.room?.remove(conn);
+  }
+
+  /**
+   * An account is being deleted: close its live connections, run `remove`
+   * (the DB delete) once its open solves are flushed, then tell co-op
+   * partners the member list changed.
+   */
+  dropUser(userId, remove) {
+    for (const conn of [...this.conns]) {
+      if (conn.user.id !== userId) continue;
+      this.disconnect(conn);
+      conn.close?.();
+    }
+    const shared = [...this.rooms.values()].filter((room) => room.members.some((m) => m.id === userId));
+    remove();
+    for (const room of shared) room.refreshMembers();
   }
 
   /** Find or create the user's solo solve for a puzzle. */
