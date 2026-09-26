@@ -95,7 +95,7 @@ class Room {
     this.eventBuf.push({
       seq: ++this.seq,
       t: Math.round(this.elapsed() * 1000),
-      at: this.now(),
+      at: Math.round(this.now()),
       userId: user?.id ?? null,
       kind,
       cell,

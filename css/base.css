@@ -48,6 +48,29 @@
   --color-kb-key-wide: #d5d8dc;
   --color-kb-key-down: #c4c8cd;
 
+  /* charts (js/charts.js). Sequential = one blue, light to dark; diverging =
+     blue (faster) to red (slower) through a gray middle. Steps from the
+     dataviz reference ramp; the red arm matches the blue's lightness */
+  --color-chart-grid: #ececec;      /* gridlines: one step off the surface */
+  --color-chart-axis: #c4c4c4;      /* baselines */
+  --color-chart-muted: #c9c9c9;     /* everyone but the highlighted series */
+  --color-chart-band: rgba(0, 0, 0, 0.06);
+  --color-chart-empty: #f2f2f2;     /* a heatmap cell with no data */
+  --color-seq-0: #cde2fb;
+  --color-seq-1: #9ec5f4;
+  --color-seq-2: #6da7ec;
+  --color-seq-3: #3987e5;
+  --color-seq-4: #256abf;
+  --color-seq-5: #184f95;
+  --color-seq-6: #0d366b;
+  --color-div-0: #184f95;
+  --color-div-1: #3987e5;
+  --color-div-2: #9ec5f4;
+  --color-div-3: #f0efec;
+  --color-div-4: #f8aaa3;
+  --color-div-5: #e34948;
+  --color-div-6: #921d21;
+
   color-scheme: light;
 
   --font-ui: 'Libre Franklin', 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -100,6 +123,27 @@
   --color-kb-key: #3a3a3a;
   --color-kb-key-wide: #2a2a2a;
   --color-kb-key-down: #555;
+
+  /* charts: the ramps flip so the faint end sits near the dark surface */
+  --color-chart-grid: #262626;
+  --color-chart-axis: #444;
+  --color-chart-muted: #4a4a4a;
+  --color-chart-band: rgba(255, 255, 255, 0.08);
+  --color-chart-empty: #1f1f1f;
+  --color-seq-0: #0d366b;
+  --color-seq-1: #184f95;
+  --color-seq-2: #256abf;
+  --color-seq-3: #3987e5;
+  --color-seq-4: #6da7ec;
+  --color-seq-5: #9ec5f4;
+  --color-seq-6: #cde2fb;
+  --color-div-0: #9ec5f4;
+  --color-div-1: #3987e5;
+  --color-div-2: #256abf;
+  --color-div-3: #383835;
+  --color-div-4: #bc2f32;
+  --color-div-5: #e34948;
+  --color-div-6: #f8aaa3;
 
   --shadow-modal: 0 6px 30px rgba(0, 0, 0, 0.6);
 

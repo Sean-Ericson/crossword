@@ -1,32 +1,39 @@
 /*
- * stats-page.js — per-user statistics and multi-user comparison.
+ * stats-page.js — the stats page shell: who's compared, the puzzle type,
+ * the filter bar and the section tabs. Each tab lives in js/stats/ and
+ * renders from one context object (see makeContext).
+ *
+ * Data: one GET /api/stats-all (everyone's solo solves, unfinished solves,
+ * co-op solves and log summaries) plus puzzles/index.json, joined by
+ * js/stats-data.js into a row per solve. Per-entry details come later, per
+ * person, from /api/summaries/:user, only for the tabs that need them.
  *
  * Anyone with an account can be compared. With a short account list every
  * person gets a chip to toggle; a longer one shows just the people being
- * compared plus "Compare with…" (the people picker). Two or three people
- * get tiles and grouped bars. Four or more get tables (a sortable
- * leaderboard and a weekday grid), which stay readable however many are
- * picked. Each person has their account color, kept distinct within a
- * comparison (see distinctColors). Solo stats only; co-op solves are
- * listed separately and never count toward streaks or times.
+ * compared plus "Compare with…" (the people picker). Each person keeps
+ * their account color, kept distinct within a comparison (distinctColors).
+ * Co-op results never count toward solo stats; they have their own tab.
  */
 
-import {
-  el,
-  qs,
-  formatTime,
-  formatDateLong,
-  WEEKDAY_NAMES,
-  parsePuzzleId,
-} from './util.js';
-import { computeUserStats, compareUsers } from './stats.js';
+import { el, qs, WEEKDAY_NAMES } from './util.js';
 import { loadMe } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
 import { api } from './api.js';
-import { byDisplayName, distinctColors, listNames } from './people.js';
+import { byDisplayName, distinctColors } from './people.js';
 import { pickPeople } from './people-picker.js';
+import { buildDataset, applyFilters, RANGES, toCsv } from './stats-data.js';
+import { fitAdditive, constructorEffects, elo, bradleyTerry } from './stats-model.js';
+import { downloadText, hideTip } from './charts.js';
+import { WEEKDAY_ORDER, hasWeekdays } from './stats/common.js';
+import * as overview from './stats/overview.js';
+import * as trends from './stats/trends.js';
+import * as distributions from './stats/distributions.js';
+import * as habits from './stats/habits.js';
+import * as puzzlesTab from './stats/puzzles.js';
+import * as style from './stats/style.js';
+import * as compare from './stats/compare.js';
+import * as coopTab from './stats/coop.js';
 
-const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon..Sun, NYT style
 const TYPE_TABS = [
   ['daily', 'Daily'],
   ['mini', 'Mini'],
@@ -34,48 +41,56 @@ const TYPE_TABS = [
   ['bonus', 'Bonus'],
   ['special', 'Special'],
 ];
+const SECTIONS = [
+  ['overview', 'Overview', overview],
+  ['trends', 'Trends', trends],
+  ['distributions', 'Distributions', distributions],
+  ['habits', 'Habits', habits],
+  ['puzzles', 'Puzzles', puzzlesTab],
+  ['style', 'Solve style', style],
+  ['compare', 'Compare', compare],
+  ['coop', 'Co-op', coopTab],
+];
 const TYPE_KEY = 'xw:site:stats-type';
+const PREFS_KEY = 'xw:site:stats-prefs';
 const CHIPS_UP_TO = 8; // more accounts than this: "Compare with…" instead of a chip each
 const CHIPS_PICKED = 6; // then chips for the people compared, up to this many
-const TABLES_FROM = 4; // comparing this many people: tables instead of tiles and bars
 
-/** "Fri, Sep 25, 2026" */
-const shortDate = (date) =>
-  new Date(date + 'T12:00:00Z').toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-
-const solvesCache = new Map(); // user -> solves map
-const coopCache = new Map(); // user -> co-op solve list
-
-async function getSolves(user) {
-  if (!solvesCache.has(user)) {
-    const doc = await api.get(`stats/${encodeURIComponent(user)}`).catch(() => null);
-    solvesCache.set(user, doc?.solves ?? {});
-  }
-  return solvesCache.get(user);
-}
-
-async function getCoopSolves(user) {
-  if (!coopCache.has(user)) {
-    const doc = await api.get(`coop-stats/${encodeURIComponent(user)}`).catch(() => null);
-    coopCache.set(user, doc?.solves ?? []);
-  }
-  return coopCache.get(user);
-}
+const store = {
+  get(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  set(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* private mode */
+    }
+  },
+};
 
 async function main() {
   const me = await loadMe();
   const activeUser = me.name;
   initProfileChip(qs('#profile-chip'));
 
-  const accounts = (await api.get('users')).users.sort(byDisplayName);
+  const body = qs('#stats-body');
+  body.append(el('div', { class: 'stats-empty' }, 'Loading everyone’s solves…'));
+  const [users, payload, index] = await Promise.all([
+    api.get('users'),
+    api.get('stats-all'),
+    fetch('./puzzles/index.json')
+      .then((r) => (r.ok ? r.json() : { puzzles: [] }))
+      .catch(() => ({ puzzles: [] })),
+  ]);
+  const accounts = users.users.sort(byDisplayName);
+  const ds = buildDataset(payload, index.puzzles ?? []);
   const byName = new Map(accounts.map((u) => [u.name, u]));
-  const nameOf = (user) => byName.get(user)?.display_name ?? user;
+  const nameOf = (user) => byName.get(user)?.display_name ?? user ?? 'someone';
   const byDisplay = (a, b) => byDisplayName(byName.get(a) ?? { name: a }, byName.get(b) ?? { name: b });
 
   // In the order people were picked: that decides who keeps their own
@@ -84,12 +99,104 @@ async function main() {
   let colors = new Map();
   const colorOf = (user) => colors.get(user) ?? byName.get(user)?.color ?? 'var(--color-text-subtle)';
   const dot = (user) => el('span', { class: 'dot', style: `background:${colorOf(user)}` });
-  /** A name that gets cut short in narrow table columns (full name on hover). */
-  const shortName = (user) => el('span', { class: 'who-name', title: nameOf(user) }, nameOf(user));
-  const who = (user) => el('div', { class: 'who' }, [dot(user), shortName(user)]);
 
-  let statsType = localStorage.getItem(TYPE_KEY);
+  let statsType = store.get(TYPE_KEY);
   if (!TYPE_TABS.some(([t]) => t === statsType)) statsType = 'daily';
+  const prefs = (() => {
+    try {
+      return JSON.parse(store.get(PREFS_KEY)) ?? {};
+    } catch {
+      return {};
+    }
+  })();
+  const filters = {
+    range: RANGES.some(([k]) => k === prefs.range) ? prefs.range : 'all',
+    weekdays: new Set(),
+    cleanOnly: !!prefs.cleanOnly,
+    times: prefs.times === 'actual' ? 'actual' : 'relative',
+  };
+  let section = SECTIONS.some(([k]) => k === location.hash.slice(1))
+    ? location.hash.slice(1)
+    : SECTIONS.some(([k]) => k === prefs.section)
+      ? prefs.section
+      : 'overview';
+  const savePrefs = () =>
+    store.set(PREFS_KEY, JSON.stringify({ range: filters.range, cleanOnly: filters.cleanOnly, times: filters.times, section }));
+
+  // ----- models, cached per puzzle type (all time, everyone) -----
+  const modelCache = new Map();
+  function models(type) {
+    if (!modelCache.has(type)) {
+      const rows = ds.solves.filter((r) => r.type === type);
+      const fit = fitAdditive(rows);
+      modelCache.set(type, {
+        fit,
+        constructors: fit ? constructorEffects(fit, ds.puzzles) : new Map(),
+        elo: elo(rows),
+        bt: bradleyTerry(rows),
+      });
+    }
+    return modelCache.get(type);
+  }
+
+  const detailCache = new Map();
+  const details = (user) => {
+    if (!detailCache.has(user)) {
+      detailCache.set(
+        user,
+        api
+          .get(`summaries/${encodeURIComponent(user)}`)
+          .then((d) => d.solves ?? {})
+          .catch(() => ({}))
+      );
+    }
+    return detailCache.get(user);
+  };
+
+  function makeContext() {
+    const people = [...selected].sort(byDisplay);
+    const inType = ds.solves.filter((r) => r.type === statsType);
+    const scope = { range: filters.range, weekdays: filters.weekdays, cleanOnly: filters.cleanOnly };
+    const all = applyFilters(inType, scope);
+    const rows = all.filter((r) => selected.has(r.user));
+    const byUser = new Map(people.map((u) => [u, rows.filter((r) => r.user === u)]));
+    const coop = applyFilters(
+      ds.coop.filter((c) => c.type === statsType && c.members.some((m) => selected.has(m))),
+      scope
+    );
+    const latest =
+      [...ds.puzzles.values()].filter((p) => p.type === statsType && p.date).sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
+    return {
+      me: activeUser,
+      users: people,
+      type: statsType,
+      filters,
+      ds,
+      inType,
+      all,
+      rows,
+      byUser,
+      coop,
+      unfinished: ds.unfinished.filter((u) => u.puzzle.type === statsType && selected.has(u.user)),
+      puzzles: ds.puzzles,
+      latest,
+      models: () => models(statsType),
+      details,
+      accounts,
+      colorOf,
+      nameOf,
+      byDisplay,
+      dot,
+      series: (list = people) => list.map((u) => ({ key: u, label: nameOf(u), color: colorOf(u) })),
+      /** The time a chart plots: actual seconds, or relative to the person's usual. */
+      timeOf: (r) => (filters.times === 'relative' ? r.relative : r.seconds),
+      relative: filters.times === 'relative',
+      hasWeekdays: hasWeekdays(statsType),
+      typeLabel: TYPE_TABS.find(([t]) => t === statsType)?.[1] ?? statsType,
+    };
+  }
+
+  // ----- controls -----
 
   function renderTypeTabs() {
     const host = qs('#type-tabs');
@@ -100,10 +207,13 @@ async function main() {
           'button',
           {
             class: 'type-tab' + (t === statsType ? ' active' : ''),
+            type: 'button',
             onclick: () => {
               statsType = t;
-              localStorage.setItem(TYPE_KEY, t);
+              store.set(TYPE_KEY, t);
+              filters.weekdays.clear();
               renderTypeTabs();
+              renderFilters();
               render();
             },
           },
@@ -113,10 +223,113 @@ async function main() {
     }
   }
 
-  function filterByType(solves) {
-    return Object.fromEntries(
-      Object.entries(solves).filter(([id]) => parsePuzzleId(id).type === statsType)
+  function segmented(options, value, onPick, label, title = null) {
+    return el(
+      'div',
+      { class: 'segmented', role: 'group', 'aria-label': label, title },
+      options.map(([key, text]) =>
+        el(
+          'button',
+          { type: 'button', class: key === value ? 'active' : null, 'aria-pressed': String(key === value), onclick: () => onPick(key) },
+          text
+        )
+      )
     );
+  }
+
+  function renderFilters() {
+    const host = qs('#filter-bar');
+    host.textContent = '';
+    host.append(
+      segmented(RANGES.map(([k, label]) => [k, label]), filters.range, (k) => {
+        filters.range = k;
+        savePrefs();
+        renderFilters();
+        render();
+      }, 'Solved in')
+    );
+    if (hasWeekdays(statsType)) {
+      host.append(
+        el(
+          'div',
+          { class: 'segmented weekdays', role: 'group', 'aria-label': 'Weekdays (none picked: all)' },
+          WEEKDAY_ORDER.map((d) =>
+            el(
+              'button',
+              {
+                type: 'button',
+                class: filters.weekdays.has(d) ? 'active' : null,
+                'aria-pressed': String(filters.weekdays.has(d)),
+                'aria-label': WEEKDAY_NAMES[d],
+                title: `Only ${WEEKDAY_NAMES[d]}s (pick several, or none for every day)`,
+                onclick: () => {
+                  if (filters.weekdays.has(d)) filters.weekdays.delete(d);
+                  else filters.weekdays.add(d);
+                  renderFilters();
+                  render();
+                },
+              },
+              WEEKDAY_NAMES[d].slice(0, 2)
+            )
+          )
+        )
+      );
+    }
+    host.append(
+      el('label', { class: 'check' }, [
+        el('input', {
+          type: 'checkbox',
+          ...(filters.cleanOnly ? { checked: true } : {}),
+          onchange: (e) => {
+            filters.cleanOnly = e.target.checked;
+            savePrefs();
+            render();
+          },
+        }),
+        'Clean only',
+      ]),
+      segmented(
+        [
+          ['relative', 'Relative'],
+          ['actual', 'Actual'],
+        ],
+        filters.times,
+        (k) => {
+          filters.times = k;
+          savePrefs();
+          renderFilters();
+          render();
+        },
+        'Times',
+        'Relative: each solve against that person’s usual time for the weekday, so easy and hard days line up. Actual: the clock.'
+      )
+    );
+  }
+
+  function renderSections() {
+    const host = qs('#section-tabs');
+    host.textContent = '';
+    for (const [key, label] of SECTIONS) {
+      host.append(
+        el(
+          'button',
+          {
+            type: 'button',
+            role: 'tab',
+            class: 'section-tab' + (key === section ? ' active' : ''),
+            'aria-selected': String(key === section),
+            onclick: () => {
+              section = key;
+              history.replaceState(null, '', `#${key}`);
+              savePrefs();
+              renderSections();
+              render();
+            },
+          },
+          label
+        )
+      );
+    }
   }
 
   function update() {
@@ -141,7 +354,6 @@ async function main() {
       }
       return;
     }
-    // the first few picked; the tables below list everyone
     const picked = [...selected];
     const shown = picked.length > CHIPS_PICKED ? picked.slice(0, CHIPS_PICKED - 1) : picked;
     for (const user of shown) host.append(pickedChip(user));
@@ -212,403 +424,87 @@ async function main() {
     update();
   }
 
+  // ----- export -----
+
+  qs('#export-btn').addEventListener('click', () => {
+    const people = [...selected];
+    const rows = ds.solves.filter((r) => people.includes(r.user));
+    const secs = (ms) => (ms == null ? '' : (ms / 1000).toFixed(1));
+    const csv = toCsv(rows, [
+      ['solver', (r) => r.user],
+      ['puzzle', (r) => r.puzzleId],
+      ['type', (r) => r.type],
+      ['puzzle_date', (r) => r.date],
+      ['weekday', (r) => (r.weekday == null ? '' : WEEKDAY_NAMES[r.weekday])],
+      ['seconds', (r) => r.seconds],
+      ['relative_to_usual', (r) => r.relative?.toFixed(3)],
+      ['completed_at', (r) => (Number.isFinite(r.completedAt) ? new Date(r.completedAt).toISOString() : '')],
+      ['opened_at', (r) => (r.openedAt ? new Date(r.openedAt).toISOString() : '')],
+      ['clean', (r) => (r.clean ? 1 : 0)],
+      ['used_check', (r) => (r.check ? 1 : 0)],
+      ['used_reveal', (r) => (r.reveal ? 1 : 0)],
+      ['constructors', (r) => r.puzzle.constructors.join('; ')],
+      ['editor', (r) => r.puzzle.editor],
+      ['width', (r) => r.puzzle.width],
+      ['height', (r) => r.puzzle.height],
+      ['words', (r) => r.puzzle.words],
+      ['blocks', (r) => r.puzzle.blocks],
+      ['avg_word_len', (r) => r.puzzle.avgLen],
+      ['rebus_squares', (r) => r.puzzle.rebus],
+      ['solve_hour', (r) => r.solveHour],
+      ['lag_days', (r) => r.lagDays],
+      ['first_letter_s', (r) => secs(r.summary?.first_ms)],
+      ['letters_typed', (r) => r.summary?.letters],
+      ['wrong_letters', (r) => r.summary?.wrong],
+      ['typo_hunt_s', (r) => secs(r.summary?.finish_ms)],
+      ['longest_stall_s', (r) => secs(r.summary?.stall_ms)],
+      ['sittings', (r) => r.summary?.sittings],
+    ]);
+    downloadText(`crossword-solves-${people.join('-')}.csv`, csv);
+  });
+
   // ----- the stats -----
 
   let renderSeq = 0;
   async function render() {
     const seq = ++renderSeq;
-    const users = [...selected].sort(byDisplay);
-    const docs = await Promise.all(users.map(getSolves));
-    const coop = users.length === 1 ? await getCoopSolves(users[0]) : [];
+    hideTip();
+    const ctx = makeContext();
+    const mod = SECTIONS.find(([k]) => k === section)[2];
+    const frag = el('div', { class: 'section-body' });
+    try {
+      await mod.render(frag, ctx);
+    } catch (err) {
+      console.error(err);
+      frag.append(el('div', { class: 'stats-empty' }, 'Something went wrong drawing this section.'));
+    }
     if (seq !== renderSeq) return; // a newer render has taken over
-    const body = qs('#stats-body');
     body.textContent = '';
-    const data = users.map((user, k) => ({ user, solves: filterByType(docs[k]) }));
-    if (users.length === 1) {
-      renderSingle(body, data[0]);
-      renderCoop(body, users[0], coop.filter((s) => parsePuzzleId(s.puzzle_id).type === statsType));
-    } else {
-      renderComparison(body, data);
-    }
+    body.append(el('p', { class: 'stats-scope' }, scopeText(ctx, section)), frag);
   }
 
-  /** Co-op solves: listed on their own, never mixed into solo stats. */
-  function renderCoop(body, user, solves) {
-    if (!solves.length) return;
-    const sorted = [...solves].sort((a, b) => b.puzzle_id.localeCompare(a.puzzle_id));
-    const clean = solves.filter((s) => s.clean).length;
-    const best = Math.min(...solves.map((s) => s.seconds));
-    body.append(
-      el('div', { class: 'coop-stats' }, [
-        el('h2', {}, 'Co-op solves'),
-        el(
-          'p',
-          { class: 'chart-sub' },
-          `${solves.length} solved together · ${clean} clean · best ${formatTime(best)}. Not counted in the solo stats above.`
-        ),
-        el('div', { class: 'table-scroll' }, el('table', { class: 'h2h-table' }, [
-          el('thead', {}, el('tr', {}, [el('th', {}, 'Puzzle'), el('th', {}, 'With'), el('th', {}, 'Time'), el('th', {}, '')])),
-          el(
-            'tbody',
-            {},
-            sorted.map((s) => {
-              const info = parsePuzzleId(s.puzzle_id);
-              const partners = s.members.filter((n) => n !== user).sort(byDisplay);
-              // a big group: three names, then "+N" (hover for everyone)
-              const shown = partners.length > 4 ? partners.slice(0, 3) : partners;
-              return el('tr', {}, [
-                el('td', {}, info.date ? shortDate(info.date) : s.puzzle_id),
-                el('td', { class: 'with', title: listNames(partners.map(nameOf)) }, [
-                  ...shown.map((n) =>
-                    el('span', { class: 'coop-partner' }, [
-                      el('span', { class: 'dot', style: `background:${byName.get(n)?.color ?? 'var(--color-text-subtle)'}` }),
-                      nameOf(n),
-                    ])
-                  ),
-                  shown.length < partners.length
-                    ? el('span', { class: 'coop-more' }, `+${partners.length - shown.length} more`)
-                    : null,
-                ]),
-                el('td', {}, formatTime(s.seconds)),
-                el('td', { class: 'gold' }, s.clean ? '★' : ''),
-              ]);
-            })
-          ),
-        ])),
-      ])
-    );
+  function scopeText(ctx, key) {
+    const n = key === 'coop' ? ctx.coop.length : ctx.rows.length;
+    const range = RANGES.find(([k]) => k === filters.range)[1].toLowerCase();
+    const days = filters.weekdays.size
+      ? `, ${WEEKDAY_ORDER.filter((d) => filters.weekdays.has(d)).map((d) => WEEKDAY_NAMES[d].slice(0, 3)).join('/')} only`
+      : '';
+    const what = `${ctx.typeLabel.toLowerCase()}${key === 'coop' ? ' co-op' : ''} solve${n === 1 ? '' : 's'}`;
+    return `${n} ${what} · ${range}${days}${filters.cleanOnly ? ', clean only' : ''}`;
   }
 
-  function tile(value, label, sub = '') {
-    return el('div', { class: 'stat-tile' }, [
-      el('div', { class: 'tile-value' }, value),
-      el('div', { class: 'tile-label' }, label),
-      sub ? el('div', { class: 'tile-sub' }, sub) : null,
-    ]);
-  }
-
-  function renderSingle(body, { user, solves }) {
-    const st = computeUserStats(solves);
-    if (!st.solvedCount) {
-      body.append(
-        el(
-          'div',
-          { class: 'stats-empty' },
-          `No completed ${statsType} puzzles yet for ${nameOf(user)}. Go solve one!`
-        )
-      );
-      return;
+  window.addEventListener('hashchange', () => {
+    const key = location.hash.slice(1);
+    if (SECTIONS.some(([k]) => k === key) && key !== section) {
+      section = key;
+      renderSections();
+      render();
     }
-    body.append(
-      el('div', { class: 'stat-tiles' }, [
-        tile(String(st.solvedCount), 'Puzzles solved'),
-        tile(String(st.cleanCount), '★ Clean solves', 'no check or reveal'),
-        tile(String(st.currentStreak), 'Current streak', 'consecutive puzzle dates'),
-        tile(String(st.longestStreak), 'Longest streak'),
-        tile(st.avgSeconds != null ? formatTime(st.avgSeconds) : '—', 'Average time'),
-        tile(
-          st.bestSeconds != null ? formatTime(st.bestSeconds) : '—',
-          'Best time',
-          st.bestPuzzleId ?? ''
-        ),
-      ])
-    );
-
-    const maxAvg = Math.max(
-      1,
-      ...st.byWeekday.map((w) => w.avgSeconds ?? 0)
-    );
-    const chart = el('div', { class: 'weekday-chart' }, [
-      el('h2', {}, 'Average solve time by day'),
-      el('p', { class: 'chart-sub' }, 'Bar = average · right label = best'),
-    ]);
-    for (const dow of WEEKDAY_ORDER) {
-      const wk = st.byWeekday[dow];
-      chart.append(
-        el('div', { class: 'wk-row' }, [
-          el('div', { class: 'wk-label' }, WEEKDAY_NAMES[dow].slice(0, 3)),
-          el('div', { class: 'wk-bars' }, [
-            wk.avgSeconds == null
-              ? el('div', { class: 'wk-empty' }, 'no solves')
-              : el(
-                  'div',
-                  {
-                    class: 'wk-bar-line',
-                    title: `${WEEKDAY_NAMES[dow]}: avg ${formatTime(wk.avgSeconds)} over ${wk.count} solve${wk.count > 1 ? 's' : ''}`,
-                  },
-                  [
-                    el('div', {
-                      class: 'wk-bar',
-                      style: `width:${(wk.avgSeconds / maxAvg) * 100}%;background:${colorOf(user)}`,
-                    }),
-                    el('span', { class: 'wk-value' }, formatTime(wk.avgSeconds)),
-                    el(
-                      'span',
-                      { class: 'wk-best' },
-                      wk.bestSeconds != null ? `best ${formatTime(wk.bestSeconds)}` : ''
-                    ),
-                  ]
-                ),
-          ]),
-        ])
-      );
-    }
-    body.append(chart);
-  }
-
-  function renderComparison(body, data) {
-    const statsByUser = data.map(({ user, solves }) => ({
-      user,
-      stats: computeUserStats(solves),
-    }));
-    const h2h = compareUsers(data);
-    if (data.length >= TABLES_FROM) {
-      body.append(leaderboard(statsByUser, h2h.wins), weekdayTable(statsByUser));
-    } else {
-      renderTilesAndBars(body, data, statsByUser);
-    }
-    renderHeadToHead(body, data, h2h, { winChips: data.length < TABLES_FROM });
-  }
-
-  /** Two or three people: headline tiles side by side, then grouped bars. */
-  function renderTilesAndBars(body, data, statsByUser) {
-    body.append(
-      el(
-        'div',
-        { class: 'stat-tiles' },
-        statsByUser.map(({ user, stats }) =>
-          tile(
-            String(stats.solvedCount),
-            [dot(user), ` ${nameOf(user)} — solved`],
-            `★ ${stats.cleanCount} clean · streak ${stats.currentStreak}`
-          )
-        )
-      )
-    );
-
-    const maxAvg = Math.max(
-      1,
-      ...statsByUser.flatMap(({ stats }) => stats.byWeekday.map((w) => w.avgSeconds ?? 0))
-    );
-    const chart = el('div', { class: 'weekday-chart' }, [
-      el('h2', {}, 'Average solve time by day'),
-      el(
-        'div',
-        { class: 'legend' },
-        data.map(({ user }) => el('span', { class: 'legend-item' }, [dot(user), nameOf(user)]))
-      ),
-    ]);
-    for (const dow of WEEKDAY_ORDER) {
-      const bars = el('div', { class: 'wk-bars' });
-      for (const { user, stats } of statsByUser) {
-        const wk = stats.byWeekday[dow];
-        bars.append(
-          wk.avgSeconds == null
-            ? el('div', { class: 'wk-empty' }, `${nameOf(user)}: —`)
-            : el(
-                'div',
-                {
-                  class: 'wk-bar-line',
-                  title: `${nameOf(user)} — ${WEEKDAY_NAMES[dow]}: avg ${formatTime(wk.avgSeconds)} over ${wk.count}`,
-                },
-                [
-                  el('div', {
-                    class: 'wk-bar',
-                    style: `width:${(wk.avgSeconds / maxAvg) * 100}%;background:${colorOf(user)}`,
-                  }),
-                  el('span', { class: 'wk-value' }, `${formatTime(wk.avgSeconds)}`),
-                ]
-              )
-        );
-      }
-      chart.append(
-        el('div', { class: 'wk-row' }, [
-          el('div', { class: 'wk-label' }, WEEKDAY_NAMES[dow].slice(0, 3)),
-          bars,
-        ])
-      );
-    }
-    body.append(chart);
-  }
-
-  // Leaderboard columns. `better` is the direction a column sorts in first
-  // (more solves, faster times); people with no value always sort last.
-  const BOARD_COLUMNS = [
-    { key: 'solved', label: 'Solved', value: (r) => r.stats.solvedCount, show: String, better: -1 },
-    { key: 'clean', label: '★ Clean', value: (r) => r.stats.cleanCount, show: String, better: -1 },
-    { key: 'streak', label: 'Streak', value: (r) => r.stats.currentStreak, show: String, better: -1 },
-    { key: 'avg', label: 'Average', value: (r) => r.stats.avgSeconds, show: formatTime, better: 1 },
-    { key: 'best', label: 'Best', value: (r) => r.stats.bestSeconds, show: formatTime, better: 1 },
-    { key: 'wins', label: 'Wins', value: (r) => r.wins, show: String, better: -1 },
-  ];
-  let boardSort = { key: 'solved', dir: -1 };
-
-  /** Four or more people: one row each, sortable by any column. */
-  function leaderboard(statsByUser, wins) {
-    const rows = statsByUser.map((r) => ({ ...r, wins: wins[r.user] ?? 0 }));
-    const section = el('div', { class: 'board' }, [
-      el('h2', {}, 'Leaderboard'),
-      el('p', { class: 'chart-sub' }, 'Streak = current run of consecutive puzzle dates · Wins = fastest on a puzzle two or more of you solved. Click a heading to sort.'),
-    ]);
-    const holder = el('div', { class: 'table-scroll' });
-    section.append(holder);
-
-    function draw() {
-      const col = BOARD_COLUMNS.find((c) => c.key === boardSort.key);
-      const sorted = [...rows].sort((a, b) => {
-        const va = col.value(a);
-        const vb = col.value(b);
-        if (va == null && vb == null) return byDisplay(a.user, b.user);
-        if (va == null || vb == null) return va == null ? 1 : -1;
-        return (va - vb) * boardSort.dir || byDisplay(a.user, b.user);
-      });
-      holder.textContent = '';
-      holder.append(
-        el('table', { class: 'h2h-table board-table' }, [
-          el('thead', {}, el('tr', {}, [
-            el('th', {}, 'Solver'),
-            ...BOARD_COLUMNS.map((c) => {
-              const active = c.key === boardSort.key;
-              return el(
-                'th',
-                { class: 'num', 'aria-sort': active ? (boardSort.dir < 0 ? 'descending' : 'ascending') : null },
-                el(
-                  'button',
-                  {
-                    class: 'sort-btn' + (active ? ' active' : ''),
-                    type: 'button',
-                    onclick: () => {
-                      boardSort = active ? { key: c.key, dir: -boardSort.dir } : { key: c.key, dir: c.better };
-                      draw();
-                    },
-                  },
-                  [c.label, active ? (boardSort.dir < 0 ? ' ▾' : ' ▴') : '']
-                )
-              );
-            }),
-          ])),
-          el(
-            'tbody',
-            {},
-            sorted.map((r) =>
-              el('tr', { class: r.user === activeUser ? 'you' : null }, [
-                el('td', {}, who(r.user)),
-                ...BOARD_COLUMNS.map((c) => {
-                  const v = c.value(r);
-                  return el('td', { class: 'num' }, v == null ? '—' : c.show(v));
-                }),
-              ])
-            )
-          ),
-        ])
-      );
-    }
-    draw();
-    return section;
-  }
-
-  /** Four or more people: average time per weekday, fastest in bold. */
-  function weekdayTable(statsByUser) {
-    const fastest = WEEKDAY_ORDER.map((dow) => {
-      const avgs = statsByUser.map(({ stats }) => stats.byWeekday[dow].avgSeconds).filter((v) => v != null);
-      return avgs.length ? Math.min(...avgs) : null;
-    });
-    return el('div', { class: 'weekday-chart' }, [
-      el('h2', {}, 'Average solve time by day'),
-      el('p', { class: 'chart-sub' }, 'Fastest average each day in bold.'),
-      el('div', { class: 'table-scroll' }, el('table', { class: 'h2h-table wk-table' }, [
-        el('thead', {}, el('tr', {}, [
-          el('th', {}, 'Solver'),
-          ...WEEKDAY_ORDER.map((dow) => el('th', { class: 'num' }, WEEKDAY_NAMES[dow].slice(0, 3))),
-        ])),
-        el(
-          'tbody',
-          {},
-          statsByUser.map(({ user, stats }) =>
-            el('tr', { class: user === activeUser ? 'you' : null }, [
-              el('td', {}, who(user)),
-              ...WEEKDAY_ORDER.map((dow, k) => {
-                const wk = stats.byWeekday[dow];
-                if (wk.avgSeconds == null) return el('td', { class: 'num empty' }, '—');
-                return el(
-                  'td',
-                  {
-                    class: 'num' + (wk.avgSeconds === fastest[k] ? ' fastest' : ''),
-                    title: `${nameOf(user)} — ${WEEKDAY_NAMES[dow]}: avg ${formatTime(wk.avgSeconds)} over ${wk.count}, best ${formatTime(wk.bestSeconds)}`,
-                  },
-                  formatTime(wk.avgSeconds)
-                );
-              }),
-            ])
-          )
-        ),
-      ])),
-    ]);
-  }
-
-  function renderHeadToHead(body, data, { common, wins }, { winChips }) {
-    const h2h = el('div', { class: 'h2h' }, [el('h2', {}, 'Head to head')]);
-    if (!common.length) {
-      h2h.append(
-        el('p', { class: 'chart-sub' }, 'No commonly-solved puzzles yet.')
-      );
-      body.append(h2h);
-      return;
-    }
-    if (winChips) {
-      h2h.append(
-        el(
-          'div',
-          { class: 'h2h-wins' },
-          [...data]
-            .sort((a, b) => (wins[b.user] ?? 0) - (wins[a.user] ?? 0) || byDisplay(a.user, b.user))
-            .map(({ user }) =>
-              el('span', { class: 'win-chip' }, [
-                dot(user),
-                nameOf(user),
-                el('b', {}, String(wins[user] ?? 0)),
-                'wins',
-              ])
-            )
-        )
-      );
-    } else {
-      h2h.append(el('p', { class: 'chart-sub' }, 'Puzzles at least two of you solved, newest first; the fastest time is in bold.'));
-    }
-    const table = el('table', { class: 'h2h-table' });
-    table.append(
-      el('tr', {}, [
-        el('th', {}, 'Puzzle'),
-        ...data.map(({ user }) => el('th', {}, shortName(user))),
-        el('th', {}, 'Fastest'),
-      ])
-    );
-    for (const row of common.slice(0, 50)) {
-      table.append(
-        el('tr', {}, [
-          el('td', {}, [
-            el(
-              'a',
-              { href: `./puzzle.html?id=${encodeURIComponent(row.puzzleId)}`, title: row.date ? formatDateLong(row.date) : null },
-              row.date ? shortDate(row.date) : row.puzzleId
-            ),
-          ]),
-          ...data.map(({ user }) =>
-            el(
-              'td',
-              { class: row.winner === user ? 'fastest' : '' },
-              row.times[user] != null ? formatTime(row.times[user]) : '—'
-            )
-          ),
-          el('td', {}, row.winner ? nameOf(row.winner) : 'tie'),
-        ])
-      );
-    }
-    h2h.append(el('div', { class: 'table-scroll' }, table));
-    body.append(h2h);
-  }
+  });
 
   renderTypeTabs();
+  renderFilters();
+  renderSections();
   update();
 }
 
