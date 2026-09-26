@@ -593,6 +593,79 @@ test('proxy: cookies are Secure when the public URL is https', () => {
 
 // ---------- admin account management over HTTP ----------
 
+test('stats api: one payload for everyone; logs of finished solves are open, unfinished ones members-only', async () => {
+  const { createServer } = await import('../server/server.mjs');
+  const { store, hub, users, tick } = setup();
+  store.setPassword(users[0].id, hashPassword('sean-pass-1'));
+  store.setPassword(users[1].id, hashPassword('devon-pass-1'));
+  const cfg = {
+    puzzlesDir: path.join(here, 'fixtures'), sessionDays: 30, trustProxy: false,
+    clientIpHeader: null, secureCookies: false, publicUrl: null,
+  };
+  // sean solves solo (a check along the way); devon starts but doesn't finish
+  const a = client(hub, users[0]);
+  await hub.handle(a.conn, { type: 'join', puzzle: PUZZLE });
+  await hub.handle(a.conn, { type: 'active', on: true });
+  tick(30_000);
+  await hub.handle(a.conn, { type: 'flags', used_check: true });
+  await hub.handle(a.conn, { type: 'cells', opId: 1, changes: open.map((i) => ({ i, fill: answer(i), marks: 0 })) });
+  const seanSolve = a.conn.room.id;
+  const b = client(hub, users[1]);
+  await hub.handle(b.conn, { type: 'join', puzzle: PUZZLE });
+  await hub.handle(b.conn, { type: 'active', on: true });
+  tick(5_000);
+  await hub.handle(b.conn, { type: 'cells', opId: 1, changes: [{ i: open[0], fill: 'Q', marks: 0 }] });
+  const devonSolve = b.conn.room.id;
+  hub.disconnect(b.conn);
+
+  const { server } = createServer(cfg, { store, puzzles: { model: async () => null }, hub });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}/api/`;
+  const login = async (name, password) => {
+    const r = await fetch(base + 'login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, password }) });
+    return r.headers.get('set-cookie').split(';')[0];
+  };
+  const get = async (p, cookie) => {
+    const r = await fetch(base + p, { headers: cookie ? { Cookie: cookie } : {} });
+    return { status: r.status, json: await r.json() };
+  };
+  try {
+    const kam = store.userByName('kam');
+    store.setPassword(kam.id, hashPassword('kam-pass-11'));
+    const kamCookie = await login('kam', 'kam-pass-11');
+    const devonCookie = await login('devon', 'devon-pass-1');
+    assert.equal((await get('stats-all')).status, 401);
+
+    const all = (await get('stats-all', kamCookie)).json;
+    assert.deepEqual(all.users.sean.solo[0].slice(0, 2), [PUZZLE, 30]);
+    assert.equal(all.users.sean.solo[0][3], 2, 'not clean, check used');
+    assert.equal(all.users.sean.solo[0][4], seanSolve);
+    assert.deepEqual(all.users.devon.unfinished[0].slice(0, 3), [PUZZLE, 0, 5], 'one letter rounds to 0%, but 5 s were spent');
+    assert.deepEqual(all.users.kam, { solo: [], unfinished: [] });
+    assert.equal(all.summaries[seanSolve].ms, 30_000);
+
+    const results = (await get(`puzzles/${PUZZLE}/results`, kamCookie)).json.results;
+    assert.equal(results.length, 1);
+    assert.equal(results[0].logged, true);
+    assert.equal(results[0].summary.ms, 30_000);
+
+    const log = (await get(`solves/${seanSolve}/events`, kamCookie)).json;
+    assert.equal(log.solve.completed, true);
+    assert.deepEqual(log.solve.members.map((m) => m.name), ['sean']);
+    assert.equal(log.events.at(-1)[4], 'd');
+    assert.equal(log.events.at(-1)[1], 30_000);
+    assert.equal((await get(`solves/${devonSolve}/events`, kamCookie)).status, 404, 'unfinished: members only');
+    assert.equal((await get(`solves/${devonSolve}/events`, devonCookie)).status, 200);
+
+    const details = (await get('summaries/sean', kamCookie)).json.solves;
+    assert.equal(details[seanSolve].puzzle_id, PUZZLE);
+    assert.equal(details[seanSolve].detail.words.length, model.clueOrder.length);
+    assert.equal((await get('summaries/nobody', kamCookie)).status, 404);
+  } finally {
+    server.close();
+  }
+});
+
 test('admin api: admins reset passwords and add accounts; others cannot', async () => {
   const { createServer } = await import('../server/server.mjs');
   const store = new Store(':memory:');

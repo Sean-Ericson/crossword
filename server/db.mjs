@@ -411,6 +411,133 @@ export class Store {
       }));
   }
 
+  // ---------- everyone's stats (the stats page) ----------
+
+  /**
+   * Every account's solo solves, unfinished solo puzzles, completed co-op
+   * solves and summary scalars, in one compact payload (GET /api/stats-all).
+   * Solo rows are tuples to keep it small:
+   *   [puzzle_id, seconds, completed_at, flags, solve_id, opened_at]
+   *   flags: 1 clean, 2 used check, 4 used reveal
+   * Unfinished: [puzzle_id, pct, elapsed, updated_at]
+   */
+  statsAll() {
+    const users = {};
+    const entry = (name) => (users[name] ??= { solo: [], unfinished: [] });
+    for (const u of this.db.prepare('SELECT name FROM users').all()) entry(u.name);
+    const solo = this.db
+      .prepare(
+        `SELECT users.name, s.puzzle_id, s.seconds, s.completed_at, s.clean, s.used_check, s.used_reveal,
+                sv.id AS solve_id, sv.created_at AS opened_at
+         FROM solo_solves AS s
+         JOIN users ON users.id = s.user_id
+         LEFT JOIN solves AS sv ON sv.kind = 'solo' AND sv.owner_id = s.user_id AND sv.puzzle_id = s.puzzle_id`
+      )
+      .all();
+    for (const r of solo) {
+      const flags = (r.clean ? 1 : 0) | (r.used_check ? 2 : 0) | (r.used_reveal ? 4 : 0);
+      entry(r.name).solo.push([r.puzzle_id, r.seconds, r.completed_at, flags, r.solve_id ?? null, r.opened_at ?? null]);
+    }
+    const unfinished = this.db
+      .prepare(
+        `SELECT users.name, sv.puzzle_id, sv.pct, json_extract(sv.record, '$.elapsed') AS elapsed, sv.updated_at
+         FROM solves AS sv JOIN users ON users.id = sv.owner_id
+         WHERE sv.kind = 'solo' AND sv.completed = 0 AND (sv.pct > 0 OR json_extract(sv.record, '$.elapsed') > 0)
+           AND NOT EXISTS (SELECT 1 FROM solo_solves AS s WHERE s.user_id = sv.owner_id AND s.puzzle_id = sv.puzzle_id)`
+      )
+      .all();
+    for (const r of unfinished) entry(r.name).unfinished.push([r.puzzle_id, r.pct, r.elapsed ?? 0, r.updated_at]);
+
+    const coop = this.db
+      .prepare(
+        `SELECT id, puzzle_id, created_at,
+                json_extract(record, '$.elapsed') AS seconds,
+                json_extract(record, '$.solved_at') AS completed_at,
+                json_extract(record, '$.clean') AS clean,
+                json_extract(record, '$.used_check') AS used_check,
+                json_extract(record, '$.used_reveal') AS used_reveal
+         FROM solves WHERE kind = 'coop' AND completed = 1`
+      )
+      .all()
+      .map((r) => ({
+        id: r.id,
+        puzzle_id: r.puzzle_id,
+        members: this.members(r.id).map((m) => m.name),
+        seconds: r.seconds ?? 0,
+        completed_at: r.completed_at,
+        opened_at: r.created_at,
+        flags: (r.clean ? 1 : 0) | (r.used_check ? 2 : 0) | (r.used_reveal ? 4 : 0),
+      }));
+
+    const summaries = {};
+    for (const r of this.db.prepare('SELECT solve_id, scalars FROM solve_summaries').all()) {
+      summaries[r.solve_id] = JSON.parse(r.scalars);
+    }
+    return { users, coop, summaries };
+  }
+
+  /**
+   * Summary details of the solves a user took part in (solo and co-op):
+   * {solve_id: {puzzle_id, kind, detail}}.
+   */
+  summaryDetails(userId) {
+    const out = {};
+    const rows = this.db
+      .prepare(
+        `SELECT s.solve_id, s.detail, solves.puzzle_id, solves.kind FROM solve_summaries AS s
+         JOIN solves ON solves.id = s.solve_id
+         JOIN solve_members AS m ON m.solve_id = s.solve_id
+         WHERE m.user_id = ?`
+      )
+      .all(userId);
+    for (const r of rows) out[r.solve_id] = { puzzle_id: r.puzzle_id, kind: r.kind, detail: JSON.parse(r.detail) };
+    return out;
+  }
+
+  /** Every finished solve of one puzzle, solo and co-op, with summaries. */
+  puzzleResults(puzzleId) {
+    const solo = this.db
+      .prepare(
+        `SELECT users.name, s.seconds, s.completed_at, s.clean, s.used_check, s.used_reveal, sv.id AS solve_id
+         FROM solo_solves AS s
+         JOIN users ON users.id = s.user_id
+         LEFT JOIN solves AS sv ON sv.kind = 'solo' AND sv.owner_id = s.user_id AND sv.puzzle_id = s.puzzle_id
+         WHERE s.puzzle_id = ?`
+      )
+      .all(puzzleId)
+      .map((r) => ({
+        kind: 'solo',
+        solve_id: r.solve_id ?? null,
+        members: [r.name],
+        seconds: r.seconds,
+        completed_at: r.completed_at,
+        flags: (r.clean ? 1 : 0) | (r.used_check ? 2 : 0) | (r.used_reveal ? 4 : 0),
+      }));
+    const coop = this.db
+      .prepare(
+        `SELECT id, json_extract(record, '$.elapsed') AS seconds, json_extract(record, '$.solved_at') AS completed_at,
+                json_extract(record, '$.clean') AS clean, json_extract(record, '$.used_check') AS used_check,
+                json_extract(record, '$.used_reveal') AS used_reveal
+         FROM solves WHERE kind = 'coop' AND completed = 1 AND puzzle_id = ?`
+      )
+      .all(puzzleId)
+      .map((r) => ({
+        kind: 'coop',
+        solve_id: r.id,
+        members: this.members(r.id).map((m) => m.name),
+        seconds: r.seconds ?? 0,
+        completed_at: r.completed_at,
+        flags: (r.clean ? 1 : 0) | (r.used_check ? 2 : 0) | (r.used_reveal ? 4 : 0),
+      }));
+    const results = [...solo, ...coop];
+    for (const r of results) {
+      const s = r.solve_id ? this.summary(r.solve_id) : null;
+      r.summary = s?.scalars ?? null;
+      r.logged = !!(r.solve_id && this.maxEventSeq(r.solve_id));
+    }
+    return results;
+  }
+
   // ---------- solve event log ----------
 
   /** Highest event number logged for a solve (0 when there are none). */

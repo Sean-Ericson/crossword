@@ -220,6 +220,48 @@ export function makeApi(ctx) {
       send(res, 200, { solves: store.coopStats(userByNameOr404(name).id) });
     }],
 
+    // Everything the stats page aggregates, for every account at once
+    // (anyone signed in can already see anyone's stats). Tuples; see
+    // Store.statsAll.
+    ['GET', /^\/api\/stats-all$/, async (req, res) => {
+      send(res, 200, store.statsAll());
+    }],
+
+    // Per-entry times, progress curves and letter confusions from one
+    // person's logged solves (solo and co-op), fetched when a tab needs them.
+    ['GET', /^\/api\/summaries\/([a-z0-9-]+)$/, async (req, res, [name]) => {
+      send(res, 200, { solves: store.summaryDetails(userByNameOr404(name).id) });
+    }],
+
+    // Every finished solve of one puzzle, for its breakdown page.
+    ['GET', /^\/api\/puzzles\/([A-Za-z0-9_-]+)\/results$/, async (req, res, [puzzleId]) => {
+      send(res, 200, { results: store.puzzleResults(puzzleId) });
+    }],
+
+    // A solve's event log, for replays and the breakdown page. Finished
+    // solves are open to everyone (the page hides answers from people who
+    // haven't solved the puzzle); unfinished ones only to their members.
+    ['GET', /^\/api\/solves\/([A-Za-z0-9_-]+)\/events$/, async (req, res, [solveId], user) => {
+      const solve = store.solveById(solveId);
+      const member = solve && store.isMember(solveId, user.id);
+      if (!solve || (!solve.record?.completed && !hub.liveRecord(solveId)?.completed && !member)) {
+        throw new HttpError(404, 'No such solve.');
+      }
+      hub.rooms.get(solveId)?.flush(); // include what the room hasn't written yet
+      send(res, 200, {
+        solve: {
+          id: solve.id,
+          puzzle_id: solve.puzzle_id,
+          kind: solve.kind,
+          members: solve.members.map((m) => ({ name: m.name, display_name: m.display_name, color: m.color })),
+          completed: !!(hub.liveRecord(solveId) ?? solve.record)?.completed,
+          elapsed: (hub.liveRecord(solveId) ?? solve.record)?.elapsed ?? 0,
+        },
+        // [seq, t, at, user, kind, cell, value, marks, dir]
+        events: store.events(solveId).map((e) => [e.seq, e.t, e.at, e.user, e.kind, e.cell, e.value, e.marks, e.dir]),
+      });
+    }],
+
     ['GET', /^\/api\/solves$/, async (req, res, _p, user, url) => {
       const puzzle = url.searchParams.get('puzzle');
       if (puzzle && !PUZZLE_ID_RE.test(puzzle)) throw new HttpError(400, 'Bad puzzle id.');
