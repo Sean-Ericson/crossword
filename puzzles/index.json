@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-26T05:27:39Z",
+  "generated_at": "2026-09-27T05:27:28Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-27",
+      "file": "puzzles/mini-2026-09-27.puz",
+      "type": "mini",
+      "date": "2026-09-27",
+      "title": "NY Times, Sunday, September 27, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-27",
+      "file": "puzzles/midi-2026-09-27.puz",
+      "type": "midi",
+      "date": "2026-09-27",
+      "title": "NY Times, Sunday, September 27, 2026 SHADY CHARACTERS",
+      "author": "Andy Kravis / Ian Livengood",
+      "width": 10,
+      "height": 9
+    },
+    {
+      "id": "2026-09-27",
+      "file": "puzzles/2026-09-27.puz",
+      "type": "daily",
+      "date": "2026-09-27",
+      "title": "NY Times, Sunday, September 27, 2026 THE FULL 12 ROUNDS",
+      "author": "Adam Wagner / Will Shortz",
+      "width": 21,
+      "height": 21
+    },
     {
       "id": "mini-2026-09-26",
       "file": "puzzles/mini-2026-09-26.puz",
