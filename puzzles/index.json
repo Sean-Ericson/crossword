@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-09-27T05:27:28Z",
+  "generated_at": "2026-09-28T05:17:23Z",
   "puzzles": [
+    {
+      "id": "mini-2026-09-28",
+      "file": "puzzles/mini-2026-09-28.puz",
+      "type": "mini",
+      "date": "2026-09-28",
+      "title": "NY Times, Monday, September 28, 2026",
+      "author": "Christina Iverson / Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-09-28",
+      "file": "puzzles/midi-2026-09-28.puz",
+      "type": "midi",
+      "date": "2026-09-28",
+      "title": "NY Times, Monday, September 28, 2026 CRAFT FROM THE PAST",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-09-28",
+      "file": "puzzles/2026-09-28.puz",
+      "type": "daily",
+      "date": "2026-09-28",
+      "title": "NY Times, Monday, September 28, 2026",
+      "author": "Helen Chen / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-09-27",
       "file": "puzzles/mini-2026-09-27.puz",
