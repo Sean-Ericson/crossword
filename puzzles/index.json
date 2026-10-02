@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-10-01T05:03:54Z",
+  "generated_at": "2026-10-02T05:07:06Z",
   "puzzles": [
+    {
+      "id": "mini-2026-10-02",
+      "file": "puzzles/mini-2026-10-02.puz",
+      "type": "mini",
+      "date": "2026-10-02",
+      "title": "NY Times, Friday, October 2, 2026",
+      "author": "Joel Fagliano",
+      "width": 5,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-10-02",
+      "file": "puzzles/midi-2026-10-02.puz",
+      "type": "midi",
+      "date": "2026-10-02",
+      "title": "NY Times, Friday, October 2, 2026 ENDPIECES",
+      "author": "Evan Kalish / Ian Livengood",
+      "width": 9,
+      "height": 9
+    },
+    {
+      "id": "2026-10-02",
+      "file": "puzzles/2026-10-02.puz",
+      "type": "daily",
+      "date": "2026-10-02",
+      "title": "NY Times, Friday, October 2, 2026",
+      "author": "Joe Marquez / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-10-01",
       "file": "puzzles/mini-2026-10-01.puz",
