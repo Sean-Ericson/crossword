@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-10-02T05:07:06Z",
+  "generated_at": "2026-10-03T05:01:09Z",
   "puzzles": [
+    {
+      "id": "mini-2026-10-03",
+      "file": "puzzles/mini-2026-10-03.puz",
+      "type": "mini",
+      "date": "2026-10-03",
+      "title": "NY Times, Saturday, October 3, 2026",
+      "author": "Joel Fagliano",
+      "width": 7,
+      "height": 7
+    },
+    {
+      "id": "midi-2026-10-03",
+      "file": "puzzles/midi-2026-10-03.puz",
+      "type": "midi",
+      "date": "2026-10-03",
+      "title": "NY Times, Saturday, October 3, 2026 GET IN LINE",
+      "author": "Sid Sivakumar / Ian Livengood",
+      "width": 9,
+      "height": 10
+    },
+    {
+      "id": "2026-10-03",
+      "file": "puzzles/2026-10-03.puz",
+      "type": "daily",
+      "date": "2026-10-03",
+      "title": "NY Times, Saturday, October 3, 2026",
+      "author": "Kameron Austin Collins / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
     {
       "id": "mini-2026-10-02",
       "file": "puzzles/mini-2026-10-02.puz",
