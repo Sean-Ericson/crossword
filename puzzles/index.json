@@ -1,7 +1,37 @@
 {
   "schema": 1,
-  "generated_at": "2026-10-03T05:01:09Z",
+  "generated_at": "2026-10-04T05:18:05Z",
   "puzzles": [
+    {
+      "id": "mini-2026-10-04",
+      "file": "puzzles/mini-2026-10-04.puz",
+      "type": "mini",
+      "date": "2026-10-04",
+      "title": "NY Times, Sunday, October 4, 2026",
+      "author": "Sam Ezersky / Joel Fagliano",
+      "width": 6,
+      "height": 5
+    },
+    {
+      "id": "midi-2026-10-04",
+      "file": "puzzles/midi-2026-10-04.puz",
+      "type": "midi",
+      "date": "2026-10-04",
+      "title": "NY Times, Sunday, October 4, 2026 DRAW A LINE IN THE SAND",
+      "author": "Paolo Pasco / Ian Livengood",
+      "width": 10,
+      "height": 9
+    },
+    {
+      "id": "2026-10-04",
+      "file": "puzzles/2026-10-04.puz",
+      "type": "daily",
+      "date": "2026-10-04",
+      "title": "NY Times, Sunday, October 4, 2026 10-4",
+      "author": "Kathryn Bale / Will Shortz",
+      "width": 22,
+      "height": 22
+    },
     {
       "id": "mini-2026-10-03",
       "file": "puzzles/mini-2026-10-03.puz",
