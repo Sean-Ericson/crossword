@@ -629,3 +629,107 @@ a {
   min-height: 20px;
   margin: 6px 0;
 }
+
+/* ---------- feedback on custom puzzles (js/feedback.js) ---------- */
+
+.feedback-form {
+  margin: 18px 0 6px;
+  padding-top: 14px;
+  text-align: left;
+  border-top: 1px solid var(--color-border);
+}
+
+.feedback-title {
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.star-btn {
+  padding: 0 2px;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--color-text-faint);
+  background: none;
+  border: none;
+}
+
+.star-btn.on {
+  color: var(--color-gold);
+}
+
+.star-btn:hover {
+  transform: scale(1.12);
+}
+
+.feedback-note {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  resize: vertical;
+}
+
+.feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.feedback-notes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedback-notes li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.feedback-notes p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.feedback-who {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.feedback-stars {
+  color: var(--color-gold);
+  letter-spacing: 1px;
+}
+
+.feedback-when,
+.feedback-empty {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* "Test solve — nothing is saved" in the player */
+.test-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: var(--color-solved-clean-bg);
+  color: var(--color-text);
+  white-space: nowrap;
+}

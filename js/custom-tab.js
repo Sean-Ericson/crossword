@@ -13,7 +13,8 @@ import { el, formatTime } from './util.js';
 import { api } from './api.js';
 import { showModal, toast } from './modals.js';
 import { listNames } from './people.js';
-import { MIN_SIZE, MAX_SIZE } from './custom-puzzle.js';
+import { parsePuz, PuzParseError } from './puz.js';
+import { MIN_SIZE, MAX_SIZE, docFromPuz } from './custom-puzzle.js';
 
 const FILTER_ABOVE = 12; // more of everyone's puzzles than this: search and a status filter
 
@@ -57,6 +58,10 @@ export function renderCustomTab(host, ctx) {
   host.append(
     el('div', { class: 'custom-actions' }, [
       el('button', { class: 'btn btn-primary', type: 'button', onclick: () => openNewPuzzle() }, 'New puzzle'),
+      el('label', { class: 'btn', title: 'Bring in a puzzle you made with another program (Crossfire, Phil, Crosshare…)' }, [
+        'Upload a .puz',
+        el('input', { type: 'file', accept: '.puz', class: 'visually-hidden', onchange: (e) => uploadPuz(e.target.files[0]) }),
+      ]),
       el('p', { class: 'custom-intro' }, 'Make a crossword alone or with friends, live, and share it here.'),
     ])
   );
@@ -81,6 +86,7 @@ export function renderCustomTab(host, ctx) {
       bits.push(p.solved ? `${p.solved} solved` : 'no solves yet');
       if (p.solving) bits.push(`${p.solving} solving`);
       if (stars(p.stars)) bits.push(stars(p.stars));
+      if (p.notes) bits.push(`${p.notes} note${p.notes === 1 ? '' : 's'}`);
     }
     const notes = [];
     if (others.length) notes.push(`with ${listNames(others.map(nameOf), 3)}`);
@@ -183,6 +189,28 @@ export function renderCustomTab(host, ctx) {
         el('span', { class: `sp-status ${iconClass}` }, icon),
       ]
     );
+  }
+}
+
+/** A .puz from another program becomes a draft here (it's checked and published from the builder). */
+async function uploadPuz(file) {
+  if (!file) return;
+  if (file.size > 1_000_000) {
+    toast('That file is too big for a crossword.', { error: true });
+    return;
+  }
+  let doc;
+  try {
+    doc = docFromPuz(parsePuz(await file.arrayBuffer()));
+  } catch (err) {
+    toast(err instanceof PuzParseError ? 'That doesn’t look like a .puz file.' : err.message, { error: true });
+    return;
+  }
+  try {
+    const { puzzle } = await api.post('custom-puzzles', { doc });
+    location.href = `./builder.html?id=${encodeURIComponent(puzzle.id)}`;
+  } catch (err) {
+    toast(err.message, { error: true });
   }
 }
 

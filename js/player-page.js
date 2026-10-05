@@ -8,6 +8,9 @@
  *
  * Custom puzzles (custom-… ids) come from the API instead of a .puz file;
  * their authors get pointed to the builder, since nobody solves their own.
+ *      puzzle.html?id=<custom>&test=1       an author's test solve of the
+ *                                           working copy: LocalSolve, no
+ *                                           server, nothing saved
  */
 
 import { parsePuz } from './puz.js';
@@ -17,6 +20,9 @@ import { GridView } from './grid-view.js';
 import { CluesView } from './clues-view.js';
 import { Timer } from './timer.js';
 import { LiveSolve } from './net.js';
+import { LocalSolve } from './local-solve.js';
+import { feedbackForm, loadFeedback } from './feedback.js';
+import { downloadPuz, puzFileName } from './puz-write.js';
 import { api } from './api.js';
 import { showModal, confirmDialog, toast } from './modals.js';
 import { newProgress, hasAnyFill, fillPercent } from './state.js';
@@ -62,15 +68,20 @@ async function main() {
   }
   let puz;
   let custom = null; // a custom puzzle's listing entry (authors, audience...)
+  const testMode = params.has('test') && isCustomId(id);
   if (isCustomId(id)) {
-    const got = await loadCustomPuzzle(id);
+    const got = await loadCustomPuzzle(id, { working: testMode });
     if (got.error) {
       showFatal(got.status === 404 ? 'That puzzle doesn’t exist, or it isn’t shared with you.' : got.error);
       return;
     }
     custom = got.puzzle;
-    if (custom.mine) {
+    if (custom.mine && !testMode) {
       showOwnPuzzle(custom);
+      return;
+    }
+    if (!got.puz) {
+      showFatal('That puzzle isn’t published yet.');
       return;
     }
     puz = got.puz;
@@ -116,9 +127,14 @@ async function main() {
   const record = newProgress(model, id, user);
   const settings = loadSettings(user);
   const engine = new SolveEngine(model, record, settings);
-  engine.deferCompletion = true; // the server decides when it's solved
+  engine.deferCompletion = !testMode; // the server decides when it's solved
   const timer = new Timer(0);
-  const live = new LiveSolve({ puzzleId: id, solveId: solveParam });
+  const live = testMode ? new LocalSolve({ puzzleId: id, model, user: me }) : new LiveSolve({ puzzleId: id, solveId: solveParam });
+  if (testMode) {
+    // an author trying their working copy: nothing here is saved or shared
+    qs('#solve-btn').hidden = true;
+    qs('.puzzle-header').append(el('span', { class: 'test-badge', title: 'Nothing here is saved or counted' }, 'Test solve — nothing is saved'));
+  }
 
   let solve = null; // snapshot.solve: {id, kind, puzzle_id, members}
   let presence = []; // [{conn, user, display_name, color, cursor, active}]
@@ -202,7 +218,7 @@ async function main() {
 
   // ----- live connection -----
   const liveBadge = qs('#sync-badge');
-  liveBadge.hidden = false;
+  liveBadge.hidden = testMode;
   liveBadge.className = 'live-dot';
   let sessionCheck = null;
   live.on('status', (status) => {
@@ -237,7 +253,7 @@ async function main() {
     renderSolveInfo();
     renderPresence();
     drawAllRemote();
-    if (firstTime) {
+    if (firstTime && !testMode) {
       loadSolveList();
       loadDirectory().catch(() => {}); // display names in the solve menu
     }
@@ -458,6 +474,16 @@ async function main() {
   const solveHref = (s) =>
     `./puzzle.html?id=${encodeURIComponent(id)}${s?.kind === 'coop' ? `&solve=${encodeURIComponent(s.id)}` : ''}`;
 
+  /** Stars and a note for a custom puzzle's constructors, any time after finishing it. */
+  async function openRating() {
+    const fb = await loadFeedback(id);
+    if (!fb?.can_rate) {
+      toast('Finish the puzzle first, then tell its constructors what you thought.', { error: true });
+      return;
+    }
+    showModal({ title: puz.title || 'This puzzle', body: [feedbackForm(id, { byline: puz.author, existing: fb.mine })] });
+  }
+
   makeMenu(solveBtn, () => {
     const coops = mySolves.filter((s) => s.kind === 'coop');
     const items = [
@@ -482,6 +508,11 @@ async function main() {
             ?.writeText(location.origin + solveHref(solve).slice(1))
             .then(() => toast('Link copied — anyone in this solve can open it.')),
       });
+    }
+    if (custom) {
+      items.push('hr');
+      if (record.completed) items.push({ label: 'Rate this puzzle…', action: () => openRating() });
+      items.push({ label: 'Download .puz', action: () => downloadPuz(puz, puzFileName(puz.title, id)) });
     }
     return items;
   });
@@ -664,6 +695,11 @@ async function main() {
   engine.on('full', ({ solved, clean }) => {
     if (solved) {
       active = false;
+      if (testMode) {
+        // no server to stop the clock and say so
+        live.setActive(false);
+        record.elapsed = Math.floor(timer.seconds);
+      }
       closeOverlay();
       veil(false);
       gridView.setCompleted(true);
@@ -671,20 +707,37 @@ async function main() {
       showFinalTime();
       if (settings.playSound) playJingle();
       const partners = isCoop() ? solve.members.filter((m) => m.name !== user).map((m) => m.display_name) : [];
+      const rating = el('div'); // a custom puzzle's constructors hear what you thought
+      if (custom && !testMode) {
+        loadFeedback(id).then((fb) => {
+          if (fb?.can_rate) rating.append(feedbackForm(id, { byline: puz.author, existing: fb.mine }));
+        });
+      }
       showModal({
-        title: 'Congratulations!',
+        title: testMode ? 'It works!' : 'Congratulations!',
         body: el('div', {}, [
-          el('p', {}, partners.length ? `You solved it with ${listNames(partners, 4)}.` : 'You solved the puzzle.'),
+          el(
+            'p',
+            {},
+            testMode
+              ? 'The grid checks out. Nothing was saved.'
+              : partners.length
+              ? `You solved it with ${listNames(partners, 4)}.`
+              : 'You solved the puzzle.'
+          ),
           el('div', { class: 'solve-time' }, formatTime(record.elapsed)),
           clean ? el('div', { class: 'gold-star' }, '★ Clean solve') : null,
+          rating,
         ]),
-        actions: [
-          { label: 'Back to archive', onClick: () => (location.href = './index.html') },
-          ...(solve?.id
-            ? [{ label: 'See the breakdown', onClick: () => (location.href = `./analysis.html?puzzle=${encodeURIComponent(id)}&solve=${encodeURIComponent(solve.id)}`) }]
-            : []),
-          { label: 'Admire the puzzle', primary: true },
-        ],
+        actions: testMode
+          ? [{ label: 'Back to the builder', primary: true, onClick: () => (location.href = `./builder.html?id=${encodeURIComponent(id)}`) }]
+          : [
+              { label: 'Back to archive', onClick: () => (location.href = custom ? './index.html#custom' : './index.html') },
+              ...(solve?.id
+                ? [{ label: 'See the breakdown', onClick: () => (location.href = `./analysis.html?puzzle=${encodeURIComponent(id)}&solve=${encodeURIComponent(solve.id)}`) }]
+                : []),
+              { label: 'Admire the puzzle', primary: true },
+            ],
       });
     } else if (!fullModalOpen) {
       fullModalOpen = true;
@@ -965,6 +1018,7 @@ function showOwnPuzzle(p) {
     dismissible: false,
     actions: [
       { label: 'Edit it', onClick: () => (location.href = `./builder.html?id=${id}`) },
+      { label: 'Test solve', onClick: () => (location.href = `./puzzle.html?id=${id}&test=1`) },
       ...(p.status !== 'draft'
         ? [{ label: 'See how people did', primary: true, onClick: () => (location.href = `./analysis.html?puzzle=${id}`) }]
         : []),

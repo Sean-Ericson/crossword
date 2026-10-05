@@ -468,6 +468,23 @@ test('custom api: drafts, publishing, sharing, co-authors, delete and withdraw',
     assert.equal((await call('GET', `custom-puzzles/${id}`, null, kam)).json.doc.clues.A0, 'Kitty');
     hub.disconnect(solving.conn);
 
+    // feedback: from people who finished it; notes only for them and the authors
+    assert.equal((await call('POST', `custom-puzzles/${id}/feedback`, { stars: 5 }, kam)).status, 403, 'kam hasn’t finished it');
+    assert.equal((await call('POST', `custom-puzzles/${id}/feedback`, { stars: 5 }, sean)).status, 400, 'nor do authors rate');
+    assert.equal((await call('POST', `custom-puzzles/${id}/feedback`, { stars: 6 }, devon)).status, 400);
+    assert.equal((await call('POST', `custom-puzzles/${id}/feedback`, { stars: 4, comment: '  Loved 1-Across!  ' }, devon)).status, 200);
+    const asAuthor = (await call('GET', `custom-puzzles/${id}/feedback`, null, sean)).json;
+    assert.deepEqual(asAuthor.stars, { avg: 4, n: 1 });
+    assert.equal(asAuthor.notes[0].comment, 'Loved 1-Across!');
+    assert.equal(asAuthor.can_rate, false);
+    const asKam = (await call('GET', `custom-puzzles/${id}/feedback`, null, kam)).json;
+    assert.equal(asKam.notes, null, 'notes can give answers away');
+    assert.deepEqual(asKam.stars, { avg: 4, n: 1 });
+    const asDevon = (await call('GET', `custom-puzzles/${id}/feedback`, null, devon)).json;
+    assert.equal(asDevon.can_rate, true);
+    assert.equal(asDevon.mine.stars, 4);
+    assert.deepEqual((await call('GET', 'custom-puzzles', null, kam)).json.puzzles[0].stars, { avg: 4, n: 1 });
+
     // deleting something people have played withdraws it instead
     assert.deepEqual((await call('DELETE', `custom-puzzles/${id}`, null, sean)).json, { withdrawn: true });
     await drain([b], hub);

@@ -29,6 +29,7 @@ import { chartCard, xyChart, dotPlot, gridHeatmap, legend, scaleLegend, fmt } fr
 import { sectionHead, sortableTable, tiles, tile, chartGrid, empty, playHref } from './stats/common.js';
 import { loadCustomPuzzle } from './fetch-puzzle.js';
 import { isCustomId } from './custom-puzzle.js';
+import { loadFeedback, feedbackForm, feedbackNotes, starsText } from './feedback.js';
 
 const MAX_LOGS = 12; // logged solves fetched for the race and the entry table
 const SPEEDS = [1, 2, 5, 10, 20, 30, 60, 120];
@@ -154,6 +155,20 @@ async function main() {
     ),
   ]);
   if (!reveal) host.append(banner);
+
+  // a custom puzzle: what solvers told its constructors
+  if (customEntry && customEntry.status !== 'draft') {
+    const fb = await loadFeedback(puzzleId);
+    if (fb) {
+      const section = el('section', { class: 'feedback-section', id: 'feedback' }, [
+        sectionHead('What solvers thought', starsText(fb.stars)),
+        fb.notes ? feedbackNotes(fb.notes) : el('p', { class: 'feedback-empty' }, 'Solvers’ notes are for its constructors and the people who finished it.'),
+        fb.can_rate ? feedbackForm(puzzleId, { byline: model.puz.author, existing: fb.mine }) : null,
+      ]);
+      host.append(section);
+      if (location.hash === '#feedback') section.scrollIntoView();
+    }
+  }
 
   if (!results.length) {
     host.append(empty('Nobody has finished this puzzle yet.'));

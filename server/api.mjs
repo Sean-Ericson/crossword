@@ -579,6 +579,39 @@ export function makeApi(ctx) {
       send(res, 200, { authors: authors.map((a) => a.name) });
     }],
 
+    // What solvers thought. Everyone who can see the puzzle gets the
+    // average; its authors and the people who finished it also get the
+    // notes (they can give away answers).
+    ['GET', /^\/api\/custom-puzzles\/([A-Za-z0-9_-]+)\/feedback$/, async (req, res, [id], user) => {
+      const { mine } = customFor(id, user);
+      const all = store.feedbackFor(id);
+      const finished = store.finishedPuzzle(id, user.id);
+      const rated = all.filter((f) => f.stars != null);
+      const avg = rated.reduce((a, f) => a + f.stars, 0) / (rated.length || 1);
+      send(res, 200, {
+        mine: all.find((f) => f.user === user.name) ?? null,
+        can_rate: !mine && finished,
+        stars: rated.length ? { avg: Math.round(avg * 10) / 10, n: rated.length } : null,
+        notes: mine || finished ? all.filter((f) => f.comment) : null,
+      });
+    }],
+
+    // Rate it (1-5 stars) and/or leave a note for its authors, once you've
+    // finished it. Sending again replaces yours.
+    ['POST', /^\/api\/custom-puzzles\/([A-Za-z0-9_-]+)\/feedback$/, async (req, res, [id], user) => {
+      const { mine } = customFor(id, user);
+      if (mine) throw new HttpError(400, 'Authors don’t rate their own puzzle.');
+      if (!store.finishedPuzzle(id, user.id)) throw new HttpError(403, 'Finish the puzzle first.');
+      const body = await readJson(req, 10_000);
+      const stars = body.stars == null || body.stars === '' ? null : Number(body.stars);
+      if (stars != null && !(Number.isInteger(stars) && stars >= 1 && stars <= 5)) {
+        throw new HttpError(400, 'Stars are a whole number from 1 to 5.');
+      }
+      const comment = String(body.comment ?? '').trim().slice(0, 1000);
+      store.saveFeedback(id, user.id, { stars, comment });
+      send(res, 200, { ok: true });
+    }],
+
     // The creator (or an admin) deletes a puzzle. One that anybody has opened
     // to solve is withdrawn instead: unlisted and closed to new solves, while
     // their solves and stats stay.

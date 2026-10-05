@@ -39,8 +39,9 @@ import { listNames } from './people.js';
 import { TouchKeyboard, isTouchDevice } from './touch-keyboard.js';
 import { el, qs, qsa } from './util.js';
 import {
-  applyChange, valueAt, modelOf, problems, partnerOf, clueKey, entryName, isCustomId, SYMMETRIES,
+  applyChange, valueAt, modelOf, docToPuz, problems, partnerOf, clueKey, entryName, isCustomId, SYMMETRIES,
 } from './custom-puzzle.js';
+import { downloadPuz, puzFileName } from './puz-write.js';
 
 const params = new URLSearchParams(location.search);
 const SYMMETRY_LABELS = { rotational: 'Rotational (standard)', mirror: 'Left–right mirror', none: 'None' };
@@ -543,6 +544,15 @@ async function main() {
             { label: 'See how people did', action: () => (location.href = `./analysis.html?puzzle=${encodeURIComponent(id)}`) },
           ]
         : []),
+      'hr',
+      {
+        label: 'Test solve',
+        action: () => {
+          flushClues();
+          window.open(`./puzzle.html?id=${encodeURIComponent(id)}&test=1`, '_blank');
+        },
+      },
+      { label: 'Download .puz', action: () => downloadPuz(docToPuz(doc), puzFileName(doc.title, id)) },
       'hr',
       creator
         ? { label: info.status === 'draft' ? 'Delete this draft…' : 'Delete this puzzle…', action: () => deletePuzzle() }
