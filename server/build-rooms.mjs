@@ -158,7 +158,7 @@ export class BuildRoom {
       const changed = this.differsFromPublished();
       if (changed !== this.changed) {
         this.changed = changed;
-        this.broadcast({ type: 'status', ...this.statusInfo() });
+        this.broadcast({ type: 'puzzle-state', ...this.statusInfo() });
       }
     }
   }
@@ -205,7 +205,7 @@ export class BuildRoom {
     if (visibility) this.visibility = visibility;
     if (published !== undefined) this.published = published;
     this.changed = this.differsFromPublished();
-    this.broadcast({ type: 'status', ...this.statusInfo(by) });
+    this.broadcast({ type: 'puzzle-state', ...this.statusInfo(by) });
   }
 
   /** Authors were added or removed: people who aren't one any more leave. */

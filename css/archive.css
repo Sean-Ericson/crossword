@@ -343,3 +343,230 @@
 .coop-item.coop-toggle:hover {
   color: var(--color-text);
 }
+
+/* ---------- custom puzzles (js/custom-tab.js) ---------- */
+
+/* how many of everyone's puzzles are new to you, on the tab itself */
+.tab-new {
+  display: inline-block;
+  margin-left: 6px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.custom-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 26px;
+}
+
+.custom-intro {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.custom-section {
+  margin-bottom: 30px;
+}
+
+.custom-section h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.custom-empty {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.custom-tools {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.custom-search,
+.custom-filter {
+  font: inherit;
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.custom-search {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+}
+
+.custom-filter {
+  padding: 6px 8px;
+}
+
+.custom-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  color: var(--color-text);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.custom-item:hover {
+  border-color: var(--color-link);
+}
+
+.custom-item.withdrawn {
+  opacity: 0.7;
+}
+
+.ci-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ci-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-weight: 600;
+}
+
+.ci-meta {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.ci-note {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.ci-tag {
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--color-bg-muted);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ci-tag.new {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.ci-links {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
+}
+
+.ci-links .btn-quiet {
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+.custom-item .sp-status {
+  font-size: 15px;
+}
+
+.custom-item .day-coop {
+  font-size: 13px;
+}
+
+/* the New puzzle dialog */
+.new-puzzle {
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.field-label {
+  display: block;
+  margin: 14px 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.field {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.size-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 12px;
+}
+
+.size-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.size-row input {
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.size-other {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+.size-num {
+  width: 72px;
+  padding: 6px 8px;
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+@media (max-width: 600px) {
+  .custom-item {
+    gap: 8px;
+  }
+
+  .ci-links .btn-quiet {
+    padding: 6px;
+  }
+}

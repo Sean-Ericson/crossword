@@ -15,7 +15,8 @@ export class GridView {
   /**
    * @param {HTMLElement} container
    * @param {import('./model.js').PuzzleModel} model
-   * @param {{onCellClick?: (index:number) => void}} opts
+   * @param {{onCellClick?: (index:number) => void, clickBlack?: boolean}} opts
+   *   clickBlack: black squares are clickable too (the builder)
    */
   constructor(container, model, opts = {}) {
     this.model = model;
@@ -43,7 +44,7 @@ export class GridView {
 
     this.board.addEventListener('mousedown', (e) => {
       const cellEl = e.target.closest('.cell');
-      if (!cellEl || cellEl.classList.contains('black')) return;
+      if (!cellEl || (cellEl.classList.contains('black') && !opts.clickBlack)) return;
       e.preventDefault(); // keep focus/keyboard on document
       opts.onCellClick?.(Number(cellEl.dataset.i));
     });
@@ -141,6 +142,30 @@ export class GridView {
 
   setCompleted(done) {
     this.board.classList.toggle('completed', done);
+  }
+
+  /** Put `cls` on exactly these cells (the builder's highlights). */
+  setCellClass(cls, cells) {
+    this.classed ??= new Map();
+    for (const i of this.classed.get(cls) ?? []) this.cellEls[i]?.classList.remove(cls);
+    const list = [...new Set(cells)].filter((i) => this.cellEls[i]);
+    for (const i of list) this.cellEls[i].classList.add(cls);
+    this.classed.set(cls, list);
+  }
+
+  /** Circle or uncircle a white square (the builder). */
+  setCircled(index, on) {
+    const node = this.cellEls[index];
+    if (!node || this.model.cells[index].isBlack) return;
+    const circle = node.querySelector('.cell-circle');
+    if (on && !circle) node.prepend(el('div', { class: 'cell-circle' }));
+    if (!on) circle?.remove();
+  }
+
+  /** Take the board off the page (the builder makes a new one when the shape changes). */
+  destroy() {
+    this.resizeObserver.disconnect();
+    this.board.remove();
   }
 
   // ---------- other solvers' cursors ----------

@@ -73,7 +73,7 @@ function builder(hub, user, puzzleId) {
     for (const ch of changes) applyChange(state.doc, ch);
   });
   live.on('error', (msg) => state.errors.push(msg));
-  live.on('status', (msg) => state.statuses.push(msg));
+  live.on('puzzle-state', (msg) => state.statuses.push(msg));
   live.on('authors', (msg) => state.authors.push(msg));
   return {
     conn,

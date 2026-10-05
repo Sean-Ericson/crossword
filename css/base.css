@@ -528,6 +528,25 @@ a {
   border-bottom-color: var(--color-text);
 }
 
+/* all the tabs don't fit a phone: they scroll sideways */
+@media (max-width: 600px) {
+  .type-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .type-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .type-tab {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+    padding: 10px 11px;
+    white-space: nowrap;
+  }
+}
+
 /* ---------- misc shared ---------- */
 
 .badge {

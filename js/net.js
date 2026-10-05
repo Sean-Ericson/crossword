@@ -56,9 +56,11 @@
  *   cursor    {conn, user, index?, dir?, clue?}
  *   presence  {presence:[{conn, user, display_name, color, cursor}]}
  *   authors   {authors}
- *   status    {status, visibility, shape_locked, changed, by}
- *                                           published, updated, withdrawn, or
- *                                           sharing changed
+ *   puzzle-state {status, visibility, shape_locked, changed, by}
+ *                                           published, updated, withdrawn,
+ *                                           sharing changed, or the working
+ *                                           copy now differs from the
+ *                                           published one (or no longer does)
  *   deleted   {by}                          the puzzle is gone
  *   error     {code, message, re}
  *
@@ -72,8 +74,9 @@
  * sent again.
  *
  * Events: 'status' ('connecting'|'live'|'offline'), 'snapshot'
- * (msg, overlayChanges), 'cells' / 'edit' (changes to apply), plus every
- * other server message type by name.
+ * (msg, overlayChanges), 'cells' / 'edit' (changes to apply), 'pending'
+ * (how many edits await the server's ack), plus every other server message
+ * type by name.
  */
 
 /** The socket, retries and optimistic-edit bookkeeping both kinds share. */
@@ -190,12 +193,14 @@ class LiveChannel {
       this.inflight.set(key, (this.inflight.get(key) ?? 0) + 1);
     }
     this.send({ type: this.opType, ...op });
+    this.emit('pending', this.pending.length);
   }
 
   /** Forget unsent edits (the room is starting over). */
   dropPending() {
     this.pending = [];
     this.inflight.clear();
+    this.emit('pending', 0);
   }
 
   receive(msg) {
@@ -226,6 +231,7 @@ class LiveChannel {
         // later edit of ours is still on its way
         const settled = msg.changes.filter((ch) => !this.inflight.has(this.keyOf(ch)));
         if (settled.length) this.emit(this.opType, settled);
+        this.emit('pending', this.pending.length);
       } else {
         const apply = msg.changes.filter((ch) => !this.inflight.has(this.keyOf(ch)));
         if (apply.length) this.emit(this.opType, apply, msg);
