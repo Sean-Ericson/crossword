@@ -214,18 +214,17 @@ class LiveChannel {
     if (msg.type === this.opType) {
       const ours = msg.conn === this.connId && this.pending[0]?.opId === msg.opId;
       if (ours) {
-        this.pending.shift();
-        const settled = [];
-        for (const ch of msg.changes) {
+        const op = this.pending.shift();
+        // what we sent is no longer in flight, even keys the server dropped
+        for (const ch of op.changes) {
           const key = this.keyOf(ch);
           const left = (this.inflight.get(key) ?? 1) - 1;
-          if (left > 0) {
-            this.inflight.set(key, left);
-          } else {
-            this.inflight.delete(key);
-            settled.push(ch); // the server's final say (normally our own value)
-          }
+          if (left > 0) this.inflight.set(key, left);
+          else this.inflight.delete(key);
         }
+        // the server's final say (normally our own values), except where a
+        // later edit of ours is still on its way
+        const settled = msg.changes.filter((ch) => !this.inflight.has(this.keyOf(ch)));
         if (settled.length) this.emit(this.opType, settled);
       } else {
         const apply = msg.changes.filter((ch) => !this.inflight.has(this.keyOf(ch)));

@@ -20,7 +20,23 @@ import {
   SESSION_COOKIE,
 } from './auth.mjs';
 import { PUZZLE_ID_RE } from './puzzles.mjs';
+import { newId } from './db.mjs';
 import { mergeProgress, newProgress, recordFitsModel } from '../js/state.js';
+import { listNames } from '../js/people.js';
+import {
+  CUSTOM_PREFIX,
+  isCustomId,
+  isValidSize,
+  emptyDoc,
+  normalizeDoc,
+  modelOf,
+  problems,
+  publishedCopy,
+  puzzleFeatures,
+  sameShape,
+} from '../js/custom-puzzle.js';
+
+const MAX_DRAFTS = 50; // per person
 
 class HttpError extends Error {
   constructor(status, message) {
@@ -124,6 +140,94 @@ export function makeApi(ctx) {
     return u;
   };
 
+  const displayOf = (u) => u.display_name || u.name;
+
+  // ----- custom puzzles -----
+
+  /** The puzzle, if this person may see it (its authors: even a draft). */
+  const customFor = (id, user, { author = false } = {}) => {
+    const p = isCustomId(id) ? store.customPuzzle(id) : null;
+    const mine = !!p?.authors.some((a) => a.id === user.id);
+    if (!p || (author ? !mine : !mine && !store.canSeePuzzle(user.id, id))) throw new HttpError(404, 'No such puzzle.');
+    return { p, mine };
+  };
+
+  const namesOf = (ids) => ids.map((id) => store.userById(id)?.name).filter(Boolean);
+
+  /**
+   * What lists, the stats page and the breakdown page need about a custom
+   * puzzle: an index.json-shaped entry (of the published copy; a draft's
+   * working copy for its authors) plus its status, authors and counts.
+   */
+  const customEntry = (p, user, counts = store.customCounts()) => {
+    const mine = p.authors.some((a) => a.id === user.id);
+    const doc = p.published ?? p.doc;
+    const c = counts[p.id] ?? { solved: 0, solving: 0, stars: null, notes: 0 };
+    return {
+      id: p.id,
+      type: 'custom',
+      date: null,
+      title: (doc.title ?? '').trim(),
+      author: (doc.byline ?? '').trim(),
+      width: doc.width,
+      height: doc.height,
+      ...(p.features ?? {}),
+      status: p.status,
+      visibility: p.visibility,
+      authors: p.authors.map((a) => a.name),
+      created_by: p.authors.find((a) => a.id === p.created_by)?.name ?? null,
+      mine,
+      published_at: p.published_at,
+      revised_at: p.revised_at,
+      solved: c.solved,
+      solving: c.solving,
+      stars: c.stars,
+      ...(mine
+        ? {
+            updated_at: p.updated_at,
+            changed: p.status !== 'draft' && p.updated_at > (p.revised_at ?? ''),
+            notes: c.notes,
+            shared_with: p.visibility === 'people' ? namesOf(p.shares) : [],
+          }
+        : {}),
+    };
+  };
+
+  /** {visibility: 'everyone'} or {visibility: 'people', people: [names]} */
+  const setSharing = (p, body) => {
+    const { visibility } = body;
+    if (visibility !== 'everyone' && visibility !== 'people') {
+      throw new HttpError(400, 'visibility must be "everyone" or "people".');
+    }
+    const ids =
+      visibility === 'people'
+        ? [...new Set((body.people || []).map(String))]
+            .map((n) => userByNameOr404(n).id)
+            .filter((uid) => !p.authors.some((a) => a.id === uid))
+        : [];
+    store.setCustomSharing(p.id, visibility, ids);
+  };
+
+  /**
+   * Co-op solves of a custom puzzle: never its authors, never people it
+   * isn't shared with, and only while it's published.
+   */
+  const checkCustomSolvers = (puzzleId, user, people) => {
+    if (!isCustomId(puzzleId)) return;
+    if (store.customState(puzzleId)?.status !== 'published') {
+      throw new HttpError(400, 'That puzzle isn’t taking new solves.');
+    }
+    if (people.some((u) => u.id === user.id) && store.isCustomAuthor(puzzleId, user.id)) {
+      throw new HttpError(400, 'You made this puzzle, so you can’t solve it. Try Test solve in the builder.');
+    }
+    const authors = people.filter((u) => store.isCustomAuthor(puzzleId, u.id));
+    if (authors.length) {
+      throw new HttpError(400, `${listNames(authors.map(displayOf))} helped make this puzzle, so they can’t solve it.`);
+    }
+    const blind = people.filter((u) => !store.canSeePuzzle(u.id, puzzleId));
+    if (blind.length) throw new HttpError(403, `This puzzle isn’t shared with ${listNames(blind.map(displayOf))}.`);
+  };
+
   const solveSummary = (s) => ({
     id: s.id,
     puzzle_id: s.puzzle_id,
@@ -212,29 +316,34 @@ export function makeApi(ctx) {
       send(res, 200, { solo, coop });
     }],
 
-    ['GET', /^\/api\/stats\/([a-z0-9-]+)$/, async (req, res, [name]) => {
-      send(res, 200, store.statsDoc(userByNameOr404(name)));
+    ['GET', /^\/api\/stats\/([a-z0-9-]+)$/, async (req, res, [name], user) => {
+      const doc = store.statsDoc(userByNameOr404(name));
+      const shown = store.puzzleFilter(user.id);
+      doc.solves = Object.fromEntries(Object.entries(doc.solves).filter(([id]) => shown(id)));
+      send(res, 200, doc);
     }],
 
-    ['GET', /^\/api\/coop-stats\/([a-z0-9-]+)$/, async (req, res, [name]) => {
-      send(res, 200, { solves: store.coopStats(userByNameOr404(name).id) });
+    ['GET', /^\/api\/coop-stats\/([a-z0-9-]+)$/, async (req, res, [name], user) => {
+      const shown = store.puzzleFilter(user.id);
+      send(res, 200, { solves: store.coopStats(userByNameOr404(name).id).filter((s) => shown(s.puzzle_id)) });
     }],
 
     // Everything the stats page aggregates, for every account at once
     // (anyone signed in can already see anyone's stats). Tuples; see
     // Store.statsAll.
-    ['GET', /^\/api\/stats-all$/, async (req, res) => {
-      send(res, 200, store.statsAll());
+    ['GET', /^\/api\/stats-all$/, async (req, res, _p, user) => {
+      send(res, 200, store.statsAll(user.id));
     }],
 
     // Per-entry times, progress curves and letter confusions from one
     // person's logged solves (solo and co-op), fetched when a tab needs them.
-    ['GET', /^\/api\/summaries\/([a-z0-9-]+)$/, async (req, res, [name]) => {
-      send(res, 200, { solves: store.summaryDetails(userByNameOr404(name).id) });
+    ['GET', /^\/api\/summaries\/([a-z0-9-]+)$/, async (req, res, [name], user) => {
+      send(res, 200, { solves: store.summaryDetails(userByNameOr404(name).id, user.id) });
     }],
 
     // Every finished solve of one puzzle, for its breakdown page.
-    ['GET', /^\/api\/puzzles\/([A-Za-z0-9_-]+)\/results$/, async (req, res, [puzzleId]) => {
+    ['GET', /^\/api\/puzzles\/([A-Za-z0-9_-]+)\/results$/, async (req, res, [puzzleId], user) => {
+      if (!store.canSeePuzzle(user.id, puzzleId)) throw new HttpError(404, 'No such puzzle.');
       send(res, 200, { results: store.puzzleResults(puzzleId) });
     }],
 
@@ -247,6 +356,8 @@ export function makeApi(ctx) {
       if (!solve || (!solve.record?.completed && !hub.liveRecord(solveId)?.completed && !member)) {
         throw new HttpError(404, 'No such solve.');
       }
+      // a restricted custom puzzle's answers stay with the people it's shared with
+      if (!member && !store.canSeePuzzle(user.id, solve.puzzle_id)) throw new HttpError(404, 'No such solve.');
       hub.rooms.get(solveId)?.flush(); // include what the room hasn't written yet
       send(res, 200, {
         solve: {
@@ -276,7 +387,9 @@ export function makeApi(ctx) {
       if (!model) throw new HttpError(404, 'That puzzle is not in the archive.');
       const others = [...new Set((body.members || []).map(String))].filter((n) => n !== user.name);
       if (!others.length) throw new HttpError(400, 'Pick at least one person to solve with.');
-      const memberIds = [user.id, ...others.map((n) => userByNameOr404(n).id)];
+      const people = others.map((n) => userByNameOr404(n));
+      checkCustomSolvers(puzzleId, user, [user, ...people]);
+      const memberIds = [user.id, ...people.map((u) => u.id)];
       const record = newProgress(model, puzzleId, 'coop');
       const solve = store.createSolve({ puzzleId, kind: 'coop', createdBy: user.id, memberIds, record });
       send(res, 201, { solve: { id: solve.id, puzzle_id: puzzleId, members: solve.members.map((m) => m.name) } });
@@ -287,7 +400,9 @@ export function makeApi(ctx) {
       const solve = store.solveById(solveId);
       if (!solve || !store.isMember(solveId, user.id)) throw new HttpError(404, 'No such solve.');
       if (solve.kind !== 'coop') throw new HttpError(400, 'Solo solves stay solo — start a co-op instead.');
-      const ids = [...new Set((body.add || []).map(String))].map((n) => userByNameOr404(n).id);
+      const people = [...new Set((body.add || []).map(String))].map((n) => userByNameOr404(n));
+      checkCustomSolvers(solve.puzzle_id, user, people);
+      const ids = people.map((u) => u.id);
       const members = store.addMembers(solveId, ids);
       hub.membersChanged(solveId);
       send(res, 200, { members: members.map((m) => m.name) });
@@ -301,6 +416,156 @@ export function makeApi(ctx) {
       }
       const result = await puzzles.fetch(puzzleId);
       send(res, 200, result);
+    }],
+
+    // ----- custom puzzles (js/custom-puzzle.js; editing is live, in
+    // server/build-rooms.mjs) -----
+
+    // Every custom puzzle you can see, and your drafts, newest first.
+    ['GET', /^\/api\/custom-puzzles$/, async (req, res, _p, user) => {
+      const counts = store.customCounts();
+      const puzzles = [...store.visibleCustomIds(user.id)]
+        .map((id) => store.customPuzzle(id))
+        .filter(Boolean)
+        .map((p) => customEntry(p, user, counts))
+        .sort((a, b) => (b.published_at ?? b.updated_at ?? '').localeCompare(a.published_at ?? a.updated_at ?? ''));
+      send(res, 200, { puzzles });
+    }],
+
+    // A new draft: {width, height, symmetry?, title?} for a blank grid, or
+    // {doc} (an uploaded .puz, converted in the browser).
+    ['POST', /^\/api\/custom-puzzles$/, async (req, res, _p, user) => {
+      const body = await readJson(req, 500_000);
+      if (store.draftCount(user.id) >= MAX_DRAFTS) {
+        throw new HttpError(400, `You have ${MAX_DRAFTS} drafts already. Publish or delete some first.`);
+      }
+      let doc;
+      try {
+        if (body.doc) {
+          doc = normalizeDoc(body.doc);
+        } else {
+          const width = Number(body.width);
+          const height = Number(body.height);
+          if (!isValidSize(width, height)) normalizeDoc({ width, height }); // throws the size message
+          doc = emptyDoc({ width, height, symmetry: body.symmetry, title: String(body.title ?? '').trim() });
+        }
+      } catch (err) {
+        throw new HttpError(400, err.message);
+      }
+      if (!doc.byline.trim()) doc.byline = displayOf(user);
+      const p = store.createCustomPuzzle({ id: CUSTOM_PREFIX + newId(6), createdBy: user.id, doc });
+      ctx.log.info?.(`${user.name} started custom puzzle ${p.id} (${doc.width}×${doc.height})`);
+      send(res, 201, { puzzle: customEntry(p, user) });
+    }],
+
+    // One puzzle: solvers get the published copy. Its authors get a draft's
+    // entry with doc null, and ?working=1 gives them the working copy (test
+    // solving, downloading).
+    ['GET', /^\/api\/custom-puzzles\/([A-Za-z0-9_-]+)$/, async (req, res, [id], user, url) => {
+      const { p, mine } = customFor(id, user);
+      let doc = p.published;
+      if (url.searchParams.has('working')) {
+        if (!mine) throw new HttpError(404, 'No such puzzle.');
+        doc = hub.liveDoc(id) ?? p.doc;
+      }
+      const puzzle = customEntry(p, user);
+      if (p.visibility === 'people') puzzle.audience = namesOf(p.shares);
+      send(res, 200, { puzzle, doc: doc ?? null });
+    }],
+
+    // Publish the working copy (or update what solvers have) once nothing
+    // blocks it. A published puzzle's shape never changes, so every solve
+    // still fits; open solves switch to the new copy.
+    ['POST', /^\/api\/custom-puzzles\/([A-Za-z0-9_-]+)\/publish$/, async (req, res, [id], user) => {
+      const { p } = customFor(id, user, { author: true });
+      const body = await readJson(req, 50_000);
+      hub.flushBuild(id);
+      const doc = hub.liveDoc(id) ?? p.doc;
+      const { blockers } = problems(doc);
+      if (blockers.length) throw new HttpError(400, `Not ready yet. ${blockers.map((b) => b.message).join(' ')}`);
+      if (p.published && !sameShape(p.published, doc)) {
+        throw new HttpError(409, 'The grid’s shape changed since it was published, so it can’t replace it.');
+      }
+      if (body.visibility != null) setSharing(p, body);
+      const published = publishedCopy(doc);
+      store.publishCustomPuzzle(id, { published, features: puzzleFeatures(modelOf(published)) });
+      puzzles.forget(id);
+      const after = store.customPuzzle(id);
+      hub.buildRoom(id)?.setState({ status: 'published', visibility: after.visibility, published }, user.name);
+      if (p.published) await hub.puzzleChanged(id);
+      ctx.onPublished?.(after);
+      ctx.log.info?.(`${user.name} ${p.published ? 'updated' : 'published'} custom puzzle ${id}`);
+      send(res, 200, { puzzle: customEntry(after, user) });
+    }],
+
+    // Who can see it: {visibility: 'everyone'} or {visibility: 'people',
+    // people: [names]}. Nobody loses a solve they already have.
+    ['POST', /^\/api\/custom-puzzles\/([A-Za-z0-9_-]+)\/sharing$/, async (req, res, [id], user) => {
+      const { p } = customFor(id, user, { author: true });
+      setSharing(p, await readJson(req, 50_000));
+      const after = store.customPuzzle(id);
+      hub.buildRoom(id)?.setState({ visibility: after.visibility }, user.name);
+      send(res, 200, { puzzle: customEntry(after, user) });
+    }],
+
+    // Co-authors edit the working copy live with you. Someone who already
+    // has a solve of the puzzle can't become one.
+    ['POST', /^\/api\/custom-puzzles\/([A-Za-z0-9_-]+)\/authors$/, async (req, res, [id], user) => {
+      const { p } = customFor(id, user, { author: true });
+      const body = await readJson(req, 10_000);
+      const people = [...new Set((body.add || []).map(String))]
+        .map((n) => userByNameOr404(n))
+        .filter((u) => !p.authors.some((a) => a.id === u.id));
+      const played = people.filter((u) => store.hasSolves(id, u.id));
+      if (played.length) {
+        throw new HttpError(
+          400,
+          `${listNames(played.map(displayOf))} already ${played.length === 1 ? 'has' : 'have'} a solve of this puzzle, so they can’t help write it.`
+        );
+      }
+      const authors = store.addCustomAuthors(id, people.map((u) => u.id));
+      hub.buildRoom(id)?.refreshAuthors();
+      send(res, 200, { authors: authors.map((a) => a.name) });
+    }],
+
+    // The creator removes a co-author; anyone can leave.
+    ['DELETE', /^\/api\/custom-puzzles\/([A-Za-z0-9_-]+)\/authors\/([a-z0-9-]+)$/, async (req, res, [id, name], user) => {
+      const { p } = customFor(id, user, { author: true });
+      const target = userByNameOr404(name);
+      if (!p.authors.some((a) => a.id === target.id)) throw new HttpError(404, `${displayOf(target)} isn’t one of its authors.`);
+      if (target.id !== user.id && p.created_by !== user.id) {
+        throw new HttpError(403, 'Only the person who started the puzzle can remove its co-authors.');
+      }
+      if (p.authors.length === 1) throw new HttpError(400, 'A puzzle needs at least one author. Delete it instead.');
+      hub.flushBuild(id);
+      const authors = store.removeCustomAuthor(id, target.id);
+      hub.buildRoom(id)?.refreshAuthors();
+      send(res, 200, { authors: authors.map((a) => a.name) });
+    }],
+
+    // The creator (or an admin) deletes a puzzle. One that anybody has opened
+    // to solve is withdrawn instead: unlisted and closed to new solves, while
+    // their solves and stats stay.
+    ['DELETE', /^\/api\/custom-puzzles\/([A-Za-z0-9_-]+)$/, async (req, res, [id], user) => {
+      const p = isCustomId(id) ? store.customPuzzle(id) : null;
+      const mine = !!p?.authors.some((a) => a.id === user.id);
+      if (!p || (!mine && !(user.is_admin && store.canSeePuzzle(user.id, id)))) throw new HttpError(404, 'No such puzzle.');
+      if (p.created_by !== user.id && !user.is_admin) {
+        throw new HttpError(403, 'Only the person who started the puzzle can delete it.');
+      }
+      if (store.hasSolves(id)) {
+        hub.flushBuild(id);
+        store.withdrawCustomPuzzle(id);
+        hub.buildRoom(id)?.setState({ status: 'withdrawn' }, user.name);
+        ctx.log.info?.(`${user.name} withdrew custom puzzle ${id}`);
+        send(res, 200, { withdrawn: true });
+        return;
+      }
+      hub.buildRoom(id)?.deleted(user.name);
+      store.deleteCustomPuzzle(id);
+      puzzles.forget(id);
+      ctx.log.info?.(`${user.name} deleted custom puzzle ${id}`);
+      send(res, 200, { deleted: true });
     }],
 
     // ----- admin: manage accounts from the website -----
@@ -373,7 +638,7 @@ export function makeApi(ctx) {
       let skipped = 0;
       for (const rec of Array.isArray(body.records) ? body.records : []) {
         const puzzleId = String(rec?.puzzle_id || '');
-        const model = PUZZLE_ID_RE.test(puzzleId) ? await puzzles.model(puzzleId) : null;
+        const model = PUZZLE_ID_RE.test(puzzleId) && !isCustomId(puzzleId) ? await puzzles.model(puzzleId) : null;
         if (!model || !recordFitsModel(rec, model)) {
           skipped++;
           continue;
@@ -394,7 +659,7 @@ export function makeApi(ctx) {
       }
       let solves = 0;
       for (const [puzzleId, entry] of Object.entries(body.stats?.solves ?? {})) {
-        if (!PUZZLE_ID_RE.test(puzzleId) || !entry?.completed_at) continue;
+        if (!PUZZLE_ID_RE.test(puzzleId) || isCustomId(puzzleId) || !entry?.completed_at) continue;
         if (store.recordSoloSolve(user.id, puzzleId, entry)) solves++;
       }
       send(res, 200, { imported, skipped, solves });

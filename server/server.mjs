@@ -42,7 +42,9 @@ const MIME = {
 
 // Only these are ever served; tools/, server/, secrets etc. never are.
 const PUBLIC_PAGES = new Set(['/login.html']);
-const PAGES = new Set(['/index.html', '/puzzle.html', '/stats.html', '/analysis.html', '/login.html', '/admin.html']);
+const PAGES = new Set([
+  '/index.html', '/puzzle.html', '/stats.html', '/analysis.html', '/login.html', '/admin.html', '/builder.html',
+]);
 const PUBLIC_DIRS = ['/css/', '/js/'];
 const PRIVATE_DIRS = ['/puzzles/']; // NYT content: members only
 
@@ -71,7 +73,7 @@ function openLogFile(file) {
 
 export function createServer(cfg, { store, puzzles, hub } = {}) {
   store ??= new Store(path.join(cfg.dataDir, 'crossword.db'));
-  puzzles ??= new Puzzles(cfg, { log });
+  puzzles ??= new Puzzles(cfg, { log, store });
   hub ??= new Hub({ store, puzzles, log });
   const limiter = new LoginLimiter();
   const handleApi = makeApi({ cfg, store, hub, puzzles, limiter, log });

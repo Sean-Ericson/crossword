@@ -10,6 +10,11 @@
  *
  * solo_solves is the canonical solo solve log (what stats.json used to
  * be): one row per user per puzzle, written on first completion.
+ *
+ * custom_puzzles are puzzles made on the site (js/custom-puzzle.js docs):
+ * the working copy its authors edit live (server/build-rooms.mjs) and the
+ * copy solvers get, which changes only when an author publishes. Solves
+ * of one use its id as their puzzle_id, like any other puzzle.
  */
 
 import { DatabaseSync } from 'node:sqlite';
@@ -17,8 +22,9 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { USER_PALETTE } from '../js/people.js';
+import { CUSTOM_ID_RE } from '../js/util.js';
 
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 export const USER_NAME_RE = /^[a-z0-9-]{1,24}$/;
 
@@ -130,6 +136,45 @@ export class Store {
         scalars  TEXT NOT NULL,
         detail   TEXT NOT NULL
       );
+      -- puzzles made on the site: doc is the working copy the authors edit,
+      -- published the copy solvers get (null while a draft), features the
+      -- grid numbers of the published copy (js/custom-puzzle.js)
+      CREATE TABLE IF NOT EXISTS custom_puzzles (
+        id           TEXT PRIMARY KEY,
+        created_by   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        status       TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'withdrawn')),
+        visibility   TEXT NOT NULL DEFAULT 'everyone' CHECK (visibility IN ('everyone', 'people')),
+        doc          TEXT NOT NULL,
+        published    TEXT,
+        features     TEXT,
+        created_at   TEXT NOT NULL,
+        updated_at   TEXT NOT NULL,
+        published_at TEXT,
+        revised_at   TEXT
+      );
+      CREATE TABLE IF NOT EXISTS custom_puzzle_authors (
+        puzzle_id TEXT NOT NULL REFERENCES custom_puzzles(id) ON DELETE CASCADE,
+        user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        added_at  TEXT NOT NULL,
+        PRIMARY KEY (puzzle_id, user_id)
+      );
+      CREATE INDEX IF NOT EXISTS custom_authors_user ON custom_puzzle_authors(user_id);
+      -- who can see a puzzle published with visibility 'people'
+      CREATE TABLE IF NOT EXISTS custom_puzzle_shares (
+        puzzle_id TEXT NOT NULL REFERENCES custom_puzzles(id) ON DELETE CASCADE,
+        user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        PRIMARY KEY (puzzle_id, user_id)
+      );
+      -- solvers' ratings and notes for a custom puzzle's authors
+      CREATE TABLE IF NOT EXISTS puzzle_feedback (
+        puzzle_id  TEXT NOT NULL REFERENCES custom_puzzles(id) ON DELETE CASCADE,
+        user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        stars      INTEGER CHECK (stars BETWEEN 1 AND 5),
+        comment    TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (puzzle_id, user_id)
+      );
       PRAGMA user_version = ${SCHEMA_VERSION};
     `);
   }
@@ -206,6 +251,20 @@ export class Store {
 
   deleteUser(userId) {
     this.db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+    // drafts nobody can edit any more go with them; published puzzles stay
+    this.db
+      .prepare(
+        `DELETE FROM custom_puzzles WHERE status = 'draft'
+         AND NOT EXISTS (SELECT 1 FROM custom_puzzle_authors AS a WHERE a.puzzle_id = custom_puzzles.id)`
+      )
+      .run();
+    this.db
+      .prepare(
+        `UPDATE custom_puzzles SET created_by = (
+           SELECT user_id FROM custom_puzzle_authors AS a WHERE a.puzzle_id = custom_puzzles.id ORDER BY added_at, rowid LIMIT 1)
+         WHERE created_by IS NULL`
+      )
+      .run();
   }
 
   // ---------- sessions ----------
@@ -420,8 +479,10 @@ export class Store {
    *   [puzzle_id, seconds, completed_at, flags, solve_id, opened_at]
    *   flags: 1 clean, 2 used check, 4 used reveal
    * Unfinished: [puzzle_id, pct, elapsed, updated_at]
+   * With `viewerId`, custom puzzles that person can't see are left out.
    */
-  statsAll() {
+  statsAll(viewerId = null) {
+    const shown = this.puzzleFilter(viewerId);
     const users = {};
     const entry = (name) => (users[name] ??= { solo: [], unfinished: [] });
     for (const u of this.db.prepare('SELECT name FROM users').all()) entry(u.name);
@@ -435,6 +496,7 @@ export class Store {
       )
       .all();
     for (const r of solo) {
+      if (!shown(r.puzzle_id)) continue;
       const flags = (r.clean ? 1 : 0) | (r.used_check ? 2 : 0) | (r.used_reveal ? 4 : 0);
       entry(r.name).solo.push([r.puzzle_id, r.seconds, r.completed_at, flags, r.solve_id ?? null, r.opened_at ?? null]);
     }
@@ -446,7 +508,9 @@ export class Store {
            AND NOT EXISTS (SELECT 1 FROM solo_solves AS s WHERE s.user_id = sv.owner_id AND s.puzzle_id = sv.puzzle_id)`
       )
       .all();
-    for (const r of unfinished) entry(r.name).unfinished.push([r.puzzle_id, r.pct, r.elapsed ?? 0, r.updated_at]);
+    for (const r of unfinished) {
+      if (shown(r.puzzle_id)) entry(r.name).unfinished.push([r.puzzle_id, r.pct, r.elapsed ?? 0, r.updated_at]);
+    }
 
     const coop = this.db
       .prepare(
@@ -459,6 +523,7 @@ export class Store {
          FROM solves WHERE kind = 'coop' AND completed = 1`
       )
       .all()
+      .filter((r) => shown(r.puzzle_id))
       .map((r) => ({
         id: r.id,
         puzzle_id: r.puzzle_id,
@@ -470,17 +535,22 @@ export class Store {
       }));
 
     const summaries = {};
-    for (const r of this.db.prepare('SELECT solve_id, scalars FROM solve_summaries').all()) {
-      summaries[r.solve_id] = JSON.parse(r.scalars);
+    const rows = this.db
+      .prepare('SELECT s.solve_id, s.scalars, solves.puzzle_id FROM solve_summaries AS s JOIN solves ON solves.id = s.solve_id')
+      .all();
+    for (const r of rows) {
+      if (shown(r.puzzle_id)) summaries[r.solve_id] = JSON.parse(r.scalars);
     }
     return { users, coop, summaries };
   }
 
   /**
    * Summary details of the solves a user took part in (solo and co-op):
-   * {solve_id: {puzzle_id, kind, detail}}.
+   * {solve_id: {puzzle_id, kind, detail}}. With `viewerId`, custom puzzles
+   * that person can't see are left out.
    */
-  summaryDetails(userId) {
+  summaryDetails(userId, viewerId = null) {
+    const shown = this.puzzleFilter(viewerId);
     const out = {};
     const rows = this.db
       .prepare(
@@ -490,7 +560,9 @@ export class Store {
          WHERE m.user_id = ?`
       )
       .all(userId);
-    for (const r of rows) out[r.solve_id] = { puzzle_id: r.puzzle_id, kind: r.kind, detail: JSON.parse(r.detail) };
+    for (const r of rows) {
+      if (shown(r.puzzle_id)) out[r.solve_id] = { puzzle_id: r.puzzle_id, kind: r.kind, detail: JSON.parse(r.detail) };
+    }
     return out;
   }
 
@@ -619,6 +691,276 @@ export class Store {
     this.db
       .prepare('INSERT OR REPLACE INTO gh_sync (path, sha, local_updated_at) VALUES (?, ?, ?)')
       .run(path, sha, localUpdatedAt);
+  }
+
+  // ---------- custom puzzles ----------
+
+  /** A new draft, with its creator as the first author. */
+  createCustomPuzzle({ id, createdBy, doc }) {
+    const now = nowIso();
+    this.db.exec('BEGIN');
+    try {
+      this.db
+        .prepare(
+          `INSERT INTO custom_puzzles (id, created_by, status, visibility, doc, created_at, updated_at)
+           VALUES (?, ?, 'draft', 'everyone', ?, ?, ?)`
+        )
+        .run(id, createdBy, JSON.stringify(doc), now, now);
+      this.db
+        .prepare('INSERT INTO custom_puzzle_authors (puzzle_id, user_id, added_at) VALUES (?, ?, ?)')
+        .run(id, createdBy, now);
+      this.db.exec('COMMIT');
+    } catch (err) {
+      this.db.exec('ROLLBACK');
+      throw err;
+    }
+    return this.customPuzzle(id);
+  }
+
+  /**
+   * -> {id, created_by, status, visibility, doc, published, features,
+   *     created_at, updated_at, published_at, revised_at,
+   *     authors: [user rows], shares: [user ids]} or null
+   */
+  customPuzzle(id) {
+    const row = this.db.prepare('SELECT * FROM custom_puzzles WHERE id = ?').get(id);
+    if (!row) return null;
+    return {
+      id: row.id,
+      created_by: row.created_by,
+      status: row.status,
+      visibility: row.visibility,
+      doc: JSON.parse(row.doc),
+      published: row.published ? JSON.parse(row.published) : null,
+      features: row.features ? JSON.parse(row.features) : null,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      published_at: row.published_at,
+      revised_at: row.revised_at,
+      authors: this.customAuthors(id),
+      shares: this.db.prepare('SELECT user_id FROM custom_puzzle_shares WHERE puzzle_id = ?').all(id).map((r) => r.user_id),
+    };
+  }
+
+  /** The copy solvers get, or null (a draft, or no such puzzle). */
+  customPublished(id) {
+    const row = this.db.prepare('SELECT published FROM custom_puzzles WHERE id = ?').get(id);
+    return row?.published ? JSON.parse(row.published) : null;
+  }
+
+  /** {status, visibility} without the docs, or null. */
+  customState(id) {
+    return this.db.prepare('SELECT status, visibility FROM custom_puzzles WHERE id = ?').get(id) ?? null;
+  }
+
+  customAuthors(id) {
+    return this.db
+      .prepare(
+        `SELECT users.id, users.name, users.display_name, users.color FROM custom_puzzle_authors
+         JOIN users ON users.id = custom_puzzle_authors.user_id
+         WHERE puzzle_id = ? ORDER BY custom_puzzle_authors.added_at, custom_puzzle_authors.rowid`
+      )
+      .all(id);
+  }
+
+  isCustomAuthor(puzzleId, userId) {
+    return !!this.db
+      .prepare('SELECT 1 FROM custom_puzzle_authors WHERE puzzle_id = ? AND user_id = ?')
+      .get(puzzleId, userId);
+  }
+
+  /** How many drafts a person has open (the API caps them). */
+  draftCount(userId) {
+    return this.db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM custom_puzzles AS p JOIN custom_puzzle_authors AS a ON a.puzzle_id = p.id
+         WHERE a.user_id = ? AND p.status = 'draft'`
+      )
+      .get(userId).n;
+  }
+
+  /** The build room writes its working copy here. */
+  saveCustomDoc(id, doc, updatedAt = nowIso()) {
+    this.db.prepare('UPDATE custom_puzzles SET doc = ?, updated_at = ? WHERE id = ?').run(JSON.stringify(doc), updatedAt, id);
+  }
+
+  /** Publish (or update) what solvers get. */
+  publishCustomPuzzle(id, { published, features }) {
+    const now = nowIso();
+    this.db
+      .prepare(
+        `UPDATE custom_puzzles SET status = 'published', published = ?, features = ?,
+                published_at = COALESCE(published_at, ?), revised_at = ?
+         WHERE id = ?`
+      )
+      .run(JSON.stringify(published), JSON.stringify(features), now, now, id);
+  }
+
+  /** visibility 'everyone', or 'people' (the authors plus `userIds`). */
+  setCustomSharing(id, visibility, userIds = []) {
+    this.db.exec('BEGIN');
+    try {
+      this.db.prepare('UPDATE custom_puzzles SET visibility = ? WHERE id = ?').run(visibility, id);
+      this.db.prepare('DELETE FROM custom_puzzle_shares WHERE puzzle_id = ?').run(id);
+      if (visibility === 'people') {
+        const add = this.db.prepare('INSERT OR IGNORE INTO custom_puzzle_shares (puzzle_id, user_id) VALUES (?, ?)');
+        for (const uid of userIds) add.run(id, uid);
+      }
+      this.db.exec('COMMIT');
+    } catch (err) {
+      this.db.exec('ROLLBACK');
+      throw err;
+    }
+  }
+
+  addCustomAuthors(id, userIds) {
+    const add = this.db.prepare('INSERT OR IGNORE INTO custom_puzzle_authors (puzzle_id, user_id, added_at) VALUES (?, ?, ?)');
+    const now = nowIso();
+    for (const uid of userIds) add.run(id, uid, now);
+    return this.customAuthors(id);
+  }
+
+  /** If the creator leaves, the longest-standing author takes over. */
+  removeCustomAuthor(id, userId) {
+    this.db.prepare('DELETE FROM custom_puzzle_authors WHERE puzzle_id = ? AND user_id = ?').run(id, userId);
+    this.db
+      .prepare(
+        `UPDATE custom_puzzles SET created_by = (
+           SELECT user_id FROM custom_puzzle_authors WHERE puzzle_id = ? ORDER BY added_at, rowid LIMIT 1)
+         WHERE id = ? AND created_by = ?`
+      )
+      .run(id, id, userId);
+    return this.customAuthors(id);
+  }
+
+  withdrawCustomPuzzle(id) {
+    this.db.prepare("UPDATE custom_puzzles SET status = 'withdrawn' WHERE id = ?").run(id);
+  }
+
+  deleteCustomPuzzle(id) {
+    this.db.prepare('DELETE FROM custom_puzzles WHERE id = ?').run(id);
+  }
+
+  /** Has anyone opened a solve of this puzzle (then it's withdrawn, never deleted)? */
+  hasSolves(puzzleId, userId = null) {
+    return !!this.db
+      .prepare(
+        `SELECT 1 FROM solves ${userId == null ? '' : 'JOIN solve_members AS m ON m.solve_id = solves.id AND m.user_id = ?'}
+         WHERE solves.puzzle_id = ? LIMIT 1`
+      )
+      .get(...(userId == null ? [puzzleId] : [userId, puzzleId]));
+  }
+
+  /** Did this person finish the puzzle, alone or in a co-op? */
+  finishedPuzzle(puzzleId, userId) {
+    return !!(
+      this.db.prepare('SELECT 1 FROM solo_solves WHERE user_id = ? AND puzzle_id = ?').get(userId, puzzleId) ||
+      this.db
+        .prepare(
+          `SELECT 1 FROM solves JOIN solve_members AS m ON m.solve_id = solves.id
+           WHERE solves.puzzle_id = ? AND solves.completed = 1 AND m.user_id = ? LIMIT 1`
+        )
+        .get(puzzleId, userId)
+    );
+  }
+
+  /**
+   * The custom puzzles a person can see: their own (any status), ones they
+   * have a solve of (sharing changed or the puzzle was withdrawn later:
+   * nobody loses a solve), and published ones for everyone or shared with
+   * them. `onlyId` checks one puzzle.
+   * @returns {Set<string>}
+   */
+  visibleCustomIds(userId, onlyId = null) {
+    const rows = this.db
+      .prepare(
+        `SELECT p.id FROM custom_puzzles AS p
+         WHERE ${onlyId == null ? '' : 'p.id = ? AND'} (
+           EXISTS (SELECT 1 FROM custom_puzzle_authors AS a WHERE a.puzzle_id = p.id AND a.user_id = ?)
+           OR EXISTS (SELECT 1 FROM solves JOIN solve_members AS m ON m.solve_id = solves.id
+                      WHERE solves.puzzle_id = p.id AND m.user_id = ?)
+           OR (p.status = 'published' AND (p.visibility = 'everyone'
+               OR EXISTS (SELECT 1 FROM custom_puzzle_shares AS sh WHERE sh.puzzle_id = p.id AND sh.user_id = ?))))`
+      )
+      .all(...(onlyId == null ? [] : [onlyId]), userId, userId, userId);
+    return new Set(rows.map((r) => r.id));
+  }
+
+  /** Every puzzle id is visible except custom puzzles this person can't see. */
+  canSeePuzzle(userId, puzzleId) {
+    return !CUSTOM_ID_RE.test(puzzleId) || this.visibleCustomIds(userId, puzzleId).has(puzzleId);
+  }
+
+  /** A filter for puzzle ids a viewer may see (everything when viewerId is null). */
+  puzzleFilter(viewerId) {
+    if (viewerId == null) return () => true;
+    const visible = this.visibleCustomIds(viewerId);
+    return (puzzleId) => !CUSTOM_ID_RE.test(puzzleId) || visible.has(puzzleId);
+  }
+
+  /**
+   * Who has finished and who is working on each custom puzzle, and its
+   * stars: {puzzleId: {solved, solving, stars: {avg, n} | null, notes}}.
+   */
+  customCounts() {
+    const out = {};
+    const at = (id) => (out[id] ??= { solved: 0, solving: 0, stars: null, notes: 0 });
+    const solved = this.db
+      .prepare(
+        `SELECT puzzle_id, COUNT(DISTINCT user_id) AS n FROM (
+           SELECT user_id, puzzle_id FROM solo_solves WHERE puzzle_id LIKE 'custom-%'
+           UNION SELECT m.user_id, solves.puzzle_id FROM solves JOIN solve_members AS m ON m.solve_id = solves.id
+                 WHERE solves.kind = 'coop' AND solves.completed = 1 AND solves.puzzle_id LIKE 'custom-%')
+         GROUP BY puzzle_id`
+      )
+      .all();
+    for (const r of solved) at(r.puzzle_id).solved = r.n;
+    const solving = this.db
+      .prepare(
+        `SELECT solves.puzzle_id, COUNT(DISTINCT m.user_id) AS n FROM solves
+         JOIN solve_members AS m ON m.solve_id = solves.id
+         WHERE solves.puzzle_id LIKE 'custom-%' AND solves.completed = 0
+           AND (solves.pct > 0 OR json_extract(solves.record, '$.elapsed') > 0)
+         GROUP BY solves.puzzle_id`
+      )
+      .all();
+    for (const r of solving) at(r.puzzle_id).solving = r.n;
+    const stars = this.db
+      .prepare(
+        `SELECT puzzle_id, AVG(stars) AS avg, COUNT(stars) AS n, SUM(comment != '') AS notes
+         FROM puzzle_feedback GROUP BY puzzle_id`
+      )
+      .all();
+    for (const r of stars) {
+      at(r.puzzle_id).stars = r.n ? { avg: Math.round(r.avg * 10) / 10, n: r.n } : null;
+      at(r.puzzle_id).notes = r.notes ?? 0;
+    }
+    return out;
+  }
+
+  // ---------- feedback on custom puzzles ----------
+
+  saveFeedback(puzzleId, userId, { stars, comment }) {
+    const now = nowIso();
+    this.db
+      .prepare(
+        `INSERT INTO puzzle_feedback (puzzle_id, user_id, stars, comment, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT (puzzle_id, user_id) DO UPDATE SET stars = excluded.stars, comment = excluded.comment,
+           updated_at = excluded.updated_at`
+      )
+      .run(puzzleId, userId, stars ?? null, comment ?? '', now, now);
+  }
+
+  /** [{user, display_name, stars, comment, created_at, updated_at}], newest first. */
+  feedbackFor(puzzleId) {
+    return this.db
+      .prepare(
+        `SELECT users.name AS user, users.display_name, f.stars, f.comment, f.created_at, f.updated_at
+         FROM puzzle_feedback AS f JOIN users ON users.id = f.user_id
+         WHERE f.puzzle_id = ? ORDER BY f.updated_at DESC`
+      )
+      .all(puzzleId);
   }
 
   /** Online backup to a single file (safe while the server is running). */

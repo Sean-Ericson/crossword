@@ -1,0 +1,488 @@
+/* Tests for custom puzzles on the server: the store, build rooms (authors
+ * editing a working copy live), publishing, sharing, co-authors, and the
+ * rules for solving them (authors never do; drafts, withdrawn and
+ * restricted puzzles stay out of other people's reach). */
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import assert from 'node:assert/strict';
+
+import { LiveBuild } from '../js/net.js';
+import { applyChange, emptyDoc, publishedCopy, puzzleFeatures, modelOf } from '../js/custom-puzzle.js';
+import { Store } from '../server/db.mjs';
+import { hashPassword } from '../server/auth.mjs';
+import { Hub } from '../server/rooms.mjs';
+import { Puzzles } from '../server/puzzles.mjs';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const quiet = { info() {}, error() {} };
+
+const ANSWERS = 'CATOREWEB';
+const CLUES = { A0: 'Feline', A3: 'Mine find', A6: 'Spider’s work', D0: 'Bovine', D1: 'Exist', D2: 'Tee, oddly' };
+
+/** A finished 3×3: every square filled, every entry clued. */
+function readyDoc(answers = ANSWERS) {
+  const doc = emptyDoc({ width: 3, height: 3, title: 'Tiny', byline: 'Sean' });
+  for (const ch of readyChanges(answers)) applyChange(doc, ch);
+  return doc;
+}
+
+function readyChanges(answers = ANSWERS) {
+  return [
+    ...answers.split('').map((v, i) => ({ k: `cell:${i}`, v })),
+    ...Object.entries(CLUES).map(([key, v]) => ({ k: `clue:${key}`, v })),
+  ];
+}
+
+function setup() {
+  const store = new Store(':memory:');
+  let clock = 1_000_000;
+  const puzzles = new Puzzles({ puzzlesDir: path.join(here, 'fixtures') }, { store, log: quiet });
+  const hub = new Hub({ store, puzzles, now: () => clock, flushMs: 60_000, log: quiet });
+  const users = ['sean', 'devon', 'kam', 'lee'].map((name) => store.createUser({ name, pwHash: 'x' }));
+  return { store, hub, puzzles, users, tick: (ms) => (clock += ms) };
+}
+
+/** What the publish route does, without HTTP. */
+function publish(store, puzzles, id, doc) {
+  const published = publishedCopy(doc);
+  store.saveCustomDoc(id, doc);
+  store.publishCustomPuzzle(id, { published, features: puzzleFeatures(modelOf(published)) });
+  puzzles.forget(id);
+}
+
+/** A simulated builder tab: LiveBuild and a doc, with a manual network. */
+function builder(hub, user, puzzleId) {
+  const inbox = [];
+  const outbox = [];
+  const conn = hub.connect(user, (msg) => inbox.push(structuredClone(msg)));
+  const live = new LiveBuild({ puzzleId });
+  live.send = (msg) => {
+    if (!live.connId) return false;
+    outbox.push(structuredClone(msg));
+    return true;
+  };
+  const state = { doc: null, puzzle: null, errors: [], statuses: [], authors: [] };
+  live.on('snapshot', (msg, overlay) => {
+    state.doc = structuredClone(msg.doc);
+    state.puzzle = msg.puzzle;
+    for (const ch of overlay) applyChange(state.doc, ch);
+  });
+  live.on('edit', (changes) => {
+    for (const ch of changes) applyChange(state.doc, ch);
+  });
+  live.on('error', (msg) => state.errors.push(msg));
+  live.on('status', (msg) => state.statuses.push(msg));
+  live.on('authors', (msg) => state.authors.push(msg));
+  return {
+    conn,
+    live,
+    inbox,
+    outbox,
+    state,
+    edit(changes) {
+      for (const ch of changes) applyChange(state.doc, ch);
+      live.sendEdit(changes);
+    },
+    recv() {
+      if (inbox.length) live.receive(inbox.shift());
+    },
+    async sendOne() {
+      if (outbox.length) await hub.handle(this.conn, outbox.shift());
+    },
+    async join() {
+      await hub.handle(this.conn, { type: 'build', puzzle: puzzleId });
+      this.recv();
+    },
+  };
+}
+
+/** A bare solver connection (the solve side has its own tests). */
+async function solver(hub, user, msg) {
+  const inbox = [];
+  const conn = hub.connect(user, (m) => inbox.push(structuredClone(m)));
+  await hub.handle(conn, msg);
+  return { conn, inbox };
+}
+
+async function drain(clients, hub) {
+  for (let guard = 0; guard < 10000; guard++) {
+    const busy = clients.find((c) => c.outbox.length || c.inbox.length);
+    if (!busy) return;
+    for (const c of clients) {
+      while (c.outbox.length) await c.sendOne();
+    }
+    for (const c of clients) {
+      while (c.inbox.length) c.recv();
+    }
+  }
+  throw new Error('network never settled');
+}
+
+// deterministic PRNG (mulberry32)
+function rng(seed) {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ---------- store ----------
+
+test('custom store: a version 3 database gains custom puzzles and keeps its rows', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'xw-migrate-'));
+  const file = path.join(dir, 'x.db');
+  let store = new Store(file);
+  const u = store.createUser({ name: 'sean', pwHash: 'x' });
+  store.recordSoloSolve(u.id, '2026-01-01', { seconds: 5, completed_at: '2026-01-01T00:00:00Z', clean: true });
+  store.db.exec(`DROP TABLE puzzle_feedback; DROP TABLE custom_puzzle_shares; DROP TABLE custom_puzzle_authors;
+                 DROP TABLE custom_puzzles; PRAGMA user_version = 3;`);
+  store.close();
+  store = new Store(file);
+  assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 4);
+  assert.equal(store.statsDoc(u).solves['2026-01-01'].seconds, 5);
+  const p = store.createCustomPuzzle({ id: 'custom-mig00001', createdBy: u.id, doc: emptyDoc({ width: 3, height: 3 }) });
+  assert.deepEqual(p.authors.map((a) => a.name), ['sean']);
+  assert.equal(p.status, 'draft');
+  store.close();
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('custom store: deleting an account drops drafts nobody else can edit, keeps published puzzles', () => {
+  const { store, puzzles, users } = setup();
+  const [sean, devon] = users;
+  store.createCustomPuzzle({ id: 'custom-draft001', createdBy: sean.id, doc: emptyDoc({ width: 3, height: 3 }) });
+  store.createCustomPuzzle({ id: 'custom-shared01', createdBy: sean.id, doc: emptyDoc({ width: 3, height: 3 }) });
+  store.addCustomAuthors('custom-shared01', [devon.id]);
+  store.createCustomPuzzle({ id: 'custom-pub00001', createdBy: sean.id, doc: readyDoc() });
+  publish(store, puzzles, 'custom-pub00001', readyDoc());
+  store.deleteUser(sean.id);
+  assert.equal(store.customPuzzle('custom-draft001'), null);
+  const shared = store.customPuzzle('custom-shared01');
+  assert.deepEqual(shared.authors.map((a) => a.name), ['devon']);
+  assert.equal(shared.created_by, devon.id, 'the remaining author takes over');
+  const published = store.customPuzzle('custom-pub00001');
+  assert.equal(published.status, 'published');
+  assert.deepEqual(published.authors, []);
+  assert.equal(published.published.byline, 'Sean', 'the byline stays');
+});
+
+// ---------- build rooms ----------
+
+test('build: only a puzzle’s authors can open it in the builder', async () => {
+  const { store, hub, users } = setup();
+  const p = store.createCustomPuzzle({ id: 'custom-auth0001', createdBy: users[0].id, doc: emptyDoc({ width: 5, height: 5 }) });
+  const stranger = builder(hub, users[1], p.id);
+  await stranger.join();
+  assert.equal(stranger.conn.room, null);
+  assert.equal(stranger.state.errors[0].code, 'not-author');
+  const lost = builder(hub, users[0], 'custom-nope0000');
+  await lost.join();
+  assert.equal(lost.state.errors[0].code, 'not-author');
+  const sean = builder(hub, users[0], p.id);
+  await sean.join();
+  assert.equal(sean.state.doc.width, 5);
+  assert.equal(sean.state.puzzle.status, 'draft');
+  assert.equal(sean.state.puzzle.shape_locked, false);
+  assert.equal(sean.state.puzzle.created_by, 'sean');
+  assert.deepEqual(sean.state.puzzle.authors.map((a) => a.name), ['sean']);
+});
+
+test('build: three authors editing at once converge', async () => {
+  for (const seed of [1, 2, 3, 4, 5]) {
+    const { store, hub, users } = setup();
+    const p = store.createCustomPuzzle({ id: `custom-fuzz000${seed}`, createdBy: users[0].id, doc: emptyDoc({ width: 5, height: 5 }) });
+    store.addCustomAuthors(p.id, [users[1].id, users[2].id]);
+    const clients = users.slice(0, 3).map((u) => builder(hub, u, p.id));
+    for (const c of clients) await c.join();
+    const rand = rng(seed);
+    // few keys, many edits: plenty of collisions
+    const keys = ['cell:0', 'cell:1', 'cell:6', 'cell:24', 'circle:0', 'clue:A0', 'clue:D1', 'title'];
+    const values = { cell: ['A', 'B', '.', '', 'QU'], circle: [0, 1], clue: ['x', 'yy', ''], title: ['T1', 'T2'] };
+    const pick = (list) => list[Math.floor(rand() * list.length)];
+    for (let step = 0; step < 600; step++) {
+      const c = pick(clients);
+      const r = rand();
+      if (r < 0.45) {
+        const change = () => {
+          const k = pick(keys);
+          return { k, v: pick(values[k.split(':')[0]]) };
+        };
+        c.edit(rand() < 0.2 ? [change(), change()] : [change()]); // sometimes two in one op
+      } else if (r < 0.75) {
+        await c.sendOne();
+      } else {
+        c.recv();
+      }
+    }
+    await drain(clients, hub);
+    const room = hub.buildRoom(p.id);
+    for (const c of clients) {
+      assert.deepEqual(c.state.doc, room.doc, `seed ${seed}: ${c.conn.user.name} diverged`);
+      assert.equal(c.live.pending.length, 0);
+    }
+    for (const c of clients) hub.disconnect(c.conn);
+    assert.deepEqual(store.customPuzzle(p.id).doc, room.doc, 'written when the last author left');
+    assert.equal(hub.buildRoom(p.id), null);
+  }
+});
+
+test('build: edits survive a dropped connection', async () => {
+  const { store, hub, users } = setup();
+  const p = store.createCustomPuzzle({ id: 'custom-drop0001', createdBy: users[0].id, doc: emptyDoc({ width: 3, height: 3 }) });
+  const a = builder(hub, users[0], p.id);
+  await a.join();
+  a.edit([{ k: 'cell:3', v: 'Q' }, { k: 'clue:A3', v: 'Lost at first' }]);
+  a.outbox.length = 0; // the connection drops before the edit gets there
+  hub.disconnect(a.conn);
+  a.live.connId = null;
+  const again = hub.connect(users[0], (m) => a.inbox.push(structuredClone(m)));
+  a.conn = again;
+  await hub.handle(again, { type: 'build', puzzle: p.id });
+  a.recv(); // snapshot -> overlay + resend
+  assert.equal(a.state.doc.grid[3], 'Q', 'the local edit survives the snapshot');
+  await drain([a], hub);
+  assert.equal(hub.buildRoom(p.id).doc.grid[3], 'Q');
+  assert.equal(hub.buildRoom(p.id).doc.clues.A3, 'Lost at first');
+});
+
+test('build: once published the shape is locked; letters and clues are not', async () => {
+  const { store, hub, puzzles, users } = setup();
+  const p = store.createCustomPuzzle({ id: 'custom-lock0001', createdBy: users[0].id, doc: readyDoc() });
+  publish(store, puzzles, p.id, readyDoc());
+  const a = builder(hub, users[0], p.id);
+  await a.join();
+  assert.equal(a.state.puzzle.shape_locked, true);
+  assert.equal(a.state.puzzle.changed, false);
+  a.edit([{ k: 'cell:4', v: '.' }, { k: 'cell:0', v: 'B' }]);
+  await drain([a], hub);
+  assert.equal(a.state.doc.grid[4], 'R', 'the flip came back');
+  assert.equal(a.state.doc.grid[0], 'B');
+  assert.equal(a.state.statuses.at(-1).changed, true, 'the working copy differs from what solvers have');
+  a.edit([{ k: 'cell:0', v: 'C' }]);
+  await drain([a], hub);
+  assert.equal(a.state.statuses.at(-1).changed, false, 'undone');
+});
+
+test('build: removed co-authors are sent away; a new one is announced', async () => {
+  const { store, hub, users } = setup();
+  const [sean, devon, kam] = users;
+  const p = store.createCustomPuzzle({ id: 'custom-coau0001', createdBy: sean.id, doc: emptyDoc({ width: 3, height: 3 }) });
+  store.addCustomAuthors(p.id, [devon.id]);
+  const a = builder(hub, sean, p.id);
+  const b = builder(hub, devon, p.id);
+  await a.join();
+  await b.join();
+  store.addCustomAuthors(p.id, [kam.id]);
+  hub.buildRoom(p.id).refreshAuthors();
+  await drain([a, b], hub);
+  assert.deepEqual(a.state.authors.at(-1).authors.map((x) => x.name), ['sean', 'devon', 'kam']);
+  store.removeCustomAuthor(p.id, devon.id);
+  hub.buildRoom(p.id).refreshAuthors();
+  await drain([a, b], hub);
+  assert.equal(b.state.errors.at(-1).code, 'not-author');
+  assert.equal(b.conn.room, null);
+  // deleting the creator's account: kam carries on
+  hub.dropUser(sean.id, () => store.deleteUser(sean.id));
+  assert.deepEqual(store.customPuzzle(p.id).authors.map((x) => x.name), ['kam']);
+});
+
+// ---------- solving custom puzzles ----------
+
+test('custom solves: drafts, their authors and withdrawn puzzles take no new solves', async () => {
+  const { store, hub, puzzles, users, tick } = setup();
+  const [sean, devon, kam] = users;
+  const id = 'custom-solv0001';
+  store.createCustomPuzzle({ id, createdBy: sean.id, doc: readyDoc() });
+  let r = await solver(hub, devon, { type: 'join', puzzle: id });
+  assert.equal(r.inbox[0].code, 'no-puzzle', 'a draft');
+  publish(store, puzzles, id, readyDoc());
+  r = await solver(hub, sean, { type: 'join', puzzle: id });
+  assert.equal(r.inbox[0].code, 'own-puzzle');
+  r = await solver(hub, devon, { type: 'join', puzzle: id });
+  assert.equal(r.inbox[0].type, 'snapshot');
+  await hub.handle(r.conn, { type: 'active', on: true });
+  tick(20_000);
+  await hub.handle(r.conn, { type: 'cells', opId: 1, changes: ANSWERS.split('').map((fill, i) => ({ i, fill, marks: 0 })) });
+  assert.ok(r.inbox.some((m) => m.type === 'completed'), 'the server checks the answers');
+  assert.equal(store.statsDoc(devon).solves[id].seconds, 20);
+  hub.disconnect(r.conn);
+  store.withdrawCustomPuzzle(id);
+  r = await solver(hub, devon, { type: 'join', puzzle: id });
+  assert.equal(r.inbox[0].type, 'snapshot', 'people keep the solves they have');
+  r = await solver(hub, kam, { type: 'join', puzzle: id });
+  assert.equal(r.inbox[0].code, 'no-puzzle', 'nobody new');
+});
+
+test('custom solves: a restricted puzzle stays with the people it is shared with', async () => {
+  const { store, hub, puzzles, users } = setup();
+  const [sean, devon, kam] = users;
+  const id = 'custom-priv0001';
+  store.createCustomPuzzle({ id, createdBy: sean.id, doc: readyDoc() });
+  publish(store, puzzles, id, readyDoc());
+  store.setCustomSharing(id, 'people', [devon.id]);
+  assert.ok(store.canSeePuzzle(devon.id, id));
+  assert.ok(store.canSeePuzzle(sean.id, id), 'its authors');
+  assert.ok(!store.canSeePuzzle(kam.id, id));
+  assert.ok(store.canSeePuzzle(kam.id, '2026-01-01'), 'every other puzzle');
+  assert.equal((await solver(hub, kam, { type: 'join', puzzle: id })).inbox[0].code, 'no-puzzle');
+  const r = await solver(hub, devon, { type: 'join', puzzle: id });
+  await hub.handle(r.conn, { type: 'cells', opId: 1, changes: ANSWERS.split('').map((fill, i) => ({ i, fill, marks: 0 })) });
+  hub.disconnect(r.conn);
+  assert.equal(store.statsAll(devon.id).users.devon.solo.length, 1);
+  assert.equal(store.statsAll(kam.id).users.devon.solo.length, 0, 'kam doesn’t see it in the stats');
+  assert.equal(Object.keys(store.summaryDetails(devon.id, kam.id)).length, 0);
+  assert.equal(Object.keys(store.summaryDetails(devon.id, devon.id)).length, 1);
+  // narrowing the share later never takes a solve away
+  store.setCustomSharing(id, 'people', []);
+  assert.ok(store.canSeePuzzle(devon.id, id));
+});
+
+test('custom solves: an update switches open solves to the new copy', async () => {
+  const { store, hub, puzzles, users } = setup();
+  const [sean, devon] = users;
+  const id = 'custom-upd00001';
+  store.createCustomPuzzle({ id, createdBy: sean.id, doc: readyDoc('CATOREWEX') });
+  publish(store, puzzles, id, readyDoc('CATOREWEX')); // a typo in the last answer
+  const r = await solver(hub, devon, { type: 'join', puzzle: id });
+  await hub.handle(r.conn, { type: 'cells', opId: 1, changes: ANSWERS.split('').map((fill, i) => ({ i, fill, marks: 0 })) });
+  assert.ok(!r.inbox.some((m) => m.type === 'completed'), 'WEB isn’t WEX');
+  publish(store, puzzles, id, readyDoc());
+  await hub.puzzleChanged(id);
+  assert.ok(r.inbox.some((m) => m.type === 'puzzle-updated'));
+  assert.ok(r.inbox.some((m) => m.type === 'completed'), 'the fixed answer completes the grid');
+});
+
+// ---------- over HTTP ----------
+
+test('custom api: drafts, publishing, sharing, co-authors, delete and withdraw', async () => {
+  const { createServer } = await import('../server/server.mjs');
+  const { store, hub, puzzles, users } = setup();
+  for (const u of users) store.setPassword(u.id, hashPassword(`${u.name}-pass-1`));
+  const cfg = {
+    puzzlesDir: path.join(here, 'fixtures'), sessionDays: 30, trustProxy: false,
+    clientIpHeader: null, secureCookies: false, publicUrl: null,
+  };
+  const { server } = createServer(cfg, { store, puzzles, hub });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}/api/`;
+  const call = async (method, p, body, cookie) => {
+    const r = await fetch(base + p, {
+      method,
+      headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(cookie ? { Cookie: cookie } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return { status: r.status, json: await r.json(), cookie: r.headers.get('set-cookie')?.split(';')[0] };
+  };
+  const login = async (name) => (await call('POST', 'login', { name, password: `${name}-pass-1` })).cookie;
+  try {
+    const [sean, devon, kam, lee] = [await login('sean'), await login('devon'), await login('kam'), await login('lee')];
+
+    // a draft, private to its author
+    assert.equal((await call('POST', 'custom-puzzles', { width: 2, height: 3 }, sean)).status, 400);
+    const made = await call('POST', 'custom-puzzles', { width: 3, height: 3, title: 'Tiny' }, sean);
+    assert.equal(made.status, 201);
+    const id = made.json.puzzle.id;
+    assert.match(id, /^custom-[A-Za-z0-9_-]{8}$/);
+    assert.equal(made.json.puzzle.status, 'draft');
+    assert.equal(made.json.puzzle.title, 'Tiny');
+    assert.equal(made.json.puzzle.author, 'sean', 'the byline starts as your name');
+    assert.equal((await call('GET', `custom-puzzles/${id}`, null, devon)).status, 404);
+    assert.deepEqual((await call('GET', 'custom-puzzles', null, devon)).json.puzzles, []);
+    assert.equal((await call('GET', `custom-puzzles/${id}`, null, sean)).json.doc, null, 'no published copy yet');
+
+    // nothing to publish yet
+    const early = await call('POST', `custom-puzzles/${id}/publish`, {}, sean);
+    assert.equal(early.status, 400);
+    assert.match(early.json.error, /need a letter/);
+
+    // fill it in live, then publish it to devon only
+    const b = builder(hub, users[0], id);
+    await b.join();
+    b.edit(readyChanges());
+    await drain([b], hub);
+    const working = await call('GET', `custom-puzzles/${id}?working=1`, null, sean);
+    assert.equal(working.json.doc.grid.join(''), ANSWERS);
+    assert.equal((await call('GET', `custom-puzzles/${id}?working=1`, null, devon)).status, 404);
+    const pub = await call('POST', `custom-puzzles/${id}/publish`, { visibility: 'people', people: ['devon'] }, sean);
+    assert.equal(pub.status, 200, pub.json.error);
+    assert.equal(pub.json.puzzle.status, 'published');
+    assert.deepEqual(pub.json.puzzle.shared_with, ['devon']);
+    assert.equal(pub.json.puzzle.words, 6);
+    await drain([b], hub);
+    assert.equal(b.state.statuses.at(-1).status, 'published');
+    assert.equal(b.state.statuses.at(-1).shape_locked, true);
+
+    // devon sees it; kam doesn't
+    const forDevon = (await call('GET', 'custom-puzzles', null, devon)).json.puzzles;
+    assert.deepEqual(forDevon.map((p) => p.id), [id]);
+    assert.equal(forDevon[0].mine, false);
+    assert.equal(forDevon[0].updated_at, undefined, 'authors-only fields stay with the authors');
+    const got = await call('GET', `custom-puzzles/${id}`, null, devon);
+    assert.equal(got.json.doc.grid.join(''), ANSWERS);
+    assert.deepEqual(got.json.puzzle.audience, ['devon']);
+    assert.deepEqual((await call('GET', 'custom-puzzles', null, kam)).json.puzzles, []);
+    assert.equal((await call('GET', `custom-puzzles/${id}`, null, kam)).status, 404);
+
+    // devon solves it; its results and log stay out of kam's reach
+    const r = await solver(hub, users[1], { type: 'join', puzzle: id });
+    const solveId = r.conn.room.id;
+    await hub.handle(r.conn, { type: 'cells', opId: 1, changes: ANSWERS.split('').map((fill, i) => ({ i, fill, marks: 0 })) });
+    hub.disconnect(r.conn);
+    assert.equal((await call('GET', `puzzles/${id}/results`, null, devon)).json.results.length, 1);
+    assert.equal((await call('GET', `puzzles/${id}/results`, null, kam)).status, 404);
+    assert.equal((await call('GET', `solves/${solveId}/events`, null, kam)).status, 404);
+    assert.equal((await call('GET', `solves/${solveId}/events`, null, sean)).status, 200, 'its authors may look');
+    assert.equal((await call('GET', 'stats-all', null, kam)).json.users.devon.solo.length, 0);
+    const listed = (await call('GET', 'custom-puzzles', null, sean)).json.puzzles[0];
+    assert.equal(listed.solved, 1);
+
+    // co-ops: never with an author, never with someone it isn't shared with
+    assert.equal((await call('POST', 'solves', { puzzle_id: id, members: ['sean'] }, devon)).status, 400);
+    assert.equal((await call('POST', 'solves', { puzzle_id: id, members: ['kam'] }, devon)).status, 403);
+    assert.equal((await call('POST', `custom-puzzles/${id}/sharing`, { visibility: 'everyone' }, devon)).status, 404);
+    assert.equal((await call('POST', `custom-puzzles/${id}/sharing`, { visibility: 'everyone' }, sean)).status, 200);
+    assert.equal((await call('POST', 'solves', { puzzle_id: id, members: ['kam'] }, devon)).status, 201);
+
+    // co-authors: not someone who has played it
+    const refused = await call('POST', `custom-puzzles/${id}/authors`, { add: ['kam'] }, sean);
+    assert.equal(refused.status, 400);
+    assert.match(refused.json.error, /already has a solve/);
+    assert.deepEqual((await call('POST', `custom-puzzles/${id}/authors`, { add: ['lee'] }, sean)).json.authors, ['sean', 'lee']);
+    assert.equal((await call('GET', `custom-puzzles/${id}?working=1`, null, lee)).status, 200);
+    assert.equal((await call('DELETE', `custom-puzzles/${id}`, null, lee)).status, 403, 'only its creator deletes it');
+    assert.equal((await call('DELETE', `custom-puzzles/${id}/authors/sean`, null, lee)).status, 403);
+    assert.deepEqual((await call('DELETE', `custom-puzzles/${id}/authors/lee`, null, lee)).json.authors, ['sean'], 'anyone can leave');
+    assert.equal((await call('DELETE', `custom-puzzles/${id}/authors/sean`, null, sean)).status, 400, 'someone has to stay');
+
+    // updating: open solves hear about it
+    b.edit([{ k: 'clue:A0', v: 'Kitty' }]);
+    await drain([b], hub);
+    const solving = await solver(hub, users[2], { type: 'join', puzzle: id });
+    assert.equal((await call('POST', `custom-puzzles/${id}/publish`, {}, sean)).status, 200);
+    assert.ok(solving.inbox.some((m) => m.type === 'puzzle-updated'));
+    assert.equal((await call('GET', `custom-puzzles/${id}`, null, kam)).json.doc.clues.A0, 'Kitty');
+    hub.disconnect(solving.conn);
+
+    // deleting something people have played withdraws it instead
+    assert.deepEqual((await call('DELETE', `custom-puzzles/${id}`, null, sean)).json, { withdrawn: true });
+    await drain([b], hub);
+    assert.equal(b.state.statuses.at(-1).status, 'withdrawn');
+    assert.deepEqual((await call('GET', 'custom-puzzles', null, lee)).json.puzzles, [], 'unlisted for people without a solve');
+    assert.equal((await call('GET', 'custom-puzzles', null, devon)).json.puzzles.length, 1, 'still there for those with one');
+
+    // an upload, then a draft that goes away for good
+    const upload = await call('POST', 'custom-puzzles', { doc: { width: 3, height: 3, grid: [...ANSWERS], clues: CLUES } }, devon);
+    assert.equal(upload.status, 201);
+    assert.equal(store.customPuzzle(upload.json.puzzle.id).doc.grid.join(''), ANSWERS);
+    assert.equal(upload.json.puzzle.author, 'devon');
+    assert.deepEqual((await call('DELETE', `custom-puzzles/${upload.json.puzzle.id}`, null, devon)).json, { deleted: true });
+    assert.equal(store.customPuzzle(upload.json.puzzle.id), null);
+  } finally {
+    server.close();
+  }
+});

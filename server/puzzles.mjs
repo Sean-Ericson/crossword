@@ -3,6 +3,10 @@
  * parser/model the browser uses (for solution checks), download missing
  * puzzles on demand, and run the daily archive update. Downloading is done
  * by the existing Python tools (tools/fetch_one.py, update_puzzles.py).
+ *
+ * Custom puzzles (custom-… ids) come from the database instead: the copy
+ * their authors last published (js/custom-puzzle.js docToPuz). Drafts
+ * have no model; nothing is ever read from disk for them.
  */
 
 import { readFile } from 'node:fs/promises';
@@ -11,14 +15,17 @@ import path from 'node:path';
 
 import { parsePuz } from '../js/puz.js';
 import { PuzzleModel } from '../js/model.js';
+import { docToPuz, isCustomId } from '../js/custom-puzzle.js';
 import { SITE_DIR } from './config.mjs';
 
 export const PUZZLE_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 
 export class Puzzles {
-  constructor(cfg, { log = console } = {}) {
+  /** @param {{log?: Console, store?: import('./db.mjs').Store}} [opts] store: for custom puzzles */
+  constructor(cfg, { log = console, store = null } = {}) {
     this.cfg = cfg;
     this.log = log;
+    this.store = store;
     this.cache = new Map(); // id -> PuzzleModel (small LRU)
     this.inflight = new Map(); // id -> Promise of a fetch
   }
@@ -36,6 +43,14 @@ export class Puzzles {
       this.cache.set(id, m);
       return m;
     }
+    const model = isCustomId(id) ? this.customModel(id) : await this.fileModel(id);
+    if (!model) return null;
+    this.cache.set(id, model);
+    if (this.cache.size > 64) this.cache.delete(this.cache.keys().next().value);
+    return model;
+  }
+
+  async fileModel(id) {
     let bytes;
     try {
       bytes = await readFile(this.file(id));
@@ -43,10 +58,17 @@ export class Puzzles {
       return null;
     }
     const buf = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-    const model = new PuzzleModel(parsePuz(buf));
-    this.cache.set(id, model);
-    if (this.cache.size > 64) this.cache.delete(this.cache.keys().next().value);
-    return model;
+    return new PuzzleModel(parsePuz(buf));
+  }
+
+  customModel(id) {
+    const doc = this.store?.customPublished(id);
+    return doc ? new PuzzleModel(docToPuz(doc)) : null;
+  }
+
+  /** Drop a cached model (a custom puzzle was published again). */
+  forget(id) {
+    this.cache.delete(id);
   }
 
   runPython(args, { timeoutMs = 5 * 60_000 } = {}) {
@@ -75,6 +97,7 @@ export class Puzzles {
    */
   fetch(id) {
     if (!PUZZLE_ID_RE.test(id)) return Promise.resolve({ status: 'error', message: 'Bad puzzle id.' });
+    if (isCustomId(id)) return Promise.resolve({ status: 'missing', message: 'Puzzles made here aren’t downloaded.' });
     if (this.inflight.has(id)) return this.inflight.get(id);
     const job = (async () => {
       const { code, stdout, stderr } = await this.runPython([
