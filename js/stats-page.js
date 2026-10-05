@@ -40,6 +40,7 @@ const TYPE_TABS = [
   ['midi', 'Midi'],
   ['bonus', 'Bonus'],
   ['special', 'Special'],
+  ['custom', 'Custom'],
 ];
 const SECTIONS = [
   ['overview', 'Overview', overview],
@@ -80,15 +81,17 @@ async function main() {
 
   const body = qs('#stats-body');
   body.append(el('div', { class: 'stats-empty' }, 'Loading everyone’s solves…'));
-  const [users, payload, index] = await Promise.all([
+  const [users, payload, index, custom] = await Promise.all([
     api.get('users'),
     api.get('stats-all'),
     fetch('./puzzles/index.json')
       .then((r) => (r.ok ? r.json() : { puzzles: [] }))
       .catch(() => ({ puzzles: [] })),
+    // puzzles made on the site: the same facts index.json has for the rest
+    api.get('custom-puzzles').catch(() => ({ puzzles: [] })),
   ]);
   const accounts = users.users.sort(byDisplayName);
-  const ds = buildDataset(payload, index.puzzles ?? []);
+  const ds = buildDataset(payload, [...(index.puzzles ?? []), ...custom.puzzles.filter((p) => p.status !== 'draft')]);
   const byName = new Map(accounts.map((u) => [u.name, u]));
   const nameOf = (user) => byName.get(user)?.display_name ?? user ?? 'someone';
   const byDisplay = (a, b) => byDisplayName(byName.get(a) ?? { name: a }, byName.get(b) ?? { name: b });

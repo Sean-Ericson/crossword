@@ -10,7 +10,7 @@
  * Spoilers: someone who hasn't solved the puzzle sees times, curves and
  * ranks, but letters, answers and clue text stay hidden until they click
  * "Show anyway". The server serves finished solves' logs to anyone signed
- * in; the guard is here.
+ * in; the guard is here. A custom puzzle's authors always see everything.
  */
 
 import { el, qs, formatDateLong, themeTitle, PUZZLE_TYPE_LABELS, parsePuzzleId, WEEKDAY_NAMES } from './util.js';
@@ -27,6 +27,8 @@ import { fitAdditive } from './stats-model.js';
 import { median } from './stats-math.js';
 import { chartCard, xyChart, dotPlot, gridHeatmap, legend, scaleLegend, fmt } from './charts.js';
 import { sectionHead, sortableTable, tiles, tile, chartGrid, empty, playHref } from './stats/common.js';
+import { loadCustomPuzzle } from './fetch-puzzle.js';
+import { isCustomId } from './custom-puzzle.js';
 
 const MAX_LOGS = 12; // logged solves fetched for the race and the entry table
 const SPEEDS = [1, 2, 5, 10, 20, 30, 60, 120];
@@ -43,19 +45,27 @@ async function main() {
   initProfileChip(qs('#profile-chip'));
   const host = qs('#analysis');
 
-  const [usersDoc, resultsDoc, statsAll, index, buf] = await Promise.all([
+  const custom = isCustomId(puzzleId);
+  const [usersDoc, resultsDoc, statsAll, index, source] = await Promise.all([
     api.get('users'),
     api.get(`puzzles/${encodeURIComponent(puzzleId)}/results`).catch(() => ({ results: [] })),
     api.get('stats-all').catch(() => null),
     fetch('./puzzles/index.json').then((r) => (r.ok ? r.json() : { puzzles: [] })).catch(() => ({ puzzles: [] })),
-    fetch(`./puzzles/${encodeURIComponent(puzzleId)}.puz`).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null),
+    custom
+      ? loadCustomPuzzle(puzzleId)
+      : fetch(`./puzzles/${encodeURIComponent(puzzleId)}.puz`)
+          .then((r) => (r.ok ? r.arrayBuffer() : null))
+          .then((buf) => (buf ? { puz: parsePuz(buf) } : {}))
+          .catch(() => ({})),
   ]);
   host.textContent = '';
-  if (!buf) {
-    host.append(empty('That puzzle isn’t in the archive.'));
+  if (!source.puz) {
+    host.append(empty(custom ? 'That puzzle doesn’t exist, isn’t published, or isn’t shared with you.' : 'That puzzle isn’t in the archive.'));
     return;
   }
-  const model = new PuzzleModel(parsePuz(buf));
+  const model = new PuzzleModel(source.puz);
+  const customEntry = source.puzzle ?? null; // custom puzzles: title, authors, features, mine
+  if (customEntry) index.puzzles = [...(index.puzzles ?? []), customEntry];
   const accounts = usersDoc.users;
   const acct = new Map(accounts.map((u) => [u.name, u]));
   const nameOf = (u) => acct.get(u)?.display_name ?? u ?? 'someone';
@@ -72,7 +82,8 @@ async function main() {
   const colorOfResult = (r) => colorOf(r.members[0]);
 
   const solvedByMe = results.some((r) => r.members.includes(me.name));
-  let reveal = solvedByMe;
+  const madeByMe = !!customEntry?.mine;
+  let reveal = solvedByMe || madeByMe;
   const hide = (text) => (reveal ? text : text.replace(/[^\s]/g, '•'));
 
   // the model, for difficulty and expectations
@@ -94,7 +105,7 @@ async function main() {
   // ----- header -----
   const { constructors, editor } = splitAuthor(entry?.author ?? model.puz.author);
   const title = info.date ? formatDateLong(info.date) : model.puz.title || puzzleId;
-  const theme = themeTitle(entry?.title ?? model.puz.title ?? '');
+  const theme = custom ? '' : themeTitle(entry?.title ?? model.puz.title ?? ''); // a custom title is the heading
   const b = fit?.puzzle.get(puzzleId);
   const facts = [
     `${model.width}×${model.height}`,
@@ -118,7 +129,12 @@ async function main() {
             `${fmt.rel(Math.exp(b)).replace('faster', 'easier').replace('slower', 'harder').replace('as usual', 'about as hard as')} than a typical ${info.date ? WEEKDAY_NAMES[new Date(info.date + 'T12:00:00Z').getUTCDay()] : PUZZLE_TYPE_LABELS[info.type]}${difficultyRank ? ` · #${difficultyRank.k} hardest of ${difficultyRank.of} rated` : ''}`
           )
         : null,
-      el('div', { class: 'actions' }, [el('a', { href: playHref(puzzleId) }, solvedByMe ? 'Open the puzzle' : 'Play it'), el('a', { href: './stats.html#puzzles' }, 'All puzzles')]),
+      el('div', { class: 'actions' }, [
+        madeByMe
+          ? el('a', { href: `./builder.html?id=${encodeURIComponent(puzzleId)}` }, 'Edit it')
+          : el('a', { href: playHref(puzzleId) }, solvedByMe ? 'Open the puzzle' : 'Play it'),
+        el('a', { href: custom ? './index.html#custom' : './stats.html#puzzles' }, 'All puzzles'),
+      ]),
     ])
   );
   const banner = el('div', { class: 'spoiler-banner' }, [

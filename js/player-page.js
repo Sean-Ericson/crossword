@@ -5,6 +5,9 @@
  *
  * URL: puzzle.html?id=<puzzle>              your solo solve
  *      puzzle.html?id=<puzzle>&solve=<id>   a co-op solve you're in
+ *
+ * Custom puzzles (custom-… ids) come from the API instead of a .puz file;
+ * their authors get pointed to the builder, since nobody solves their own.
  */
 
 import { parsePuz } from './puz.js';
@@ -17,7 +20,8 @@ import { LiveSolve } from './net.js';
 import { api } from './api.js';
 import { showModal, confirmDialog, toast } from './modals.js';
 import { newProgress, hasAnyFill, fillPercent } from './state.js';
-import { tryLoadPuzzle, fetchOnDemand, isFetchable } from './fetch-puzzle.js';
+import { tryLoadPuzzle, fetchOnDemand, isFetchable, loadCustomPuzzle } from './fetch-puzzle.js';
+import { isCustomId } from './custom-puzzle.js';
 import { loadSettings, saveSettings, SETTING_LABELS } from './settings.js';
 import { loadMe } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
@@ -56,16 +60,30 @@ async function main() {
     showFatal('No puzzle specified. Pick one from the archive.');
     return;
   }
-  let buffer = await tryLoadPuzzle(id);
-  if (!buffer) buffer = await obtainMissingPuzzle(id);
-  if (!buffer) return; // obtainMissingPuzzle explained why
-
   let puz;
-  try {
-    puz = parsePuz(buffer);
-  } catch (err) {
-    showFatal(`This puzzle file looks corrupt (${err.message}).`);
-    return;
+  let custom = null; // a custom puzzle's listing entry (authors, audience...)
+  if (isCustomId(id)) {
+    const got = await loadCustomPuzzle(id);
+    if (got.error) {
+      showFatal(got.status === 404 ? 'That puzzle doesn’t exist, or it isn’t shared with you.' : got.error);
+      return;
+    }
+    custom = got.puzzle;
+    if (custom.mine) {
+      showOwnPuzzle(custom);
+      return;
+    }
+    puz = got.puz;
+  } else {
+    let buffer = await tryLoadPuzzle(id);
+    if (!buffer) buffer = await obtainMissingPuzzle(id);
+    if (!buffer) return; // obtainMissingPuzzle explained why
+    try {
+      puz = parsePuz(buffer);
+    } catch (err) {
+      showFatal(`This puzzle file looks corrupt (${err.message}).`);
+      return;
+    }
   }
 
   const model = new PuzzleModel(puz);
@@ -84,7 +102,7 @@ async function main() {
       timeZone: 'UTC',
     });
   } else {
-    dateText = idInfo.date ? formatDateLong(idInfo.date) : theme || id;
+    dateText = idInfo.date ? formatDateLong(idInfo.date) : theme || (custom ? 'Untitled' : id);
   }
   qs('.puzzle-title').textContent = typeLabel;
   document.title = [dateText, theme, typeLabel].filter(Boolean).join(' — ');
@@ -278,8 +296,16 @@ async function main() {
     renderPresence();
     if (overlayKind === 'start') showStartOverlay(); // "You're solving with …"
   });
+  // a custom puzzle's constructors published a new version
+  live.on('puzzle-updated', () => {
+    showModal({
+      title: 'This puzzle was updated',
+      body: 'Its constructors just changed some clues or answers. Reload to get the new version; your progress stays.',
+      actions: [{ label: 'Later' }, { label: 'Reload', primary: true, onClick: () => location.reload() }],
+    });
+  });
   live.on('error', (msg) => {
-    if (['not-member', 'no-solve', 'no-puzzle'].includes(msg.code)) {
+    if (['not-member', 'no-solve', 'no-puzzle', 'own-puzzle'].includes(msg.code)) {
       live.close();
       showFatal(msg.message);
     } else {
@@ -460,16 +486,20 @@ async function main() {
     return items;
   });
 
+  /** A custom puzzle's authors can't solve it; a restricted one only goes to its audience. */
+  const canInvite = (u) =>
+    !custom || (!custom.authors.includes(u.name) && (custom.visibility !== 'people' || custom.audience?.includes(u.name)));
+
   async function choosePeople({ title, exclude, confirmLabel }) {
     let users;
     try {
-      users = (await loadDirectory()).filter((u) => !exclude.has(u.name));
+      users = (await loadDirectory()).filter((u) => !exclude.has(u.name) && canInvite(u));
     } catch (err) {
       toast(err.message, { error: true });
       return null;
     }
     if (!users.length) {
-      toast('Nobody else to invite — the admin can add accounts.', { error: true });
+      toast(custom ? 'Nobody else can be invited to this one.' : 'Nobody else to invite — the admin can add accounts.', { error: true });
       return null;
     }
     return pickPeople({ title, users, confirmLabel });
@@ -921,6 +951,25 @@ async function obtainMissingPuzzle(id) {
       : `Something went wrong fetching it. ${result.message ?? ''}`.trim()
   );
   return null;
+}
+
+/** Authors don't solve their own puzzle: offer the builder and the results instead. */
+function showOwnPuzzle(p) {
+  const id = encodeURIComponent(p.id);
+  showModal({
+    title: 'You made this one',
+    body:
+      p.status === 'draft'
+        ? 'It’s still a draft. Authors can’t solve their own puzzle here.'
+        : 'Authors can’t solve their own puzzle here. See how everyone else is doing instead.',
+    dismissible: false,
+    actions: [
+      { label: 'Edit it', onClick: () => (location.href = `./builder.html?id=${id}`) },
+      ...(p.status !== 'draft'
+        ? [{ label: 'See how people did', primary: true, onClick: () => (location.href = `./analysis.html?puzzle=${id}`) }]
+        : []),
+    ],
+  });
 }
 
 function showFatal(message) {

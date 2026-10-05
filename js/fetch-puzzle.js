@@ -5,11 +5,30 @@
  * session cookies are same-site), so the server does it: POST
  * /api/puzzles/<id>/fetch runs tools/fetch_one.py and answers once the
  * .puz is in the archive.
+ *
+ * Puzzles made on the site (custom-… ids) aren't files: loadCustomPuzzle
+ * gets them from the API as docs (js/custom-puzzle.js).
  */
 
 import { ARCHIVE_START } from './config.js';
 import { parsePuzzleId } from './util.js';
 import { api } from './api.js';
+import { docToPuz } from './custom-puzzle.js';
+
+/**
+ * A custom puzzle: `puzzle` is its listing entry (title, authors, mine,
+ * status...), `puz` the parsePuz shape of the published copy (or, with
+ * `working`, its authors' working copy). puz is null for a draft.
+ * @returns {Promise<{puzzle: object, puz: object|null} | {error: string, status: number}>}
+ */
+export async function loadCustomPuzzle(id, { working = false } = {}) {
+  try {
+    const { puzzle, doc } = await api.get(`custom-puzzles/${encodeURIComponent(id)}${working ? '?working=1' : ''}`);
+    return { puzzle, puz: doc ? docToPuz(doc) : null };
+  } catch (err) {
+    return { error: err.message, status: err.status };
+  }
+}
 
 /** Is this id something NYT plausibly published? */
 export function isFetchable(puzzleId) {
