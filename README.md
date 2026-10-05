@@ -6,7 +6,9 @@ check/reveal/autocheck, pencil mode, rebus entry, a timer with pause, and
 clean-solve gold stars. It also has a puzzle archive with a calendar, and
 deep solve statistics: trends, distributions, habits, correlations with
 puzzle features, skill ratings, head-to-head tests, replays of every solve
-and more, for one person or any group. On phones and tablets the puzzle
+and more, for one person or any group. People can also **make their own
+puzzles**, alone or together live, and publish them for everyone (or just
+a few people) to solve. On phones and tablets the puzzle
 page docks an on-screen keyboard (with the current clue above it) under the
 grid, since tapping a square can't raise the system keyboard. There is a
 dark mode: it follows the system setting until you flip the ☾/☀ toggle in
@@ -142,6 +144,51 @@ The protocol is documented in `js/net.js`. The server side is in
 `server/rooms.mjs`, and `tests/test_server.mjs` fuzzes three clients making
 conflicting edits to check that they always end up with the same grid.
 
+## Making puzzles
+
+The archive's **Custom** tab lists puzzles people made here. **New puzzle**
+picks a size (Mini 5×5 to Sunday 21×21, or anything from 3×3 to 25×25) and
+a symmetry, and opens the builder (`builder.html`). **Upload a .puz** turns
+a puzzle made in another program (Crossfire, Phil, Crosshare…) into a
+draft. The tab marks puzzles you haven't opened yet as new.
+
+- **Building.** Type letters as you would solving. `.` toggles a black square
+  (and its symmetric partner); in Blocks mode, clicking does. `*` circles a
+  square, Esc or Insert enters a rebus, Enter writes the current entry's
+  clue (Tab moves on to the next one), and Ctrl+Z / Ctrl+Shift+Z undo and
+  redo your own changes. Everything saves as you go.
+- **Building together.** Add co-authors from **More ▾ → Authors…**. Everyone
+  in the builder sees each other's letters, black squares, clues and cursors
+  live, like a co-op solve.
+- **Check** lists what has to be fixed before publishing (empty squares,
+  missing clues, squares in no entry) and what's merely unusual (two-letter
+  entries, unchecked squares, repeated answers, broken symmetry, a split
+  grid).
+- **Fill** suggests words for the current entry, keeping only words that
+  leave every crossing something to fit; a click fills the blanks. The words
+  come from every answer in the archive, published custom puzzles, and an
+  optional bigger word list (see `wordList` in DEPLOY.md). Each clue row says
+  how many words fit its entry, and blank squares nothing fits get a red dot.
+- **Publish** asks who can solve it: everyone, or people you choose. Once it's
+  published the black squares stay put (so solves in progress keep fitting),
+  but letters and clues can still change: edit them, then **Update**, and
+  anyone who has it open is asked to reload.
+- **Test solve** (in **More ▾**, or on the puzzle's own page) plays your copy
+  in the real player without saving anything. Authors never solve their own
+  puzzle for real, so its results stay honest.
+- **Download .puz** (in the builder, and in the player's **Solo ▾** menu)
+  saves a file Across Lite and other apps open.
+- When someone finishes your puzzle they can rate it and leave you a note.
+  The puzzle's breakdown page (**Results** on the Custom tab) shows who solved
+  it, the replays and what they said. Everyone sees the average rating; only
+  the authors and people who finished it see the notes.
+- **Delete** removes a draft. A puzzle someone has already opened is
+  withdrawn instead: it disappears from the list for everyone else, while
+  people keep their solves and stats.
+
+Custom puzzles live in the database, not in `puzzles/`, so the nightly
+backups cover them. The stats page has a Custom tab for them.
+
 ## Adding puzzles
 
 Puzzles are plain Across Lite `.puz` files in `puzzles/`:
@@ -170,8 +217,9 @@ To add puzzles by hand, drop `.puz` files into `puzzles/` and run
 
 | Page | What it does |
 |---|---|
-| `index.html` | Archive: co-op solves in progress, the latest-puzzle hero, and a month calendar with each day's status (◐ in progress, ★ solved, gold ★ clean solve, 👥 co-op) |
-| `puzzle.html?id=…[&solve=…]` | The player (solo, or a co-op solve) |
+| `index.html` | Archive: co-op solves in progress, the latest-puzzle hero, and a month calendar with each day's status (◐ in progress, ★ solved, gold ★ clean solve, 👥 co-op); `#custom` opens the Custom tab |
+| `puzzle.html?id=…[&solve=…]` | The player (solo, or a co-op solve); `&test=1` is an author's test solve |
+| `builder.html?id=…` | The puzzle builder, for a custom puzzle's authors |
 | `stats.html` | Statistics for one person or a group in eight sections (see Stats above), with a filter bar and a CSV of everything |
 | `analysis.html?puzzle=…[&solve=…]` | One puzzle broken down: results, the race, a replay, grid heatmaps, entries. Linked from the stats tables and the “Congratulations” dialog |
 | `login.html` | Sign in |
@@ -197,15 +245,19 @@ To add puzzles by hand, drop `.puz` files into `puzzles/` and run
 ## Repo layout
 
 ```
-index.html puzzle.html stats.html analysis.html login.html   pages
+index.html puzzle.html builder.html stats.html analysis.html login.html   pages
 css/                  base + per-page styles
 js/                   browser ES modules: parser, model, engine, views, net
                       (live sync), api client, page controllers; stats:
                       solve-analysis, stats-data/-math/-model, charts,
-                      stats/ (one module per stats section)
+                      stats/ (one module per stats section); custom puzzles:
+                      custom-puzzle (the format), builder-page/-engine,
+                      clue-editor, custom-tab, words, puz-write, feedback
 server/               Node server: server.mjs (HTTP + WebSocket), api.mjs,
-                      rooms.mjs (live solves), db.mjs (SQLite), auth.mjs,
-                      puzzles.mjs, admin.mjs, tools/import-github.mjs,
+                      rooms.mjs (live solves), build-rooms.mjs (live
+                      building), db.mjs (SQLite), auth.mjs, puzzles.mjs,
+                      words.mjs (the builder's word list), admin.mjs,
+                      tools/import-github.mjs,
                       tools/seed-demo.mjs (made-up solvers for development)
 deploy/               Windows task installer, systemd unit
 puzzles/              .puz files + generated index.json

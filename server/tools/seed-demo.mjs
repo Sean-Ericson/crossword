@@ -11,13 +11,17 @@
  *
  *   XWORD_DATA_DIR=<scratch dir> node server/tools/seed-demo.mjs [--seed N] [--force]
  *
+ * It also makes a few custom puzzles (the builder's kind): one by two
+ * co-authors for everyone, one shared with two people, and a draft, with
+ * solves, ratings and notes.
+ *
  * Every account's password is `test-pass-1`. Refuses to touch a database
  * that already has accounts (unless --force), and always refuses the
  * default server/data.
  */
 
 import path from 'node:path';
-import { Store } from '../db.mjs';
+import { Store, newId } from '../db.mjs';
 import { Hub } from '../rooms.mjs';
 import { Puzzles } from '../puzzles.mjs';
 import { hashPassword } from '../auth.mjs';
@@ -26,6 +30,8 @@ import { newProgress } from '../../js/state.js';
 import { MARK_WRONG, MARK_REVEALED, MARK_PENCIL } from '../../js/engine.js';
 import { parsePuzzleId, weekdayOf } from '../../js/util.js';
 import { mulberry32 } from '../../js/stats-math.js';
+import { CUSTOM_PREFIX, normalizeDoc, publishedCopy, puzzleFeatures, modelOf as customModel } from '../../js/custom-puzzle.js';
+import { listNames } from '../../js/people.js';
 import { readFileSync } from 'node:fs';
 
 const args = process.argv.slice(2);
@@ -247,7 +253,7 @@ async function main() {
     console.error(`${dataDir} already has accounts; use --force to add to it anyway.`);
     process.exit(2);
   }
-  const puzzles = new Puzzles({ puzzlesDir: path.join(SITE_DIR, 'puzzles') }, { log: { info() {}, error: console.error } });
+  const puzzles = new Puzzles({ puzzlesDir: path.join(SITE_DIR, 'puzzles') }, { store, log: { info() {}, error: console.error } });
   const hub = new Hub({ store, puzzles, now: () => clock, flushMs: 1e8, log: { info() {}, error: console.error } });
 
   clock = WINDOW_START - 30 * DAY;
@@ -332,10 +338,101 @@ async function main() {
     coop++;
   }
 
+  const made = await seedCustom(store, hub, users, modelOf);
+
   hub.flushAll();
   store.close();
   console.log(`Seeded ${PEOPLE.length} people: ${logged} logged solo solves, ${old} older summary-only, ${unfinished} unfinished, ${coop} co-op.`);
+  console.log(`Custom puzzles: ${made}.`);
   console.log('Password for every account: test-pass-1');
+}
+
+// ---------- puzzles people made here ----------
+
+const CUSTOM = [
+  {
+    title: 'Heart to Heart',
+    authors: ['devon', 'kam'],
+    rows: ['HEART', 'EMBER', 'ABUSE', 'RESIN', 'TREND'],
+    clues: {
+      A0: 'Ticker', A5: 'Glowing bit of a campfire', A10: 'Misuse', A15: 'Sticky stuff from a pine', A20: 'Fashion direction',
+      D0: 'Valentine shape', D1: 'Fireplace leftover', D2: 'Mistreat', D3: 'Amber, once', D4: 'What’s hot',
+    },
+    notes: 'A word square: the Downs are the Acrosses.',
+    daysAgo: 12,
+    reviews: [[5, 'A word square! Took me a minute to notice.'], [4, ''], [4, 'Cute theme.']],
+  },
+  {
+    title: 'Inside Jokes',
+    authors: ['sean'],
+    rows: ['CARD', 'AREA', 'REAR', 'DART'],
+    clues: {
+      A0: 'Birthday greeting', A4: 'Zone', A8: 'Back', A12: 'Pub missile',
+      D0: 'Deck member', D1: 'Region', D2: 'Hind', D3: 'Bullseye seeker',
+    },
+    share: ['devon', 'maya'],
+    daysAgo: 4,
+    reviews: [[5, 'Ha, the pub one.']],
+  },
+];
+
+/** A few custom puzzles, published and played through the Hub like everything else. */
+async function seedCustom(store, hub, users, modelOf) {
+  const nameOf = (n) => users.get(n).display_name;
+  let published = 0;
+  for (const c of CUSTOM) {
+    clock = REAL_NOW - (c.daysAgo + 3) * DAY;
+    const [first, ...others] = c.authors.map((n) => users.get(n));
+    const doc = normalizeDoc({
+      width: c.rows[0].length,
+      height: c.rows.length,
+      grid: c.rows.join('').split(''),
+      clues: c.clues,
+      title: c.title,
+      byline: listNames(c.authors.map(nameOf)),
+      notes: c.notes ?? '',
+      symmetry: 'none',
+    });
+    const id = CUSTOM_PREFIX + newId(6);
+    store.createCustomPuzzle({ id, createdBy: first.id, doc });
+    store.addCustomAuthors(id, others.map((u) => u.id));
+    clock = REAL_NOW - c.daysAgo * DAY;
+    const copy = publishedCopy(doc);
+    store.publishCustomPuzzle(id, { published: copy, features: puzzleFeatures(customModel(copy)) });
+    if (c.share) store.setCustomSharing(id, 'people', c.share.map((n) => users.get(n).id));
+    published++;
+
+    // everyone it's out to has a go over the next few days; some say what they thought
+    const model = await modelOf(id);
+    const solvers = PEOPLE.filter((p) => !c.authors.includes(p.name) && (!c.share || c.share.includes(p.name)));
+    const reviews = [...c.reviews];
+    for (const person of solvers) {
+      if (rand() < 0.2) continue;
+      const at = REAL_NOW - c.daysAgo * DAY + rand() * (c.daysAgo - 0.5) * DAY;
+      const target = 25 * c.rows.length * person.skill * Math.exp(0.25 * gauss());
+      const user = users.get(person.name);
+      await play(hub, model, { puzzleId: id, members: [{ user, person }], startAt: at, target });
+      const review = reviews.shift();
+      if (review) {
+        clock += 60_000;
+        store.saveFeedback(id, user.id, { stars: review[0], comment: review[1] });
+      }
+    }
+  }
+
+  // a draft, half done
+  clock = REAL_NOW - 2 * DAY;
+  const tom = users.get('tom');
+  const draft = normalizeDoc({
+    width: 5,
+    height: 5,
+    grid: ['S', 'T', 'A', 'R', '.', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '.', '', '', '', ''],
+    clues: { A0: 'Twinkler' },
+    title: 'Work in progress',
+    byline: nameOf('tom'),
+  });
+  store.createCustomPuzzle({ id: CUSTOM_PREFIX + newId(6), createdBy: tom.id, doc: draft });
+  return `${published} published, 1 draft`;
 }
 
 main().catch((err) => {

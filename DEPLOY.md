@@ -97,6 +97,21 @@ Other settings you might change:
 | `python` | Python to use; set it if auto-detection picks the wrong one | auto-detected |
 | `nytxwPath` | Location of the nytxw_puz checkout | `../nytxw_puz` |
 | `clientIpHeader` | Header holding the visitor's real IP (used by the sign-in limiter) | `cf-connecting-ip` |
+| `wordList` | A word list file for the puzzle builder's suggestions (see below) | none |
+
+### A word list for the puzzle builder (optional)
+
+The builder's Fill tab suggests words from every answer in the archive and
+in published custom puzzles: roughly 9,000 words from 250 puzzles. For many
+more, download a scored list and set `wordList` to its path (absolute, or
+relative to the site folder). Check each list's license first:
+
+- [Spread the Wordlist](https://www.spreadthewordlist.com/)
+- [Peter Broda's word list](https://peterbroda.me/crosswords/wordlist/)
+
+Lines look like `WORD;SCORE`, and higher scores are better. A line with no
+score counts as 50. Restart the server after changing the setting. At
+startup the log shows `word list: N words from M puzzles and K listed`.
 
 Create the accounts. Each command prints a temporary password to give to
 that person.
@@ -287,7 +302,14 @@ login`) and the `.github_token` file described in its `SETUP-SCHEDULED.md`.
 ## Backups and restore
 
 Backups are written nightly to `server/data/backups/crossword-<time>.db`
-and are complete SQLite files. To restore one:
+and are complete SQLite files. They include the puzzles people made on the
+site, which live in the database rather than in `puzzles/`.
+
+An update sometimes adds tables to the database. The server does that by
+itself when it starts. Copy `server/data/crossword.db` before restarting
+on a new version if you want a sure way back.
+
+To restore a backup:
 
 1. Stop the server.
 2. Copy the backup over `server/data/crossword.db`.

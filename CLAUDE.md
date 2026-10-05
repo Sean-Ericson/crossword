@@ -33,7 +33,7 @@ and the switch-over. This file covers what you need to change code safely.
 | Where | What |
 |---|---|
 | `js/engine.js` | Pure solve logic (no DOM). Emits `cells(indexes, meta)`. `meta.remote` marks server-applied changes so they aren't echoed back. `deferCompletion`: the server decides when a puzzle is solved. |
-| `js/net.js` | WebSocket client (`LiveSolve`): optimistic edits, a pending-op queue, and replay on reconnect. **The wire protocol is documented at the top of this file.** |
+| `js/net.js` | WebSocket clients: `LiveChannel` (optimistic edits, a pending-op queue, replay on reconnect) with `LiveSolve` (solves) and `LiveBuild` (the builder) on top. **The wire protocol is documented at the top of this file.** |
 | `js/player-page.js` | Player controller: wires the engine, views, net, presence, remote cursors, the solo/co-op menu, and the shared timer |
 | `js/grid-view.js`, `js/clues-view.js` | DOM rendering. Remote cursors are drawn as child elements (`setRemoteCursor`), kept apart from the local `sel-*` classes |
 | `js/theme.js`, `css/base.css` | Light/dark mode. `theme.js` is a classic script in each page's `<head>` (a module would run too late and flash white); it sets `data-theme` on `<html>` from `localStorage['xw:theme']` or the system. Every color is a `--color-*` token in `base.css`, with dark values in `:root[data-theme='dark']`. A new color needs a token with a dark value too, not a hex in page CSS or an inline style |
@@ -45,16 +45,24 @@ and the switch-over. This file covers what you need to change code safely.
 | `js/api.js`, `js/profiles.js`, `js/profile-ui.js` | REST client (a 401 redirects to login), the current user (`loadMe()` must run first on every page), and the account menu |
 | `js/people.js`, `js/people-picker.js` | Showing people, built for 30+ accounts. `people.js` (shared with the server) holds `USER_PALETTE` (8 colors, so accounts share them), `distinctColors` (colors that differ within one view: a co-op room or a stats comparison; pass `keep` so nobody already shown changes color) and `listNames` ("Devon, Kam and 3 others"). `people-picker.js` is the one dialog for choosing people. Past 8 people it adds search and a "recent partners" group (`last_together` from `GET /api/users`). Any new list of people should reuse these |
 | `server/server.mjs` | HTTP: static allowlist (pages, `css/`, `js/`, and `puzzles/` only when signed in), `/ws` upgrade with an origin check, schedulers |
-| `server/api.mjs` | REST routes (a table of `[method, regex, handler, {auth}]`), including the admin routes. Also `clientIp`, `originAllowed`, and `secureCookiesFor` for running behind Cloudflare |
-| `server/rooms.mjs` | `Hub`/`Room`: each open solve lives in memory and is authoritative. Per-cell last-writer-wins, shared timer, server-side completion, flush to the DB after ~2 s and when the last person leaves. `Room.log` records every applied change in `solve_events` on the solve's own clock; on completion the log is summarized into `solve_summaries` |
+| `server/api.mjs` | REST routes (a table of `[method, regex, handler, {auth}]`), including the admin routes and the custom-puzzle, feedback and word-list routes. Also `clientIp`, `originAllowed`, and `secureCookiesFor` for running behind Cloudflare |
+| `server/rooms.mjs` | `Hub`/`Room`: each open solve lives in memory and is authoritative. Per-cell last-writer-wins, shared timer, server-side completion, flush to the DB after ~2 s and when the last person leaves. `Room.log` records every applied change in `solve_events` on the solve's own clock; on completion the log is summarized into `solve_summaries`. The Hub also routes build messages, and `checkCustom` keeps authors out of their own puzzles |
+| `server/build-rooms.mjs` | `BuildRoom`: a custom puzzle's authors edit its working copy live, the way a co-op solve works (per-key last-writer-wins, presence, the same flush). Once the puzzle is published, black/white flips bounce back with the real value |
 | `js/solve-analysis.js` | Pure: the event log's kinds (documented at the top), `analyzeSolve` (per-square and per-entry times, errors, dwell, co-op credit), and `summarize` (what's stored per solve). Shared by client and server. **Bump `ANALYSIS_VERSION` when `summarize` changes**; the server redoes older summaries at startup |
-| `server/db.mjs` | SQLite `Store`. Schema migrations are keyed on `PRAGMA user_version`: bump `SCHEMA_VERSION` and use `CREATE … IF NOT EXISTS`. `solo_solves` is the solo stats log. Co-op stats are derived from `solves`. `solve_events` is append-only (reset logs `r`, it never deletes) |
+| `server/db.mjs` | SQLite `Store`. Schema migrations are keyed on `PRAGMA user_version`: bump `SCHEMA_VERSION` and use `CREATE … IF NOT EXISTS`. `solo_solves` is the solo stats log. Co-op stats are derived from `solves`. `solve_events` is append-only (reset logs `r`, it never deletes). `custom_puzzles` (+ `_authors`, `_shares`, `puzzle_feedback`) hold puzzles made on the site; `visibleCustomIds`/`canSeePuzzle`/`puzzleFilter` decide who sees one |
 | `server/auth.mjs` | scrypt, sessions (sha256 of the token), `LoginLimiter` (in memory; restarting clears it), `tempPassword` |
 | `server/github-sync.mjs` | Two-way sync with the old site's `crossword-data` repo, overlap period only. Solo solves only |
-| `server/puzzles.mjs`, `tools/fetch_one.py`, `tools/update_puzzles.py` | Puzzle loading and NYT downloads. Python and `../nytxw_puz` do the fetching |
+| `server/puzzles.mjs`, `tools/fetch_one.py`, `tools/update_puzzles.py` | Puzzle loading and NYT downloads. Python and `../nytxw_puz` do the fetching. Custom ids load the published copy from the DB, never a file; `forget(id)` drops a cached model on Update |
+| `js/custom-puzzle.js` | Custom puzzles' doc format (`grid` like a record's `fill`; clues keyed by direction + first square, `A0`/`D4`, so they survive block edits), `applyChange` (the one validator for edits, on both ends of the build socket), `docToPuz` (the `parsePuz` shape: `new PuzzleModel(docToPuz(doc))` everywhere), `docFromPuz` (uploads), `problems` (publish blockers and warnings), features |
+| `builder.html`, `js/builder-page.js`, `js/builder-engine.js`, `js/clue-editor.js` | The builder: `LiveBuild` + `GridView` + `BuildEngine` (a `SolveEngine` whose arrows land on blocks and that never completes), clue rows keyed by entry (focus survives a co-author's block edit), Check and Fill tabs, the publish/share/authors dialogs, undo of your own steps |
+| `js/custom-tab.js` | The archive's Custom tab: New puzzle, Upload .puz, your puzzles, everyone else's, "new" counts |
+| `js/words.js`, `server/words.mjs` | The builder's word list: per-length bitsets per (position, letter), crossing-aware `suggest`. Built from archive answers, public custom puzzles and `cfg.wordList`; rebuilt after the daily download and on publish |
+| `js/puz-write.js`, `js/cp1252.js` | `.puz` writer with all checksums (its header matches puzpy's byte for byte), and cp1252 both ways (some Node 22 releases decode `windows-1252` as Latin-1) |
+| `js/local-solve.js`, `js/feedback.js` | An author's test solve (`puzzle.html?id=…&test=1`) runs on `LocalSolve`, a no-network `LiveSolve`. `feedback.js` is the stars-and-note form and the notes list |
+| `js/menus.js`, `js/rebus-input.js` | Dropdown menus and the rebus box, shared by the player and the builder |
 | `server/admin.mjs`, `admin.html` | Account management from the CLI or the web (admins only) |
 | `server/tools/import-github.mjs` | One-time import from `crossword-data` |
-| `server/tools/seed-demo.mjs` | Fills a scratch `XWORD_DATA_DIR` with six made-up solvers played through the real `Hub` on a fake clock (logs and summaries included); password `test-pass-1`. The only way to see the stats pages with data locally |
+| `server/tools/seed-demo.mjs` | Fills a scratch `XWORD_DATA_DIR` with six made-up solvers played through the real `Hub` on a fake clock (logs and summaries included), plus a few custom puzzles with solves, ratings and notes; password `test-pass-1`. The only way to see the stats pages with data locally |
 
 ## Invariants — don't break these
 
@@ -71,13 +79,29 @@ and the switch-over. This file covers what you need to change code safely.
   so on). It's shared with `crossword-data`, so keep it compatible while
   the sync runs.
 - **Puzzle ids** are `YYYY-MM-DD`, with an optional `mini-`, `midi-` or
-  `bonus-` prefix. Any other name is a "special" puzzle.
+  `bonus-` prefix, or `custom-…` for puzzles made on the site (they live in
+  the DB, never in `puzzles/`). Any other name is a "special" puzzle.
+- **A custom puzzle has two copies.** `doc` is the working copy, and every
+  edit to it goes through the build room (`LiveBuild.sendEdit` →
+  `applyChange` on the server; edits from the server are applied with
+  `applyChange` and never sent back). `published` is what solvers get, and
+  it changes only on Publish/Update.
+- **A published puzzle's shape never changes** (size and black squares), so
+  every solve record keeps fitting. Letters and clues can change; Update
+  swaps the model in open solve rooms and they're told `puzzle-updated`.
+- **Authors never solve their own puzzle** on the server (`Hub.checkCustom`,
+  `checkCustomSolvers` in api.mjs, no co-authors who already played it).
+  Test solves are local.
+- **A restricted puzzle's answers stay with its audience.** Every endpoint that
+  serves a custom puzzle, its solves, results, logs or stats checks
+  `store.canSeePuzzle`/`puzzleFilter`; new ones must too. The GitHub sync
+  never carries custom puzzles.
 - **Accounts are invite-only.** There is no public sign-up.
 
 ## Commands
 
 ```bash
-npm test                                   # node tests/run_tests.mjs (async-capable, ~80 tests)
+npm test                                   # node tests/run_tests.mjs (async-capable, ~140 tests)
 XWORD_DATA_DIR=<scratch> XWORD_PORT=8099 node server/server.mjs   # throwaway local server
 XWORD_DATA_DIR=<scratch> node server/admin.mjs add-user sean --admin --password test-pass-1
 python tools/build_index.py                # rebuild puzzles/index.json
@@ -91,6 +115,9 @@ XWORD_DATA_DIR=<scratch> node server/tools/seed-demo.mjs   # demo data for the s
 - `tests/test_server.mjs` drives `Hub` with simulated clients: `LiveSolve`
   plus the engine, over a manual network. It includes a 3-client
   conflicting-edit fuzz and a fake GitHub repo for the sync.
+- `tests/test_custom_server.mjs` does the same for build rooms with
+  `LiveBuild` clients (a 3-author fuzz), and drives the custom-puzzle,
+  feedback and word-list REST routes over HTTP.
 - For UI changes, run a throwaway server and drive several logged-in
   Playwright contexts. Install Playwright in the session scratchpad, not
   the repo.

@@ -88,7 +88,7 @@ export function feedbackForm(puzzleId, { byline = '', existing = null, onSaved =
   ]);
 }
 
-/** "★ 4.3 from 6 solvers" */
+/** "★ 4.3 from 6 ratings" */
 export const starsText = (s) => (s ? `★ ${s.avg.toFixed(1)} from ${s.n} rating${s.n === 1 ? '' : 's'}` : 'No ratings yet');
 
 /**
