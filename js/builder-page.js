@@ -12,7 +12,10 @@
  * The grid is the player's GridView with BuildEngine (the solver's keys).
  * Clues are written in the bar over the grid or in the lists beside it
  * (ClueEditor). The Check tab lists what must be fixed before publishing
- * and what's merely unusual (custom-puzzle.js problems()).
+ * and what's merely unusual (custom-puzzle.js problems()). The Fill tab
+ * suggests words for the current entry from the server's word list
+ * (/api/words), keeping only words that leave every crossing something;
+ * each clue row says how many words fit its entry.
  *
  * Keys on the grid: letters fill and advance · arrows move (onto black
  * squares too) · Tab / Shift+Tab: next or previous entry · Enter: write the
@@ -35,7 +38,9 @@ import { pickPeople } from './people-picker.js';
 import { listNames } from './people.js';
 import { TouchKeyboard, isTouchDevice } from './touch-keyboard.js';
 import { el, qs, qsa } from './util.js';
-import { applyChange, valueAt, modelOf, problems, partnerOf, clueKey, isCustomId, SYMMETRIES } from './custom-puzzle.js';
+import {
+  applyChange, valueAt, modelOf, problems, partnerOf, clueKey, entryName, isCustomId, SYMMETRIES,
+} from './custom-puzzle.js';
 
 const params = new URLSearchParams(location.search);
 const SYMMETRY_LABELS = { rotational: 'Rotational (standard)', mirror: 'Left–right mirror', none: 'None' };
@@ -123,6 +128,7 @@ async function main() {
     else engine.emitSelection();
     drawAllRemote();
     scheduleCheck();
+    scheduleCounts();
   }
 
   function onSelection({ index, word }) {
@@ -130,6 +136,7 @@ async function main() {
     clueEditor.setActive(word, engine.crossWord());
     renderBar(word);
     if (!typingClue) sendCursor();
+    scheduleFill();
   }
 
   /** Letters typed here go to the doc and the room. */
@@ -216,6 +223,10 @@ async function main() {
     clueEditor.updateAnswers(doc);
     renderTitle();
     scheduleCheck();
+    if (cells.length) {
+      scheduleCounts();
+      scheduleFill();
+    }
   }
 
   live.on('edit', (changes) => {
@@ -553,6 +564,14 @@ async function main() {
   function renderCheck() {
     if (!doc) return;
     const { blockers, warnings } = problems(doc, model);
+    if (noFit.length) {
+      const names = noFit.map(entryName);
+      warnings.push({
+        code: 'no-fit',
+        message: `Nothing in the word list fits ${names.length > 4 ? `${names.slice(0, 3).join(', ')} and ${names.length - 3} more` : listNames(names)}.`,
+        cells: noFit.flatMap((w) => w.cells),
+      });
+    }
     qs('#check-count').textContent = blockers.length ? String(blockers.length) : '';
     const panel = qs('#check-panel');
     panel.textContent = '';
@@ -582,9 +601,148 @@ async function main() {
     }
     for (const panel of qsa('.side-panel')) panel.hidden = panel.dataset.panel !== name;
     if (name === 'check') renderCheck();
+    if (name === 'fill') renderFill();
   }
   for (const tab of qsa('.side-tab')) tab.addEventListener('click', () => showPanel(tab.dataset.panel));
-  qs('#fill-tab').hidden = true; // word suggestions come with the server's word list
+
+  // ----- words: what fits each entry, and suggestions in the Fill tab -----
+
+  const fillPanel = qs('#fill-panel');
+  let noFit = []; // entries with blanks that nothing in the list fits
+  let countsTimer = null;
+  let countsSeq = 0;
+  let fillTimer = null;
+  let fillSeq = 0;
+  let onlyFits = true;
+
+  /** An entry's squares as a pattern ('C?T'); null if a rebus or digit is in it. */
+  function patternOf(word) {
+    const parts = word.cells.map((i) => doc.grid[i] || '?');
+    return parts.every((p) => /^[A-Z?]$/.test(p)) ? parts.join('') : null;
+  }
+
+  function scheduleCounts() {
+    clearTimeout(countsTimer);
+    countsTimer = setTimeout(refreshCounts, 500);
+  }
+
+  async function refreshCounts() {
+    if (!model) return;
+    const words = model.clueOrder;
+    const patterns = words.map((w) => patternOf(w));
+    const seq = ++countsSeq;
+    let res;
+    try {
+      res = await api.post('words/counts', { patterns: patterns.map((p) => p ?? '') });
+    } catch {
+      return;
+    }
+    if (seq !== countsSeq || !res.ready) {
+      if (!res?.ready) setTimeout(scheduleCounts, 3000); // still building
+      return;
+    }
+    // only entries still being filled: a finished one is whatever its authors chose
+    const counts = new Map(words.map((w, k) => [clueKey(w), patterns[k]?.includes('?') ? res.counts[k] : null]));
+    clueEditor.setCounts(counts);
+    noFit = words.filter((w) => counts.get(clueKey(w)) === 0);
+    gridView.setCellClass('dead', noFit.flatMap((w) => w.cells.filter((i) => doc.grid[i] === '')));
+    scheduleCheck();
+  }
+
+  function scheduleFill() {
+    clearTimeout(fillTimer);
+    fillTimer = setTimeout(renderFill, 150);
+  }
+
+  async function renderFill() {
+    if (fillPanel.hidden || !engine) return;
+    const word = engine.currentWord();
+    const note = (text) => el('p', { class: 'fill-note' }, text);
+    if (!word) {
+      fillPanel.replaceChildren(note('Pick an entry to see the words that fit it.'));
+      return;
+    }
+    const pattern = patternOf(word);
+    const head = el('div', { class: 'fill-head' }, [
+      el('b', {}, entryName(word)),
+      el('span', { class: 'fill-pattern' }, word.cells.map((i) => doc.grid[i] || '·').join(' ')),
+    ]);
+    if (!pattern) {
+      fillPanel.replaceChildren(head, note('Suggestions are for plain letters; this entry has a rebus or a digit in it.'));
+      return;
+    }
+    if (!pattern.includes('?')) {
+      fillPanel.replaceChildren(head, note('This entry is full. Clear some squares (or pick another entry) to see what else fits.'));
+      return;
+    }
+    const cross = word.cells.map((i) => {
+      if (doc.grid[i] !== '') return null;
+      const other = model.wordAt(i, word.dir === 'A' ? 'D' : 'A');
+      const p = other && patternOf(other);
+      return p ? { pattern: p, at: other.cells.indexOf(i) } : null;
+    });
+    const seq = ++fillSeq;
+    let res;
+    try {
+      res = await api.post('words/suggest', { pattern, cross: onlyFits ? cross : [], limit: 150 });
+    } catch (err) {
+      if (seq === fillSeq) fillPanel.replaceChildren(head, note(err.message));
+      return;
+    }
+    if (seq !== fillSeq) return;
+    const toggle = el('label', { class: 'fill-only' }, [
+      el('input', {
+        type: 'checkbox',
+        ...(onlyFits ? { checked: true } : {}),
+        onchange: (e) => {
+          onlyFits = e.target.checked;
+          renderFill();
+        },
+      }),
+      'Only words that leave every crossing something to fit',
+    ]);
+    const parts = [head, toggle];
+    if (!res.ready) {
+      parts.push(note('The word list is still loading. One moment…'));
+      setTimeout(scheduleFill, 2000);
+    } else if (!res.words.length) {
+      parts.push(
+        note(
+          onlyFits && res.loose
+            ? `${res.loose} word${res.loose === 1 ? ' fits' : 's fit'} here, but none leaves every crossing a word. Try changing a crossing entry.`
+            : 'Nothing in the word list fits. That’s fine if it’s your own word; the list doesn’t know everything.'
+        )
+      );
+    } else {
+      parts.push(
+        el(
+          'div',
+          { class: 'fill-words' },
+          res.words.map(([w, score]) =>
+            el(
+              'button',
+              { class: 'fill-word', type: 'button', title: `Fill in ${w}`, onclick: () => useWord(word, w) },
+              [
+                el('span', {}, [...w].map((ch, k) => (pattern[k] === '?' ? el('span', { class: 'fw-new' }, ch) : ch))),
+                el('span', { class: 'fw-score', style: `--s:${Math.max(0, Math.min(100, score))}`, title: `score ${score}` }),
+              ]
+            )
+          )
+        ),
+        el(
+          'p',
+          { class: 'fill-total' },
+          `${res.total} word${res.total === 1 ? '' : 's'}${onlyFits && res.loose > res.total ? ` (of ${res.loose} that fit the entry alone)` : ''}${res.total > res.words.length ? `; the best ${res.words.length} shown` : ''}.`
+        )
+      );
+    }
+    fillPanel.replaceChildren(...parts);
+  }
+
+  /** Fill an entry's blanks with a word (one undoable step). */
+  function useWord(word, w) {
+    commit(word.cells.map((i, k) => ({ k: `cell:${i}`, v: doc.grid[i] === '' ? w[k] : doc.grid[i] })));
+  }
 
   // ----- co-authors: presence, cursors -----
 

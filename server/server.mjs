@@ -25,6 +25,7 @@ import { Puzzles, scheduleDaily } from './puzzles.mjs';
 import { Hub } from './rooms.mjs';
 import { makeApi, originAllowed } from './api.mjs';
 import { GitHubRepo, GitHubSync, resolveToken } from './github-sync.mjs';
+import { Words } from './words.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -71,12 +72,16 @@ function openLogFile(file) {
   logFile = createWriteStream(file, { flags: 'a' });
 }
 
-export function createServer(cfg, { store, puzzles, hub } = {}) {
+export function createServer(cfg, { store, puzzles, hub, words } = {}) {
   store ??= new Store(path.join(cfg.dataDir, 'crossword.db'));
   puzzles ??= new Puzzles(cfg, { log, store });
   hub ??= new Hub({ store, puzzles, log });
+  words ??= new Words(cfg, { store, log });
   const limiter = new LoginLimiter();
-  const handleApi = makeApi({ cfg, store, hub, puzzles, limiter, log });
+  const handleApi = makeApi({
+    cfg, store, hub, puzzles, words, limiter, log,
+    onPublished: () => words.rebuildSoon(), // its answers join the builder's word list
+  });
 
   async function serveStatic(req, res, url) {
     let pathname;
@@ -213,7 +218,7 @@ export function createServer(cfg, { store, puzzles, hub } = {}) {
 
   server.on('close', () => clearInterval(heartbeat));
 
-  return { server, store, hub, puzzles, wss };
+  return { server, store, hub, puzzles, words, wss };
 }
 
 /** Nightly online backup; keeps the newest `keep` files. */
@@ -244,9 +249,17 @@ async function main() {
 
   const cfg = loadConfig();
   const app = createServer(cfg);
-  const { server, store, hub, puzzles } = app;
+  const { server, store, hub, puzzles, words } = app;
 
-  scheduleDaily(cfg.dailyUpdateAt, () => puzzles.dailyUpdate(), { log });
+  scheduleDaily(
+    cfg.dailyUpdateAt,
+    async () => {
+      await puzzles.dailyUpdate();
+      words.rebuildSoon(); // the new answers
+    },
+    { log }
+  );
+  words.build();
   scheduleDaily(cfg.backupAt, () => backup(store, cfg), { log });
 
   // Two-way sync with the old GitHub Pages site's data repo, for the

@@ -2,7 +2,7 @@
  * editing a working copy live), publishing, sharing, co-authors, and the
  * rules for solving them (authors never do; drafts, withdrawn and
  * restricted puzzles stay out of other people's reach). */
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -484,5 +484,52 @@ test('custom api: drafts, publishing, sharing, co-authors, delete and withdraw',
     assert.equal(store.customPuzzle(upload.json.puzzle.id), null);
   } finally {
     server.close();
+  }
+});
+
+test('words api: the archive’s answers, published puzzles’ and a list file', async () => {
+  const { createServer } = await import('../server/server.mjs');
+  const { store, hub, puzzles, users } = setup();
+  store.setPassword(users[0].id, hashPassword('sean-pass-1'));
+  const dir = mkdtempSync(path.join(tmpdir(), 'xw-words-'));
+  writeFileSync(path.join(dir, 'list.txt'), 'CRANE;90\nCRATE;40\n# a comment\n');
+  // published for everyone: its answers count; a restricted one's don't
+  store.createCustomPuzzle({ id: 'custom-words001', createdBy: users[0].id, doc: readyDoc() });
+  publish(store, puzzles, 'custom-words001', readyDoc());
+  store.createCustomPuzzle({ id: 'custom-words002', createdBy: users[0].id, doc: readyDoc('CATOREWEX') });
+  publish(store, puzzles, 'custom-words002', readyDoc('CATOREWEX'));
+  store.setCustomSharing('custom-words002', 'people', [users[1].id]);
+  const cfg = {
+    puzzlesDir: path.join(here, 'fixtures'), wordList: path.join(dir, 'list.txt'), sessionDays: 30,
+    trustProxy: false, clientIpHeader: null, secureCookies: false, publicUrl: null,
+  };
+  const { server, words } = createServer(cfg, { store, puzzles, hub });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}/api/`;
+  const post = async (p, body, cookie) => {
+    const r = await fetch(base + p, { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie }, body: JSON.stringify(body) });
+    return { status: r.status, json: await r.json() };
+  };
+  try {
+    const login = await fetch(base + 'login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'sean', password: 'sean-pass-1' }),
+    });
+    const cookie = login.headers.get('set-cookie').split(';')[0];
+    await words.build();
+    const crane = await post('words/suggest', { pattern: 'cra?e' }, cookie);
+    assert.equal(crane.json.ready, true);
+    assert.deepEqual(crane.json.words, [['CRANE', 90], ['CRATE', 40]], 'best first');
+    const web = await post('words/suggest', { pattern: 'WE?' }, cookie);
+    assert.deepEqual(web.json.words, [['WEB', 60]], 'a published puzzle’s answer, used once');
+    const counts = await post('words/counts', { patterns: ['CRA?E', 'QQQ', 'BAD!', 'DKRY', 'WEX'] }, cookie);
+    assert.deepEqual(counts.json.counts, [2, 0, null, 1, 0], 'fixture answers count; a restricted puzzle’s don’t');
+    // a blank whose crossing nothing fits leaves no suggestions
+    const crossed = await post('words/suggest', { pattern: 'CRA?E', cross: [null, null, null, { pattern: '?Q', at: 0 }] }, cookie);
+    assert.equal(crossed.json.total, 0);
+    assert.equal(crossed.json.loose, 2);
+    assert.equal((await post('words/suggest', { pattern: 'C' }, cookie)).status, 400);
+  } finally {
+    server.close();
+    rmSync(dir, { recursive: true, force: true });
   }
 });

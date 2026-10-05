@@ -37,6 +37,7 @@ import {
 } from '../js/custom-puzzle.js';
 
 const MAX_DRAFTS = 50; // per person
+const PATTERN_RE = /^[A-Z?]{2,25}$/; // a word's squares: letters, ? for blanks
 
 class HttpError extends Error {
   constructor(status, message) {
@@ -117,7 +118,7 @@ export function originAllowed(req, cfg) {
  * @param {{cfg, store, hub, puzzles, limiter, log}} ctx
  */
 export function makeApi(ctx) {
-  const { cfg, store, hub, puzzles, limiter } = ctx;
+  const { cfg, store, hub, puzzles, words, limiter } = ctx;
   const secureFor = (req) => secureCookiesFor(req, cfg);
 
   const requireAdmin = (user) => {
@@ -415,7 +416,42 @@ export function makeApi(ctx) {
         return;
       }
       const result = await puzzles.fetch(puzzleId);
+      if (result.status === 'done') words?.rebuildSoon(60_000);
       send(res, 200, result);
+    }],
+
+    // ----- the builder's word list (server/words.mjs) -----
+
+    // Words that fit an entry, best first, keeping only those that leave
+    // every crossing something to fit: {pattern: 'C?T', cross: [{pattern,
+    // at} | null per square], limit}. ready is false until the list is built.
+    ['POST', /^\/api\/words\/suggest$/, async (req, res) => {
+      const body = await readJson(req, 50_000);
+      const pattern = String(body.pattern ?? '').toUpperCase();
+      if (!PATTERN_RE.test(pattern)) throw new HttpError(400, 'A pattern is 2-25 letters, with ? for blanks.');
+      const cross = (Array.isArray(body.cross) ? body.cross : []).slice(0, pattern.length).map((c) => {
+        const p = String(c?.pattern ?? '').toUpperCase();
+        return PATTERN_RE.test(p) && Number.isInteger(c.at) && c.at >= 0 && c.at < p.length ? { pattern: p, at: c.at } : null;
+      });
+      const index = words?.current();
+      if (!index) {
+        send(res, 200, { ready: false, words: [], total: 0, loose: 0 });
+        return;
+      }
+      const limit = Math.min(200, Math.max(1, Number(body.limit) || 100));
+      send(res, 200, { ready: true, size: index.size, ...index.suggest(pattern, cross, limit) });
+    }],
+
+    // How many words fit each pattern ({patterns: [...]}; null where it isn't one).
+    ['POST', /^\/api\/words\/counts$/, async (req, res) => {
+      const body = await readJson(req, 100_000);
+      const patterns = (Array.isArray(body.patterns) ? body.patterns : []).slice(0, 1000).map((p) => String(p ?? '').toUpperCase());
+      const index = words?.current();
+      if (!index) {
+        send(res, 200, { ready: false, counts: patterns.map(() => null) });
+        return;
+      }
+      send(res, 200, { ready: true, size: index.size, counts: patterns.map((p) => (PATTERN_RE.test(p) ? index.count(p) : null)) });
     }],
 
     // ----- custom puzzles (js/custom-puzzle.js; editing is live, in

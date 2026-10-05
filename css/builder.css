@@ -349,6 +349,96 @@
   color: var(--color-ok);
 }
 
+/* ---------- the Fill tab ---------- */
+
+.fill-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 6px 0 8px;
+}
+
+.fill-pattern {
+  font-family: var(--font-grid);
+  letter-spacing: 1px;
+  color: var(--color-text-muted);
+}
+
+.fill-only {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.fill-only input {
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.fill-words {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 4px;
+}
+
+.fill-word {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  font-family: var(--font-grid);
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-align: left;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.fill-word:hover {
+  border-color: var(--color-link);
+}
+
+/* the letters a suggestion would add */
+.fill-word .fw-new {
+  color: var(--color-link);
+  font-weight: 700;
+}
+
+.fw-score {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--color-seq-3) calc(var(--s) * 1%), var(--color-border) 0);
+}
+
+.fill-note,
+.fill-total {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* an empty square in an entry nothing in the word list fits */
+.builder-page .cell.dead::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-error);
+  z-index: 3;
+}
+
 /* ---------- dialogs ---------- */
 
 .notes-input {

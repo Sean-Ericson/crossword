@@ -748,6 +748,17 @@ export class Store {
     return row?.published ? JSON.parse(row.published) : null;
   }
 
+  /**
+   * The published copies of puzzles out for everyone, for the builder's
+   * word list (a restricted puzzle's answers stay out of it).
+   */
+  publishedDocs() {
+    return this.db
+      .prepare("SELECT published FROM custom_puzzles WHERE status = 'published' AND visibility = 'everyone'")
+      .all()
+      .map((r) => JSON.parse(r.published));
+  }
+
   /** {status, visibility} without the docs, or null. */
   customState(id) {
     return this.db.prepare('SELECT status, visibility FROM custom_puzzles WHERE id = ?').get(id) ?? null;
