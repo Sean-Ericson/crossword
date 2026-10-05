@@ -24,6 +24,8 @@ import { initProfileChip } from './profile-ui.js';
 import { TouchKeyboard, isTouchDevice } from './touch-keyboard.js';
 import { pickPeople } from './people-picker.js';
 import { listNames } from './people.js';
+import { makeMenu } from './menus.js';
+import { openRebusInput as rebusPopup } from './rebus-input.js';
 import {
   el,
   qs,
@@ -720,54 +722,19 @@ async function main() {
   }
 
   // ----- rebus input -----
-  let rebusInput = null;
+  let rebusOpen = false;
   function openRebusInput() {
-    if (!ready || record.completed || rebusInput) return;
+    if (!ready || record.completed || rebusOpen) return;
     if (engine.isLocked(engine.sel.index)) return;
     if (!active) resumeGame();
     const i = engine.sel.index;
-    const rect = gridView.cellRect(i);
-    const input = el('input', {
-      class: 'rebus-input',
-      type: 'text',
-      maxlength: '12',
-      autocapitalize: 'characters',
-      spellcheck: 'false',
-      'aria-label': 'Rebus entry',
+    rebusOpen = true;
+    rebusPopup({
+      rect: gridView.cellRect(i),
+      value: record.fill[i] || '',
+      onCommit: (value) => engine.typeRebus(value),
+      onClose: () => (rebusOpen = false),
     });
-    const width = Math.max(rect.width * 1.8, 96);
-    Object.assign(input.style, {
-      left: `${rect.left + rect.width / 2 - width / 2}px`,
-      top: `${rect.top - 2}px`,
-      width: `${width}px`,
-      height: `${rect.height + 4}px`,
-      fontSize: `${rect.height * 0.55}px`,
-    });
-    input.value = record.fill[i] || '';
-    let cancelled = false;
-    const closeRebus = (commit) => {
-      if (!rebusInput) return;
-      const value = input.value;
-      rebusInput = null;
-      input.remove();
-      if (commit) engine.typeRebus(value);
-    };
-    input.addEventListener('keydown', (e) => {
-      e.stopPropagation();
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        closeRebus(true);
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        cancelled = true;
-        closeRebus(false);
-      }
-    });
-    input.addEventListener('blur', () => closeRebus(!cancelled));
-    document.body.append(input);
-    rebusInput = input;
-    input.focus();
-    input.select();
   }
   qs('#rebus-btn').addEventListener('click', () => openRebusInput());
 
@@ -962,57 +929,6 @@ function showFatal(message) {
     body: message,
     dismissible: false,
     actions: [{ label: 'Back to archive', primary: true, onClick: () => (location.href = './index.html') }],
-  });
-}
-
-/**
- * Dropdown menu on a toolbar button; items provided lazily each open.
- * An item is 'hr', {label, action, checked?}, or {info: node} for a line
- * of text that isn't clickable.
- */
-function makeMenu(button, getItems) {
-  let panel = null;
-  const close = () => {
-    panel?.remove();
-    panel = null;
-    document.removeEventListener('mousedown', onOutside, true);
-  };
-  const onOutside = (e) => {
-    if (panel && !panel.contains(e.target) && !button.contains(e.target)) close();
-  };
-  button.addEventListener('click', () => {
-    if (panel) {
-      close();
-      return;
-    }
-    panel = el(
-      'div',
-      { class: 'menu-panel' },
-      getItems().map((item) =>
-        item === 'hr'
-          ? el('hr')
-          : item.info
-          ? item.info
-          : el(
-              'button',
-              {
-                onclick: () => {
-                  close();
-                  item.action();
-                },
-              },
-              [el('span', { class: 'menu-check' }, item.checked ? '✓' : ''), item.label]
-            )
-      )
-    );
-    button.parentElement.append(panel);
-    // keep it on screen (the people list opens near the right edge on phones);
-    // not innerWidth: on phones the overflowing panel itself widens that
-    const { left, right } = panel.getBoundingClientRect();
-    const width = document.documentElement.clientWidth;
-    const shift = Math.max(Math.min(0, width - 8 - right), 8 - left);
-    if (shift) panel.style.transform = `translateX(${shift}px)`;
-    document.addEventListener('mousedown', onOutside, true);
   });
 }
 
