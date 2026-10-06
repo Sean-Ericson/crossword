@@ -1,8 +1,9 @@
 /*
  * archive-page.js — home page. Tabs per puzzle type: Daily/Mini/Midi get a
  * month calendar with per-day solve status for the active profile; Bonus
- * (monthly) and Special get list views. The Daily tab also shows the
- * latest-puzzle hero.
+ * (monthly) and Special get list views; Custom (custom-tab.js) lists the
+ * puzzles people made here. The Daily tab also shows the latest-puzzle
+ * hero. index.html#custom opens the Custom tab.
  */
 
 import {
@@ -18,6 +19,7 @@ import { initProfileChip } from './profile-ui.js';
 import { api } from './api.js';
 import { ARCHIVE_START } from './config.js';
 import { listNames } from './people.js';
+import { renderCustomTab, isNew } from './custom-tab.js';
 
 const pad = (n) => String(n).padStart(2, '0');
 const TAB_KEY = 'xw:site:archive-tab';
@@ -28,6 +30,7 @@ const TABS = [
   ['midi', 'Midi'],
   ['bonus', 'Bonus'],
   ['special', 'Special'],
+  ['custom', 'Custom'],
 ];
 
 const STATUS_ICON = {
@@ -45,6 +48,7 @@ async function main() {
   // your solo progress + the co-op solves you're in, for the status icons
   const progressReq = api.get('progress').catch(() => ({ solo: {}, coop: {} }));
   const usersReq = api.get('users').catch(() => ({ users: [] })); // display names
+  const customReq = api.get('custom-puzzles').catch(() => ({ puzzles: [] }));
   let index = null;
   try {
     const resp = await fetch('./puzzles/index.json', { cache: 'no-cache' });
@@ -54,26 +58,26 @@ async function main() {
   }
   const progress = await progressReq;
   const displayNames = new Map((await usersReq).users.map((u) => [u.name, u.display_name]));
+  const custom = (await customReq).puzzles;
+  const customById = new Map(custom.map((p) => [p.id, p]));
 
   const puzzles = (index?.puzzles ?? []).map((p) => ({
     ...p,
     type: p.type ?? parsePuzzleId(p.id).type,
   }));
-  if (!puzzles.length) {
-    qs('#archive-empty').hidden = false;
-    return;
-  }
 
   const byType = new Map(TABS.map(([t]) => [t, []]));
   for (const p of puzzles) {
     (byType.get(p.type) ?? byType.get('special')).push(p);
   }
 
-  // ----- tabs (only those with content; Daily always) -----
+  // ----- tabs (only those with content; Daily and Custom always) -----
   const tabsEl = qs('#type-tabs');
-  const available = TABS.filter(([t]) => t === 'daily' || byType.get(t).length);
-  let tab = localStorage.getItem(TAB_KEY);
+  const available = TABS.filter(([t]) => t === 'daily' || t === 'custom' || byType.get(t).length);
+  const fromHash = location.hash.slice(1);
+  let tab = available.some(([t]) => t === fromHash) ? fromHash : localStorage.getItem(TAB_KEY);
   if (!available.some(([t]) => t === tab)) tab = 'daily';
+  const newCustom = custom.filter((p) => isNew(p, progress)).length;
 
   const monthView = {}; // per-tab current "YYYY-MM"
 
@@ -89,13 +93,22 @@ async function main() {
             onclick: () => {
               tab = t;
               localStorage.setItem(TAB_KEY, t);
+              history.replaceState(null, '', t === 'custom' ? '#custom' : location.pathname + location.search);
               renderTabs();
               renderCurrent();
             },
           },
-          label
+          [label, t === 'custom' && newCustom ? el('span', { class: 'tab-new', title: `${newCustom} new to you` }, String(newCustom)) : null]
         )
       );
+    }
+    // on a phone the tabs scroll sideways: keep the chosen one in sight
+    const active = tabsEl.querySelector('.type-tab.active');
+    if (active) {
+      const box = tabsEl.getBoundingClientRect();
+      const at = active.getBoundingClientRect();
+      if (at.right > box.right) tabsEl.scrollLeft += at.right - box.right + 8;
+      else if (at.left < box.left) tabsEl.scrollLeft -= box.left - at.left + 8;
     }
   }
 
@@ -145,7 +158,7 @@ async function main() {
       const info = parsePuzzleId(s.puzzle_id);
       const label = info.date
         ? `${formatDateLong(info.date)}${info.type !== 'daily' ? ` (${info.type})` : ''}`
-        : s.puzzle_id;
+        : customById.get(s.puzzle_id)?.title || (info.type === 'custom' ? 'A custom puzzle' : s.puzzle_id);
       list.append(
         el(
           'a',
@@ -482,10 +495,22 @@ async function main() {
     calHeader.hidden = true;
     calEl.textContent = '';
     qs('#special-list').hidden = true;
+    qs('#custom-tab').hidden = tab !== 'custom';
+    qs('#archive-empty').hidden = tab === 'custom' || puzzles.length > 0;
     renderHero();
 
     const entries = byType.get(tab);
-    if (tab === 'bonus') {
+    if (tab === 'custom') {
+      renderCustomTab(qs('#custom-tab'), {
+        me,
+        puzzles: custom,
+        progress,
+        nameOf: (n) => displayNames.get(n) || n,
+        statusOf: statusBits,
+        icons: STATUS_ICON,
+        coopMarker,
+      });
+    } else if (tab === 'bonus') {
       renderBonusYear(entries);
     } else if (tab === 'special') {
       renderList(entries, 'Special puzzles', (p) => themeTitle(p.title) || p.title || p.id);

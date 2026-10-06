@@ -5,6 +5,12 @@
  *
  * URL: puzzle.html?id=<puzzle>              your solo solve
  *      puzzle.html?id=<puzzle>&solve=<id>   a co-op solve you're in
+ *
+ * Custom puzzles (custom-… ids) come from the API instead of a .puz file;
+ * their authors get pointed to the builder, since nobody solves their own.
+ *      puzzle.html?id=<custom>&test=1       an author's test solve of the
+ *                                           working copy: LocalSolve, no
+ *                                           server, nothing saved
  */
 
 import { parsePuz } from './puz.js';
@@ -14,16 +20,22 @@ import { GridView } from './grid-view.js';
 import { CluesView } from './clues-view.js';
 import { Timer } from './timer.js';
 import { LiveSolve } from './net.js';
+import { LocalSolve } from './local-solve.js';
+import { feedbackForm, loadFeedback } from './feedback.js';
+import { downloadPuz, puzFileName } from './puz-write.js';
 import { api } from './api.js';
 import { showModal, confirmDialog, toast } from './modals.js';
 import { newProgress, hasAnyFill, fillPercent } from './state.js';
-import { tryLoadPuzzle, fetchOnDemand, isFetchable } from './fetch-puzzle.js';
+import { tryLoadPuzzle, fetchOnDemand, isFetchable, loadCustomPuzzle } from './fetch-puzzle.js';
+import { isCustomId } from './custom-puzzle.js';
 import { loadSettings, saveSettings, SETTING_LABELS } from './settings.js';
 import { loadMe } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
 import { TouchKeyboard, isTouchDevice } from './touch-keyboard.js';
 import { pickPeople } from './people-picker.js';
 import { listNames } from './people.js';
+import { makeMenu } from './menus.js';
+import { openRebusInput as rebusPopup } from './rebus-input.js';
 import {
   el,
   qs,
@@ -54,16 +66,35 @@ async function main() {
     showFatal('No puzzle specified. Pick one from the archive.');
     return;
   }
-  let buffer = await tryLoadPuzzle(id);
-  if (!buffer) buffer = await obtainMissingPuzzle(id);
-  if (!buffer) return; // obtainMissingPuzzle explained why
-
   let puz;
-  try {
-    puz = parsePuz(buffer);
-  } catch (err) {
-    showFatal(`This puzzle file looks corrupt (${err.message}).`);
-    return;
+  let custom = null; // a custom puzzle's listing entry (authors, audience...)
+  const testMode = params.has('test') && isCustomId(id);
+  if (isCustomId(id)) {
+    const got = await loadCustomPuzzle(id, { working: testMode });
+    if (got.error) {
+      showFatal(got.status === 404 ? 'That puzzle doesn’t exist, or it isn’t shared with you.' : got.error);
+      return;
+    }
+    custom = got.puzzle;
+    if (custom.mine && !testMode) {
+      showOwnPuzzle(custom);
+      return;
+    }
+    if (!got.puz) {
+      showFatal('That puzzle isn’t published yet.');
+      return;
+    }
+    puz = got.puz;
+  } else {
+    let buffer = await tryLoadPuzzle(id);
+    if (!buffer) buffer = await obtainMissingPuzzle(id);
+    if (!buffer) return; // obtainMissingPuzzle explained why
+    try {
+      puz = parsePuz(buffer);
+    } catch (err) {
+      showFatal(`This puzzle file looks corrupt (${err.message}).`);
+      return;
+    }
   }
 
   const model = new PuzzleModel(puz);
@@ -82,7 +113,7 @@ async function main() {
       timeZone: 'UTC',
     });
   } else {
-    dateText = idInfo.date ? formatDateLong(idInfo.date) : theme || id;
+    dateText = idInfo.date ? formatDateLong(idInfo.date) : theme || (custom ? 'Untitled' : id);
   }
   qs('.puzzle-title').textContent = typeLabel;
   document.title = [dateText, theme, typeLabel].filter(Boolean).join(' — ');
@@ -96,9 +127,14 @@ async function main() {
   const record = newProgress(model, id, user);
   const settings = loadSettings(user);
   const engine = new SolveEngine(model, record, settings);
-  engine.deferCompletion = true; // the server decides when it's solved
+  engine.deferCompletion = !testMode; // the server decides when it's solved
   const timer = new Timer(0);
-  const live = new LiveSolve({ puzzleId: id, solveId: solveParam });
+  const live = testMode ? new LocalSolve({ puzzleId: id, model, user: me }) : new LiveSolve({ puzzleId: id, solveId: solveParam });
+  if (testMode) {
+    // an author trying their working copy: nothing here is saved or shared
+    qs('#solve-btn').hidden = true;
+    qs('.puzzle-header').append(el('span', { class: 'test-badge', title: 'Nothing here is saved or counted' }, 'Test solve — nothing is saved'));
+  }
 
   let solve = null; // snapshot.solve: {id, kind, puzzle_id, members}
   let presence = []; // [{conn, user, display_name, color, cursor, active}]
@@ -182,7 +218,7 @@ async function main() {
 
   // ----- live connection -----
   const liveBadge = qs('#sync-badge');
-  liveBadge.hidden = false;
+  liveBadge.hidden = testMode;
   liveBadge.className = 'live-dot';
   let sessionCheck = null;
   live.on('status', (status) => {
@@ -217,7 +253,7 @@ async function main() {
     renderSolveInfo();
     renderPresence();
     drawAllRemote();
-    if (firstTime) {
+    if (firstTime && !testMode) {
       loadSolveList();
       loadDirectory().catch(() => {}); // display names in the solve menu
     }
@@ -276,8 +312,16 @@ async function main() {
     renderPresence();
     if (overlayKind === 'start') showStartOverlay(); // "You're solving with …"
   });
+  // a custom puzzle's constructors published a new version
+  live.on('puzzle-updated', () => {
+    showModal({
+      title: 'This puzzle was updated',
+      body: 'Its constructors just changed some clues or answers. Reload to get the new version; your progress stays.',
+      actions: [{ label: 'Later' }, { label: 'Reload', primary: true, onClick: () => location.reload() }],
+    });
+  });
   live.on('error', (msg) => {
-    if (['not-member', 'no-solve', 'no-puzzle'].includes(msg.code)) {
+    if (['not-member', 'no-solve', 'no-puzzle', 'own-puzzle'].includes(msg.code)) {
       live.close();
       showFatal(msg.message);
     } else {
@@ -430,6 +474,16 @@ async function main() {
   const solveHref = (s) =>
     `./puzzle.html?id=${encodeURIComponent(id)}${s?.kind === 'coop' ? `&solve=${encodeURIComponent(s.id)}` : ''}`;
 
+  /** Stars and a note for a custom puzzle's constructors, any time after finishing it. */
+  async function openRating() {
+    const fb = await loadFeedback(id);
+    if (!fb?.can_rate) {
+      toast('Finish the puzzle first, then tell its constructors what you thought.', { error: true });
+      return;
+    }
+    showModal({ title: puz.title || 'This puzzle', body: [feedbackForm(id, { byline: puz.author, existing: fb.mine })] });
+  }
+
   makeMenu(solveBtn, () => {
     const coops = mySolves.filter((s) => s.kind === 'coop');
     const items = [
@@ -455,19 +509,28 @@ async function main() {
             .then(() => toast('Link copied — anyone in this solve can open it.')),
       });
     }
+    if (custom) {
+      items.push('hr');
+      if (record.completed) items.push({ label: 'Rate this puzzle…', action: () => openRating() });
+      items.push({ label: 'Download .puz', action: () => downloadPuz(puz, puzFileName(puz.title, id)) });
+    }
     return items;
   });
+
+  /** A custom puzzle's authors can't solve it; a restricted one only goes to its audience. */
+  const canInvite = (u) =>
+    !custom || (!custom.authors.includes(u.name) && (custom.visibility !== 'people' || custom.audience?.includes(u.name)));
 
   async function choosePeople({ title, exclude, confirmLabel }) {
     let users;
     try {
-      users = (await loadDirectory()).filter((u) => !exclude.has(u.name));
+      users = (await loadDirectory()).filter((u) => !exclude.has(u.name) && canInvite(u));
     } catch (err) {
       toast(err.message, { error: true });
       return null;
     }
     if (!users.length) {
-      toast('Nobody else to invite — the admin can add accounts.', { error: true });
+      toast(custom ? 'Nobody else can be invited to this one.' : 'Nobody else to invite — the admin can add accounts.', { error: true });
       return null;
     }
     return pickPeople({ title, users, confirmLabel });
@@ -632,6 +695,11 @@ async function main() {
   engine.on('full', ({ solved, clean }) => {
     if (solved) {
       active = false;
+      if (testMode) {
+        // no server to stop the clock and say so
+        live.setActive(false);
+        record.elapsed = Math.floor(timer.seconds);
+      }
       closeOverlay();
       veil(false);
       gridView.setCompleted(true);
@@ -639,20 +707,37 @@ async function main() {
       showFinalTime();
       if (settings.playSound) playJingle();
       const partners = isCoop() ? solve.members.filter((m) => m.name !== user).map((m) => m.display_name) : [];
+      const rating = el('div'); // a custom puzzle's constructors hear what you thought
+      if (custom && !testMode) {
+        loadFeedback(id).then((fb) => {
+          if (fb?.can_rate) rating.append(feedbackForm(id, { byline: puz.author, existing: fb.mine }));
+        });
+      }
       showModal({
-        title: 'Congratulations!',
+        title: testMode ? 'It works!' : 'Congratulations!',
         body: el('div', {}, [
-          el('p', {}, partners.length ? `You solved it with ${listNames(partners, 4)}.` : 'You solved the puzzle.'),
+          el(
+            'p',
+            {},
+            testMode
+              ? 'The grid checks out. Nothing was saved.'
+              : partners.length
+              ? `You solved it with ${listNames(partners, 4)}.`
+              : 'You solved the puzzle.'
+          ),
           el('div', { class: 'solve-time' }, formatTime(record.elapsed)),
           clean ? el('div', { class: 'gold-star' }, '★ Clean solve') : null,
+          rating,
         ]),
-        actions: [
-          { label: 'Back to archive', onClick: () => (location.href = './index.html') },
-          ...(solve?.id
-            ? [{ label: 'See the breakdown', onClick: () => (location.href = `./analysis.html?puzzle=${encodeURIComponent(id)}&solve=${encodeURIComponent(solve.id)}`) }]
-            : []),
-          { label: 'Admire the puzzle', primary: true },
-        ],
+        actions: testMode
+          ? [{ label: 'Back to the builder', primary: true, onClick: () => (location.href = `./builder.html?id=${encodeURIComponent(id)}`) }]
+          : [
+              { label: 'Back to archive', onClick: () => (location.href = custom ? './index.html#custom' : './index.html') },
+              ...(solve?.id
+                ? [{ label: 'See the breakdown', onClick: () => (location.href = `./analysis.html?puzzle=${encodeURIComponent(id)}&solve=${encodeURIComponent(solve.id)}`) }]
+                : []),
+              { label: 'Admire the puzzle', primary: true },
+            ],
       });
     } else if (!fullModalOpen) {
       fullModalOpen = true;
@@ -720,54 +805,19 @@ async function main() {
   }
 
   // ----- rebus input -----
-  let rebusInput = null;
+  let rebusOpen = false;
   function openRebusInput() {
-    if (!ready || record.completed || rebusInput) return;
+    if (!ready || record.completed || rebusOpen) return;
     if (engine.isLocked(engine.sel.index)) return;
     if (!active) resumeGame();
     const i = engine.sel.index;
-    const rect = gridView.cellRect(i);
-    const input = el('input', {
-      class: 'rebus-input',
-      type: 'text',
-      maxlength: '12',
-      autocapitalize: 'characters',
-      spellcheck: 'false',
-      'aria-label': 'Rebus entry',
+    rebusOpen = true;
+    rebusPopup({
+      rect: gridView.cellRect(i),
+      value: record.fill[i] || '',
+      onCommit: (value) => engine.typeRebus(value),
+      onClose: () => (rebusOpen = false),
     });
-    const width = Math.max(rect.width * 1.8, 96);
-    Object.assign(input.style, {
-      left: `${rect.left + rect.width / 2 - width / 2}px`,
-      top: `${rect.top - 2}px`,
-      width: `${width}px`,
-      height: `${rect.height + 4}px`,
-      fontSize: `${rect.height * 0.55}px`,
-    });
-    input.value = record.fill[i] || '';
-    let cancelled = false;
-    const closeRebus = (commit) => {
-      if (!rebusInput) return;
-      const value = input.value;
-      rebusInput = null;
-      input.remove();
-      if (commit) engine.typeRebus(value);
-    };
-    input.addEventListener('keydown', (e) => {
-      e.stopPropagation();
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        closeRebus(true);
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        cancelled = true;
-        closeRebus(false);
-      }
-    });
-    input.addEventListener('blur', () => closeRebus(!cancelled));
-    document.body.append(input);
-    rebusInput = input;
-    input.focus();
-    input.select();
   }
   qs('#rebus-btn').addEventListener('click', () => openRebusInput());
 
@@ -956,63 +1006,32 @@ async function obtainMissingPuzzle(id) {
   return null;
 }
 
+/** Authors don't solve their own puzzle: offer the builder and the results instead. */
+function showOwnPuzzle(p) {
+  const id = encodeURIComponent(p.id);
+  showModal({
+    title: 'You made this one',
+    body:
+      p.status === 'draft'
+        ? 'It’s still a draft. Authors can’t solve their own puzzle here.'
+        : 'Authors can’t solve their own puzzle here. See how everyone else is doing instead.',
+    dismissible: false,
+    actions: [
+      { label: 'Edit it', onClick: () => (location.href = `./builder.html?id=${id}`) },
+      { label: 'Test solve', onClick: () => (location.href = `./puzzle.html?id=${id}&test=1`) },
+      ...(p.status !== 'draft'
+        ? [{ label: 'See how people did', primary: true, onClick: () => (location.href = `./analysis.html?puzzle=${id}`) }]
+        : []),
+    ],
+  });
+}
+
 function showFatal(message) {
   showModal({
     title: 'Hmm.',
     body: message,
     dismissible: false,
     actions: [{ label: 'Back to archive', primary: true, onClick: () => (location.href = './index.html') }],
-  });
-}
-
-/**
- * Dropdown menu on a toolbar button; items provided lazily each open.
- * An item is 'hr', {label, action, checked?}, or {info: node} for a line
- * of text that isn't clickable.
- */
-function makeMenu(button, getItems) {
-  let panel = null;
-  const close = () => {
-    panel?.remove();
-    panel = null;
-    document.removeEventListener('mousedown', onOutside, true);
-  };
-  const onOutside = (e) => {
-    if (panel && !panel.contains(e.target) && !button.contains(e.target)) close();
-  };
-  button.addEventListener('click', () => {
-    if (panel) {
-      close();
-      return;
-    }
-    panel = el(
-      'div',
-      { class: 'menu-panel' },
-      getItems().map((item) =>
-        item === 'hr'
-          ? el('hr')
-          : item.info
-          ? item.info
-          : el(
-              'button',
-              {
-                onclick: () => {
-                  close();
-                  item.action();
-                },
-              },
-              [el('span', { class: 'menu-check' }, item.checked ? '✓' : ''), item.label]
-            )
-      )
-    );
-    button.parentElement.append(panel);
-    // keep it on screen (the people list opens near the right edge on phones);
-    // not innerWidth: on phones the overflowing panel itself widens that
-    const { left, right } = panel.getBoundingClientRect();
-    const width = document.documentElement.clientWidth;
-    const shift = Math.max(Math.min(0, width - 8 - right), 8 - left);
-    if (shift) panel.style.transform = `translateX(${shift}px)`;
-    document.addEventListener('mousedown', onOutside, true);
   });
 }
 

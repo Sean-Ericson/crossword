@@ -12,7 +12,7 @@
  *      synced, and stats.json when the server knows solves GitHub doesn't.
  *
  * Only solo solves of users that exist on both sides (same name) take
- * part; co-op solves are server-only. A solve someone has open right now
+ * part; co-op solves and puzzles made on the new site are server-only. A solve someone has open right now
  * is left alone until they close it (its grid lives in memory), so remote
  * changes to it land a cycle or two later. The old site picks up server
  * changes the next time a puzzle is opened there.
@@ -27,7 +27,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { mergeProgress, mergeStats, recordFitsModel } from '../js/state.js';
-import { parsePuzzleId } from '../js/util.js';
+import { parsePuzzleId, CUSTOM_ID_RE } from '../js/util.js';
 
 const PROGRESS_RE = /^users\/([a-z0-9-]+)\/progress\/[^/]+\/([A-Za-z0-9_-]+)\.json$/;
 const STATS_RE = /^users\/([a-z0-9-]+)\/stats\.json$/;
@@ -103,6 +103,8 @@ export function resolveToken(opts) {
 }
 
 const sameJson = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+// the old site can't load puzzles made on this one
+const isCustom = (puzzleId) => CUSTOM_ID_RE.test(puzzleId);
 
 export class GitHubSync {
   /**
@@ -141,6 +143,7 @@ export class GitHubSync {
   }
 
   async modelFor(puzzleId) {
+    if (isCustom(puzzleId)) return null;
     let model = await this.puzzles.model(puzzleId);
     if (model || this.unfetchable.has(puzzleId) || !this.puzzles.fetch) return model;
     const result = await this.puzzles.fetch(puzzleId);
@@ -169,9 +172,13 @@ export class GitHubSync {
         const remote = await this.gh.readJson(sha);
         if (s) {
           for (const [id, entry] of Object.entries(remote?.solves ?? {})) {
-            if (entry?.completed_at) this.store.recordSoloSolve(user.id, id, entry);
+            if (entry?.completed_at && !isCustom(id)) this.store.recordSoloSolve(user.id, id, entry);
           }
           this.store.setGhSyncRow(path, sha, null);
+          continue;
+        }
+        if (isCustom(p[2])) {
+          counts.skipped++;
           continue;
         }
         if (await this.pullProgress(user, p[2], remote)) {
@@ -187,6 +194,7 @@ export class GitHubSync {
         const remoteUserHere = [...tree.keys()].some((k) => k.startsWith(`users/${user.name}/`));
         if (!remoteUserHere) continue; // only people who exist on both sites
         for (const solve of this.store.soloSolvesOf(user.id)) {
+          if (isCustom(solve.puzzle_id)) continue;
           if (this.hub.isBusy(solve.id) && !this.hub.liveRecord(solve.id)) continue;
           const record = this.hub.liveRecord(solve.id) ?? solve.record;
           if (!record?.updated_at) continue; // pristine: nothing to share
@@ -210,6 +218,7 @@ export class GitHubSync {
 
         const sp = statsPath(user.name);
         const local = this.store.statsDoc(user);
+        local.solves = Object.fromEntries(Object.entries(local.solves).filter(([id]) => !isCustom(id)));
         if (!Object.keys(local.solves).length) continue;
         const remoteDoc = tree.has(sp) ? await this.readCached(tree.get(sp)) : null;
         const merged = mergeStats(remoteDoc, local);

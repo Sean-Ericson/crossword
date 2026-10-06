@@ -21,6 +21,9 @@
  * in js/solve-analysis.js. When a solve completes its log is summarized
  * into solve_summaries.
  *
+ * Custom puzzles being built have rooms of their own (BuildRoom in
+ * build-rooms.mjs) on the same connections; the Hub routes to both.
+ *
  * Wire messages are documented in js/net.js.
  */
 
@@ -28,8 +31,11 @@ import { SolveEngine } from '../js/engine.js';
 import { newProgress, recordFitsModel } from '../js/state.js';
 import { distinctColors } from '../js/people.js';
 import { replayGrid, summarize, ANALYSIS_VERSION } from '../js/solve-analysis.js';
+import { isCustomId } from '../js/custom-puzzle.js';
 import { newId, nowIso } from './db.mjs';
 import { publicUser } from './auth.mjs';
+import { RoomError } from './room-error.mjs';
+import { BuildRoom } from './build-rooms.mjs';
 
 const MAX_FILL_LEN = 12;
 const FILL_RE = /^[^\s.]*$/u;
@@ -38,12 +44,7 @@ const dirOrNull = (d) => (d === 'A' || d === 'D' ? d : null);
 
 const oldestFirst = (members) => [...members].sort((a, b) => a.id - b.id);
 
-export class RoomError extends Error {
-  constructor(code, message) {
-    super(message);
-    this.code = code;
-  }
-}
+export { RoomError };
 
 class Room {
   constructor(hub, solve, model) {
@@ -396,6 +397,19 @@ class Room {
     this.colors = distinctColors(oldestFirst(this.members), { keep: this.colors });
     this.broadcast({ type: 'members', members: this.memberList() });
   }
+
+  /**
+   * The authors updated this custom puzzle. Its shape can't change once
+   * published, so the grid still fits; answers may have, so completion is
+   * checked again. Players are asked to reload for the new clues.
+   */
+  setModel(model) {
+    if (model.cells.length !== this.model.cells.length) return;
+    this.model = model;
+    this.checker = new SolveEngine(model, this.record, {});
+    this.broadcast({ type: 'puzzle-updated' });
+    this.checkComplete(null);
+  }
 }
 
 export class Hub {
@@ -411,6 +425,7 @@ export class Hub {
     this.log = log;
     this.rooms = new Map(); // solveId -> Room
     this.opening = new Map(); // solveId -> Promise<Room>
+    this.builds = new Map(); // custom puzzle id -> BuildRoom
     this.conns = new Set(); // every connected client
     this.nextConnId = 1;
   }
@@ -442,15 +457,37 @@ export class Hub {
       conn.close?.();
     }
     const shared = [...this.rooms.values()].filter((room) => room.members.some((m) => m.id === userId));
+    const builds = [...this.builds.values()].filter((room) => room.authors.some((a) => a.id === userId));
     // their logged events reference the account, so they go in before it goes
-    for (const room of shared) room.flush();
+    for (const room of [...shared, ...builds]) room.flush();
     remove();
     for (const room of shared) room.refreshMembers();
+    for (const room of builds) room.refreshAuthors(); // a draft left with no authors is gone
+  }
+
+  /**
+   * Custom puzzles: may this person solve it? Its authors never do (Test
+   * solve in the builder is for them); a withdrawn puzzle takes no new
+   * solves, and a restricted one only from the people it's shared with.
+   * Throws a RoomError when not.
+   */
+  checkCustom(user, puzzleId, { existing = false } = {}) {
+    if (!isCustomId(puzzleId)) return;
+    const state = this.store.customState(puzzleId);
+    const missing = () => new RoomError('no-puzzle', 'That puzzle doesn’t exist, or it isn’t shared with you.');
+    if (!state || state.status === 'draft') throw missing();
+    if (this.store.isCustomAuthor(puzzleId, user.id)) {
+      throw new RoomError('own-puzzle', 'You made this puzzle, so you can’t solve it. Try Test solve in the builder.');
+    }
+    if (existing) return;
+    if (state.status === 'withdrawn') throw new RoomError('no-puzzle', 'Its authors withdrew this puzzle.');
+    if (!this.store.canSeePuzzle(user.id, puzzleId)) throw missing();
   }
 
   /** Find or create the user's solo solve for a puzzle. */
   async soloSolveFor(user, puzzleId) {
     const existing = this.store.soloSolve(user.id, puzzleId);
+    this.checkCustom(user, puzzleId, { existing: !!existing });
     if (existing) return existing;
     const model = await this.puzzles.model(puzzleId);
     if (!model) throw new RoomError('no-puzzle', 'That puzzle is not in the archive.');
@@ -515,8 +552,14 @@ export class Hub {
     if (this.rooms.get(room.id) === room) this.rooms.delete(room.id);
   }
 
+  closeBuild(room) {
+    room.flush();
+    if (this.builds.get(room.id) === room) this.builds.delete(room.id);
+  }
+
   flushAll() {
     for (const room of this.rooms.values()) room.flush();
+    for (const room of this.builds.values()) room.flush();
   }
 
   async join(conn, { solve, puzzle }) {
@@ -527,10 +570,52 @@ export class Hub {
     } else if (!this.store.isMember(solveId, conn.user.id)) {
       throw new RoomError('not-member', "You're not part of that solve.");
     }
+    const puzzleId = this.rooms.get(solveId)?.puzzleId ?? this.store.solveById(solveId)?.puzzle_id;
+    if (puzzleId) this.checkCustom(conn.user, puzzleId, { existing: true }); // before opening a room
     const room = await this.room(solveId);
     if (conn.room && conn.room !== room) conn.room.remove(conn);
     if (conn.room !== room) room.add(conn);
     return room;
+  }
+
+  /** Open a custom puzzle in the builder (its authors only). */
+  joinBuild(conn, { puzzle }) {
+    if (!isCustomId(puzzle) || !this.store.isCustomAuthor(puzzle, conn.user.id)) {
+      throw new RoomError('not-author', 'That puzzle doesn’t exist, or you aren’t one of its authors.');
+    }
+    let room = this.builds.get(puzzle);
+    if (!room) {
+      const found = this.store.customPuzzle(puzzle);
+      if (!found) throw new RoomError('not-author', 'That puzzle doesn’t exist.');
+      room = new BuildRoom(this, found);
+      this.builds.set(puzzle, room);
+    }
+    if (conn.room && conn.room !== room) conn.room.remove(conn);
+    if (conn.room !== room) room.add(conn);
+    return room;
+  }
+
+  /** The working copy of a puzzle open in the builder (null when it isn't). */
+  liveDoc(puzzleId) {
+    return this.builds.get(puzzleId)?.doc ?? null;
+  }
+
+  /** Write a puzzle's working copy now (before publishing it, say). */
+  flushBuild(puzzleId) {
+    this.builds.get(puzzleId)?.flush();
+  }
+
+  buildRoom(puzzleId) {
+    return this.builds.get(puzzleId) ?? null;
+  }
+
+  /** A custom puzzle's published copy changed: open solves of it switch over. */
+  async puzzleChanged(puzzleId) {
+    const open = [...this.rooms.values()].filter((room) => room.puzzleId === puzzleId);
+    if (!open.length) return;
+    const model = await this.puzzles.model(puzzleId);
+    if (!model) return;
+    for (const room of open) room.setModel(model);
   }
 
   /** Dispatch one client message. Errors go back to that client only. */
@@ -540,8 +625,16 @@ export class Hub {
         await this.join(conn, msg);
         return;
       }
+      if (msg?.type === 'build') {
+        this.joinBuild(conn, msg);
+        return;
+      }
       const room = conn.room;
       if (!room) throw new RoomError('not-joined', 'join a solve first');
+      if (room instanceof BuildRoom) {
+        room.handle(conn, msg);
+        return;
+      }
       switch (msg.type) {
         case 'cells':
           room.applyCells(conn, msg.opId ?? null, msg.changes, msg.dir);

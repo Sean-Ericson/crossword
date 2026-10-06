@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Puzzle builder — Crossword</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧩</text></svg>">
+  <script src="./js/theme.js"></script>
+  <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/player.css">
+  <link rel="stylesheet" href="./css/builder.css">
+</head>
+<body class="player-page builder-page">
+  <header class="site-header">
+    <a class="brand" href="./index.html">🧩 Crossword</a>
+    <nav>
+      <a href="./index.html">Archive</a>
+      <a href="./stats.html">Stats</a>
+    </nav>
+    <span class="spacer"></span>
+    <span id="sync-badge" class="live-dot" hidden></span>
+    <button class="theme-toggle" type="button" title="Dark mode" aria-label="Dark mode" aria-pressed="false"></button>
+    <span id="profile-chip" class="badge"></span>
+  </header>
+
+  <div class="puzzle-header builder-header">
+    <input id="title-input" class="title-input" placeholder="Untitled" maxlength="120" aria-label="Title" autocomplete="off">
+    <label class="byline">By <input id="byline-input" class="byline-input" maxlength="120" aria-label="Byline" autocomplete="off"></label>
+    <span class="status-pill" id="status-pill"></span>
+    <span class="save-state" id="save-state" aria-live="polite"></span>
+  </div>
+
+  <div class="toolbar builder-toolbar">
+    <button class="tool-btn" id="undo-btn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↶</button>
+    <button class="tool-btn" id="redo-btn" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>↷</button>
+    <button class="tool-btn" id="block-btn" title="Block mode: tapping a square turns it black or white. Or press . on any square">■<span class="btn-label"> Blocks</span></button>
+    <button class="tool-btn" id="circle-btn" title="Circle this square (*)">◯<span class="btn-label"> Circle</span></button>
+    <button class="tool-btn" id="rebus-btn" title="Several letters in one square (Esc)">Rebus</button>
+    <div class="menu-host">
+      <button class="tool-btn" id="symmetry-btn" title="Which squares a block toggles together">Symmetry ▾</button>
+    </div>
+    <div class="menu-host">
+      <button class="tool-btn" id="clear-btn">Clear ▾</button>
+    </div>
+    <div class="menu-host menu-left presence-host">
+      <button class="presence" id="presence" type="button" hidden></button>
+    </div>
+    <span class="spacer"></span>
+    <button class="tool-btn" id="notes-btn" title="Notes solvers see under ⓘ">Notes</button>
+    <div class="menu-host">
+      <button class="tool-btn" id="more-btn">More ▾</button>
+    </div>
+    <button class="btn btn-primary btn-compact" id="publish-btn" disabled>Publish…</button>
+  </div>
+
+  <main class="play-area builder-area">
+    <div class="board-col">
+      <div class="clue-bar builder-bar" id="clue-bar">
+        <button class="clue-bar-nav" id="bar-prev" aria-label="Previous entry">‹</button>
+        <div class="clue-bar-main">
+          <span class="clue-bar-num" id="bar-num"></span>
+          <input class="bar-input" id="bar-input" maxlength="500" placeholder="Write this entry’s clue (Enter)" autocomplete="off" aria-label="Clue">
+        </div>
+        <button class="clue-bar-nav" id="bar-next" aria-label="Next entry">›</button>
+      </div>
+      <div class="board-wrap" id="board-wrap"></div>
+    </div>
+    <div class="builder-side">
+      <div class="side-tabs" role="tablist">
+        <button class="side-tab active" type="button" role="tab" data-panel="clues">Clues</button>
+        <button class="side-tab" type="button" role="tab" data-panel="check">Check <span class="tab-count" id="check-count"></span></button>
+        <button class="side-tab" type="button" role="tab" data-panel="fill" id="fill-tab">Fill</button>
+      </div>
+      <div class="side-panel" data-panel="clues">
+        <section class="clue-list" id="across-list"></section>
+        <section class="clue-list" id="down-list"></section>
+      </div>
+      <div class="side-panel" data-panel="check" id="check-panel" hidden></div>
+      <div class="side-panel" data-panel="fill" id="fill-panel" hidden></div>
+    </div>
+  </main>
+
+  <script type="module" src="./js/builder-page.js"></script>
+</body>
+</html>

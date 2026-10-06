@@ -17,9 +17,9 @@ export const breakdownHref = (puzzleId, solveId = null) =>
 
 export const playHref = (puzzleId) => `./puzzle.html?id=${encodeURIComponent(puzzleId)}`;
 
-/** "Fri, Sep 25" (+ year when not this year), or the id for special puzzles. */
+/** "Fri, Sep 25" (+ year when not this year); undated puzzles go by their title. */
 export function puzzleName(p) {
-  if (!p?.date) return p?.id ?? '';
+  if (!p?.date) return p?.title || p?.id || '';
   const d = new Date(p.date + 'T12:00:00Z');
   const sameYear = d.getUTCFullYear() === new Date().getFullYear();
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', ...(sameYear ? {} : { year: 'numeric' }), timeZone: 'UTC' });

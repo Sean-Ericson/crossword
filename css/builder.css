@@ -1,0 +1,580 @@
+/* builder.css — the puzzle builder (builder.html): an editable header, the
+   grid with block editing, and a side panel of clue boxes and checks.
+   Builds on player.css (board, toolbar, menus, presence). */
+
+/* ---------- header: the title and byline are fields ---------- */
+
+.builder-header {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.title-input,
+.byline-input {
+  font: inherit;
+  color: var(--color-text);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 2px 6px;
+}
+
+.title-input {
+  font-size: 22px;
+  font-weight: 700;
+  margin-left: -7px;
+  width: 24ch;
+  max-width: 100%;
+}
+
+/* fields as wide as their text where the browser can (else the widths above) */
+@supports (field-sizing: content) {
+  .title-input,
+  .byline-input {
+    field-sizing: content;
+    min-width: 7ch;
+  }
+
+  .title-input {
+    max-width: min(40ch, 100%);
+  }
+}
+
+.byline {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.byline-input {
+  font-size: 13px;
+  width: 22ch;
+}
+
+.title-input:hover,
+.byline-input:hover {
+  border-color: var(--color-border);
+}
+
+.title-input:focus,
+.byline-input:focus {
+  outline: none;
+  border-color: var(--color-link);
+  background: var(--color-bg);
+}
+
+.title-input::placeholder {
+  color: var(--color-text-faint);
+}
+
+.status-pill {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: var(--color-bg-muted);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.status-pill:empty {
+  display: none;
+}
+
+.status-pill.published {
+  background: var(--color-ok-bg);
+  color: var(--color-ok);
+}
+
+.status-pill.published.changed {
+  background: var(--color-solved-clean-bg);
+  color: var(--color-text);
+}
+
+.status-pill.withdrawn {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.save-state {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ---------- toolbar ---------- */
+
+.tool-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.tool-btn:disabled:hover {
+  background: none;
+}
+
+.builder-toolbar .btn-compact {
+  margin-left: 6px;
+  padding: 6px 16px;
+}
+
+/* ---------- the grid ---------- */
+
+.builder-page .cell.black {
+  cursor: pointer;
+}
+
+/* the cursor on a black square: a yellow frame, so it still reads as black */
+.builder-page .cell.black.sel-cell {
+  background: var(--color-black);
+  box-shadow: inset 0 0 0 3px var(--color-cell-selected);
+}
+
+.board.block-mode {
+  cursor: crosshair;
+}
+
+.board.block-mode .cell:hover {
+  box-shadow: inset 0 0 0 2px var(--color-text-muted);
+}
+
+/* the squares a problem in the Check tab is about */
+.builder-page .cell.flagged {
+  box-shadow: inset 0 0 0 3px var(--color-wrong);
+}
+
+/* the clue bar holds a field */
+.builder-bar .clue-bar-main {
+  cursor: text;
+}
+
+.bar-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 15px;
+  color: var(--color-text);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 4px 2px;
+}
+
+.bar-input:focus {
+  outline: none;
+  border-bottom-color: var(--color-text);
+}
+
+.bar-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* ---------- side panel: Clues / Check / Fill ---------- */
+
+.builder-side {
+  flex: 0 1 460px;
+  min-width: 320px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.side-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 8px;
+}
+
+.side-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  padding: 8px 14px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+}
+
+.side-tab:hover {
+  color: var(--color-text);
+}
+
+.side-tab.active {
+  color: var(--color-text);
+  font-weight: 700;
+  border-bottom-color: var(--color-text);
+}
+
+.tab-count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.tab-count:empty {
+  display: none;
+}
+
+.side-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding-right: 4px;
+}
+
+/* the two lists run one after the other in the panel's scroll */
+.side-panel .clue-list {
+  height: auto;
+  min-width: 0;
+}
+
+.side-panel .clue-list + .clue-list {
+  margin-top: 18px;
+}
+
+.side-panel .clue-items {
+  overflow: visible;
+}
+
+.builder-clue {
+  align-items: flex-start;
+  cursor: default;
+}
+
+.builder-clue .clue-item-num {
+  padding-top: 3px;
+}
+
+.clue-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.clue-input {
+  display: block;
+  width: 100%;
+  font: inherit;
+  font-size: 14px;
+  color: var(--color-text);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  padding: 2px 2px 3px;
+}
+
+.clue-input:focus {
+  outline: none;
+  border-bottom-color: var(--color-text);
+}
+
+.clue-input::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.clue-sub {
+  display: flex;
+  gap: 10px;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.clue-answer {
+  font-family: var(--font-grid);
+  letter-spacing: 1px;
+  overflow-wrap: anywhere;
+}
+
+.clue-count.none {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+/* ---------- the Check tab ---------- */
+
+#check-panel h3 {
+  margin: 8px 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.problem {
+  display: block;
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+}
+
+.problem:hover {
+  background: var(--color-bg-muted);
+}
+
+.problem.blocker {
+  border-left-color: var(--color-error);
+}
+
+.problem.warning {
+  border-left-color: var(--color-gold);
+}
+
+.check-ok {
+  margin: 8px 0 14px;
+  font-weight: 600;
+  color: var(--color-ok);
+}
+
+/* ---------- the Fill tab ---------- */
+
+.fill-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 6px 0 8px;
+}
+
+.fill-pattern {
+  font-family: var(--font-grid);
+  letter-spacing: 1px;
+  color: var(--color-text-muted);
+}
+
+.fill-only {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.fill-only input {
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.fill-words {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 4px;
+}
+
+.fill-word {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  font-family: var(--font-grid);
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-align: left;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.fill-word:hover {
+  border-color: var(--color-link);
+}
+
+/* the letters a suggestion would add */
+.fill-word .fw-new {
+  color: var(--color-link);
+  font-weight: 700;
+}
+
+.fw-score {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--color-seq-3) calc(var(--s) * 1%), var(--color-border) 0);
+}
+
+.fill-note,
+.fill-total {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* an empty square in an entry nothing in the word list fits */
+.builder-page .cell.dead::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-error);
+  z-index: 3;
+}
+
+/* ---------- dialogs ---------- */
+
+.notes-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  resize: vertical;
+}
+
+.publish-list {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  text-align: left;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+
+.publish-list.blockers {
+  color: var(--color-text);
+}
+
+.modal p.publish-note {
+  font-size: 13px;
+}
+
+.audience {
+  margin: 4px 0 14px;
+  padding: 12px 14px;
+  text-align: left;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.audience-title {
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.audience-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.audience-row input {
+  accent-color: var(--color-accent);
+}
+
+.audience-summary {
+  color: var(--color-text-muted);
+}
+
+.audience-choose {
+  padding-left: 18px;
+}
+
+.author-list {
+  margin: 0 0 18px;
+  text-align: left;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.author-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 15px;
+}
+
+.author-row + .author-row {
+  border-top: 1px solid var(--color-border);
+}
+
+.author-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.author-note {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.author-row .btn-quiet {
+  margin-left: auto;
+  color: var(--color-error);
+}
+
+/* ---------- narrower screens: the panel goes under the grid ---------- */
+
+@media (max-width: 1020px) {
+  .builder-side {
+    width: 100%;
+    max-width: 560px;
+    height: 440px;
+    flex: 0 0 auto;
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .puzzle-header.builder-header {
+    white-space: normal;
+    padding: 6px 12px 2px;
+  }
+
+  .title-input {
+    font-size: 17px;
+    width: 100%;
+  }
+
+  .byline-input {
+    width: 16ch;
+  }
+
+  .builder-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .builder-side {
+    min-width: 0;
+  }
+}

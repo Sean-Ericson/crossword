@@ -29,6 +29,8 @@
  *     GEXT: byte per cell; bit 0x80 = circled
  */
 
+import { decodeCp1252 } from './cp1252.js';
+
 const MAGIC = 'ACROSS&DOWN';
 
 export class PuzParseError extends Error {
@@ -100,7 +102,8 @@ export function parsePuz(data) {
   const major = parseInt(version, 10) || 1;
   // v1.x is nominally ISO-8859-1 but windows-1252 is a superset in practice
   // (NYT smart punctuation lands in 0x80-0x9F); v2.x is UTF-8.
-  const decoder = new TextDecoder(major < 2 ? 'windows-1252' : 'utf-8');
+  const utf8 = new TextDecoder('utf-8');
+  const decoder = { decode: (b) => (major < 2 ? decodeCp1252(b) : utf8.decode(b)) };
 
   const width = bytes[start + 44];
   const height = bytes[start + 45];

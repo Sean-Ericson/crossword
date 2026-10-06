@@ -31,6 +31,10 @@ const DEFAULTS = {
   // ("Firefox", "Chrome", ...) or "Cached Cookies" to read the JSON file
   // nytxw_puz caches - the option for a headless Linux box.
   nytBrowser: 'Firefox',
+  // A word list for the puzzle builder's suggestions, on top of the
+  // archive's own answers: a file of WORD;SCORE lines (Spread the Wordlist,
+  // Peter Broda's list, ...). Relative to the site folder; null = none.
+  wordList: null,
   // Local "HH:MM" for the daily download and the nightly backup; null = off.
   dailyUpdateAt: '23:30',
   backupAt: '04:00',
@@ -70,8 +74,8 @@ export function loadConfig(overrides = {}) {
   if (cfg.publicUrl) cfg.publicUrl = new URL(cfg.publicUrl).origin; // validate + normalize
   if (!cfg.python) cfg.python = detectPython();
   // relative paths in config.json are relative to the site folder
-  for (const key of ['dataDir', 'puzzlesDir', 'nytxwPath']) {
-    cfg[key] = path.resolve(SITE_DIR, cfg[key]);
+  for (const key of ['dataDir', 'puzzlesDir', 'nytxwPath', 'wordList']) {
+    if (cfg[key]) cfg[key] = path.resolve(SITE_DIR, cfg[key]);
   }
   return cfg;
 }

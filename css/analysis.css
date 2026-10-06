@@ -181,3 +181,14 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* a custom puzzle's ratings and notes (js/feedback.js) */
+.feedback-section {
+  max-width: 640px;
+  margin-bottom: 28px;
+}
+
+.feedback-section .feedback-form {
+  border-top: none;
+  padding-top: 4px;
+}
