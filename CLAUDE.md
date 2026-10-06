@@ -6,27 +6,22 @@ Cloudflare setup at **https://cross.ho.house**. Browser code is vanilla JS
 ES modules: no build step, no framework. The server is Node 22.13+; its
 only dependency is `ws`, and it uses `node:sqlite`.
 
-README.md covers features and usage. DEPLOY.md covers hosting, config,
-and the switch-over. This file covers what you need to change code safely.
+README.md covers features and usage. DEPLOY.md covers hosting and config.
+This file covers what you need to change code safely.
 
 ## Branches and state
 
-- `self-host`: the current app, meaning the server and the new client.
-  Develop here.
-- `main`: the **old GitHub Pages site**, still live during the switch-over
-  week. It uses a GitHub-API "backend" with a shared PAT, and its
-  `crossword-data` repo holds the progress. It only gets puzzle commits and
-  the "we're moving" banner (`js/move-banner.js`). When the switch-over is
-  done, `self-host` is merged into `main` and Pages is turned off. See
-  DEPLOY.md "When the week is over".
-- The home PC runs the server from a clone on `self-host`. To deploy:
+- `main`: the app. Develop here. (`self-host` was merged into it on
+  2026-10-05, when the old GitHub Pages site was retired. Its progress
+  repo, `crossword-data`, is archived.)
+- The home PC runs the server from a clone on `main`. To deploy:
   `git pull` there, then run
   `Stop-ScheduledTask 'Crossword server'; Start-ScheduledTask 'Crossword server'`.
   The task runs `node.exe` directly at boot under S4U, so it has no window
   and can't use `gh auth` or DPAPI-protected secrets. Its log is
   `logs/server.log`.
   `server/config.json` is gitignored and lives only there; it has
-  `host 0.0.0.0` and `publicUrl`, and during the overlap `githubSync` too.
+  `host 0.0.0.0` and `publicUrl`.
 
 ## Map
 
@@ -51,7 +46,7 @@ and the switch-over. This file covers what you need to change code safely.
 | `js/solve-analysis.js` | Pure: the event log's kinds (documented at the top), `analyzeSolve` (per-square and per-entry times, errors, dwell, co-op credit), and `summarize` (what's stored per solve). Shared by client and server. **Bump `ANALYSIS_VERSION` when `summarize` changes**; the server redoes older summaries at startup |
 | `server/db.mjs` | SQLite `Store`. Schema migrations are keyed on `PRAGMA user_version`: bump `SCHEMA_VERSION` and use `CREATE … IF NOT EXISTS`. `solo_solves` is the solo stats log. Co-op stats are derived from `solves`. `solve_events` is append-only (reset logs `r`, it never deletes). `custom_puzzles` (+ `_authors`, `_shares`, `puzzle_feedback`) hold puzzles made on the site; `visibleCustomIds`/`canSeePuzzle`/`puzzleFilter` decide who sees one |
 | `server/auth.mjs` | scrypt, sessions (sha256 of the token), `LoginLimiter` (in memory; restarting clears it), `tempPassword` |
-| `server/github-sync.mjs` | Two-way sync with the old site's `crossword-data` repo, overlap period only. Solo solves only |
+| `server/github-sync.mjs` | Two-way sync with the old site's `crossword-data` repo, used only during the switch-over and off now (no `githubSync` in the config). Solo solves only |
 | `server/puzzles.mjs`, `tools/fetch_one.py`, `tools/update_puzzles.py` | Puzzle loading and NYT downloads. Python and `../nytxw_puz` do the fetching. Custom ids load the published copy from the DB, never a file; `forget(id)` drops a cached model on Update |
 | `js/custom-puzzle.js` | Custom puzzles' doc format (`grid` like a record's `fill`; clues keyed by direction + first square, `A0`/`D4`, so they survive block edits), `applyChange` (the one validator for edits, on both ends of the build socket), `docToPuz` (the `parsePuz` shape: `new PuzzleModel(docToPuz(doc))` everywhere), `docFromPuz` (uploads), `problems` (publish blockers and warnings), features |
 | `builder.html`, `js/builder-page.js`, `js/builder-engine.js`, `js/clue-editor.js` | The builder: `LiveBuild` + `GridView` + `BuildEngine` (a `SolveEngine` whose arrows land on blocks and that never completes), clue rows keyed by entry (focus survives a co-author's block edit), Check and Fill tabs, the publish/share/authors dialogs, undo of your own steps |
@@ -76,8 +71,8 @@ and the switch-over. This file covers what you need to change code safely.
   per puzzle. Any number of co-op solves can exist per puzzle, one per
   group of members. Co-op results never go into solo stats.
 - **Record schema is 1** (`fill[]`, `marks[]` using the `MARK_*` bits, and
-  so on). It's shared with `crossword-data`, so keep it compatible while
-  the sync runs.
+  so on). It's the old site's format, which `import-github.mjs` and the
+  sync still read.
 - **Puzzle ids** are `YYYY-MM-DD`, with an optional `mini-`, `midi-` or
   `bonus-` prefix, or `custom-…` for puzzles made on the site (they live in
   the DB, never in `puzzles/`). Any other name is a "special" puzzle.
@@ -132,5 +127,5 @@ XWORD_DATA_DIR=<scratch> node server/tools/seed-demo.mjs   # demo data for the s
   The machine-specific paths are in Claude's memory.
 - The Git Bash heredoc + Python-edit route has turned `'\n'` into real
   newlines in JS more than once. Run `node --check` after scripted edits.
-- Don't push, or deploy to the live site, without asking. Both `main`
-  (live Pages) and the home server serve real people.
+- Don't push, or deploy to the live site, without asking. The home
+  server serves real people, and it runs `main`.

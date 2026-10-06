@@ -180,8 +180,6 @@ choose **End**, then **Run**.
 account without storing your password. Because of that, it can't use
 anything that's unlocked by your Windows login:
 
-- **GitHub:** `gh auth` isn't available to it, so put the token in
-  `server\config.json` (`githubSync.token`).
 - **NYT cookies:** reading Firefox's cookies still works. If the log shows
   NYT downloads failing because of cookies, which is likely with Chrome or
   Edge, set `"nytBrowser": "Cached Cookies"` so it uses the cookie file
@@ -223,81 +221,13 @@ at all.
 - The next day, look for `daily puzzle update` and `backup written` lines
   in the server log. On Linux, use `journalctl -u crossword`.
 
-## Running alongside the old GitHub site (switch-over week)
+## The old GitHub site
 
-While both sites are up, the server keeps solo progress and stats in sync
-with the old site's data repo (`crossword-data`), in both directions. Only
-people with the same name on both sites take part. Co-op solves exist only
-on the new site.
-
-### Turn the sync on
-
-Add this to `server/config.json`, then restart the server:
-
-```json
-"githubSync": {
-  "repo": "Sean-Ericson/crossword-data",
-  "branch": "main",
-  "token": "github_pat_…",
-  "intervalSec": 120
-}
-```
-
-The token needs Contents read/write on `crossword-data`. The token the old
-site uses works. If you leave `token` out, the server tries the
-`XWORD_GITHUB_TOKEN` environment variable, then `gh auth token`.
-
-The server log shows `github sync with … every 120s` at startup. After
-that, it logs a `github sync: pulled …, pushed …` line whenever something
-moved.
-
-### What people will see
-
-- **Progress:** the new site picks up changes from the old site within
-  about 2 minutes. The old site picks up changes from the new site the
-  next time that puzzle is opened there.
-- **Conflicts:** if the same puzzle was played on both sites, the more
-  recently edited copy wins. Time spent is never lost. These are the same
-  rules the old site used between devices.
-- **Open puzzles:** a puzzle someone has open on the new site isn't
-  updated from GitHub until they close it.
-
-### Keep new puzzles coming on the old site
-
-The server downloads puzzles for the new site only. The old site gets its
-puzzles by pushing them to GitHub, which its own scheduled tasks did. Run
-those tasks from a separate checkout of `main` during the overlap:
-
-1. Make the checkout next to `nytxw_puz`, so the old tools can find it:
-
-   ```powershell
-   cd <folder that holds crossword-site and nytxw_puz>
-   git clone https://github.com/Sean-Ericson/crossword crossword-old
-   ```
-
-2. Register the old tasks under new names. `install-windows.ps1` deletes
-   the old names, so reusing them would get them removed:
-
-   ```powershell
-   schtasks /create /tn "Crossword old-site daily" /tr "\"$PWD\crossword-old\daily_update.bat\"" /sc daily /st 23:35 /rl limited /f
-   schtasks /create /tn "Crossword old-site fetcher" /tr "\"$PWD\crossword-old\fetch_watch.bat\"" /sc onlogon /f
-   ```
-
-That checkout pushes to GitHub, so it needs git credentials (`gh auth
-login`) and the `.github_token` file described in its `SETUP-SCHEDULED.md`.
-
-### When the week is over
-
-1. Remove `githubSync` from `server/config.json` and restart the server.
-2. Delete the two old-site tasks:
-
-   ```powershell
-   schtasks /delete /tn "Crossword old-site daily" /f
-   schtasks /delete /tn "Crossword old-site fetcher" /f
-   ```
-
-3. Turn off GitHub Pages: repo → Settings → Pages. Then merge `self-host`
-   into `main`.
+Until 2026-10-05 the crossword was a GitHub Pages site that kept progress
+in the `crossword-data` repo. It's retired: Pages is off, its scheduled
+tasks are gone, and `crossword-data` is archived. The server can still
+sync with that repo (`githubSync` in the config, `server/github-sync.mjs`),
+but leave it off.
 
 ## Backups and restore
 
@@ -306,8 +236,9 @@ and are complete SQLite files. They include the puzzles people made on the
 site, which live in the database rather than in `puzzles/`.
 
 An update sometimes adds tables to the database. The server does that by
-itself when it starts. Copy `server/data/crossword.db` before restarting
-on a new version if you want a sure way back.
+itself when it starts. For a sure way back, stop the server and copy every
+`server/data/crossword.db*` file (recent changes can still be in
+`crossword.db-wal`) before starting the new version.
 
 To restore a backup:
 
