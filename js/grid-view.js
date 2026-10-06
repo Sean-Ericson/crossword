@@ -15,7 +15,8 @@ export class GridView {
   /**
    * @param {HTMLElement} container
    * @param {import('./model.js').PuzzleModel} model
-   * @param {{onCellClick?: (index:number) => void}} opts
+   * @param {{onCellClick?: (index:number) => void, clickBlack?: boolean}} opts
+   *   clickBlack: black squares are clickable too (the builder)
    */
   constructor(container, model, opts = {}) {
     this.model = model;
@@ -43,7 +44,7 @@ export class GridView {
 
     this.board.addEventListener('mousedown', (e) => {
       const cellEl = e.target.closest('.cell');
-      if (!cellEl || cellEl.classList.contains('black')) return;
+      if (!cellEl || (cellEl.classList.contains('black') && !opts.clickBlack)) return;
       e.preventDefault(); // keep focus/keyboard on document
       opts.onCellClick?.(Number(cellEl.dataset.i));
     });
@@ -57,6 +58,7 @@ export class GridView {
     this.rescale();
 
     this.appliedSelection = [];
+    this.remote = new Map(); // key -> {els, index, tag}
   }
 
   rescale() {
@@ -76,6 +78,7 @@ export class GridView {
     this.board.style.width = `${cell * cols + 5}px`; // + frame/gap slack
     this.board.style.height = `${cell * rows + 5}px`;
     this.board.style.fontSize = `${Math.max(8, cell * 0.62)}px`;
+    this.remote?.forEach((r) => this.placeTag(r));
   }
 
   /** Refresh a cell's letter + marker classes from the progress record. */
@@ -139,5 +142,81 @@ export class GridView {
 
   setCompleted(done) {
     this.board.classList.toggle('completed', done);
+  }
+
+  /** Put `cls` on exactly these cells (the builder's highlights). */
+  setCellClass(cls, cells) {
+    this.classed ??= new Map();
+    for (const i of this.classed.get(cls) ?? []) this.cellEls[i]?.classList.remove(cls);
+    const list = [...new Set(cells)].filter((i) => this.cellEls[i]);
+    for (const i of list) this.cellEls[i].classList.add(cls);
+    this.classed.set(cls, list);
+  }
+
+  /** Circle or uncircle a white square (the builder). */
+  setCircled(index, on) {
+    const node = this.cellEls[index];
+    if (!node || this.model.cells[index].isBlack) return;
+    const circle = node.querySelector('.cell-circle');
+    if (on && !circle) node.prepend(el('div', { class: 'cell-circle' }));
+    if (!on) circle?.remove();
+  }
+
+  /** Take the board off the page (the builder makes a new one when the shape changes). */
+  destroy() {
+    this.resizeObserver.disconnect();
+    this.board.remove();
+  }
+
+  // ---------- other solvers' cursors ----------
+
+  /**
+   * Show someone else's cursor: an outlined cell, a light tint on their
+   * word, and a name tag. Kept apart from the local selection classes (all
+   * drawn as child elements) so the two never fight.
+   * @param {string} key      one per remote connection
+   * @param {{index:number, cells:number[], color:string, label?:string}} at
+   */
+  setRemoteCursor(key, { index, cells, color, label }) {
+    this.clearRemoteCursor(key);
+    const els = [];
+    for (const i of new Set([...cells, index])) {
+      const tint = el('div', { class: 'remote-tint', style: `--rc:${color}` });
+      this.cellEls[i].append(tint);
+      els.push(tint);
+    }
+    const caret = el('div', { class: 'remote-caret', style: `--rc:${color}` });
+    this.cellEls[index].append(caret);
+    els.push(caret);
+    let tag = null;
+    if (label) {
+      tag = el('div', { class: 'remote-tag', style: `--rc:${color}` }, label);
+      this.board.append(tag);
+      els.push(tag);
+    }
+    const entry = { els, index, tag };
+    this.remote.set(key, entry);
+    this.placeTag(entry);
+  }
+
+  placeTag({ tag, index }) {
+    if (!tag) return;
+    const cellEl = this.cellEls[index];
+    tag.style.left = `${cellEl.offsetLeft}px`;
+    tag.style.top = `${cellEl.offsetTop}px`;
+  }
+
+  clearRemoteCursor(key) {
+    const entry = this.remote.get(key);
+    if (!entry) return;
+    for (const node of entry.els) node.remove();
+    this.remote.delete(key);
+  }
+
+  /** Drop every remote cursor whose key isn't in `keep`. */
+  pruneRemoteCursors(keep) {
+    for (const key of [...this.remote.keys()]) {
+      if (!keep.has(key)) this.clearRemoteCursor(key);
+    }
   }
 }

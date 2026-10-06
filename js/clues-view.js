@@ -11,9 +11,10 @@ export class CluesView {
    *   barEl: HTMLElement, model: import('./model.js').PuzzleModel,
    *   onSelectWord: (word: object) => void,
    *   onBarNav: (delta: number) => void,
+   *   onBarTap?: () => void,
    * }} opts
    */
-  constructor({ acrossEl, downEl, barEl, model, onSelectWord, onBarNav }) {
+  constructor({ acrossEl, downEl, barEl, model, onSelectWord, onBarNav, onBarTap }) {
     this.model = model;
     this.itemsByWordId = new Map();
     this.active = null;
@@ -45,7 +46,7 @@ export class CluesView {
     buildList(acrossEl, 'Across', model.words.A);
     buildList(downEl, 'Down', model.words.D);
 
-    // current-clue bar: ‹ [num+dir  text] ›
+    // current-clue bar: ‹ [num+dir  text] ›  (tapping the text flips direction)
     this.barNum = el('span', { class: 'clue-bar-num' });
     this.barText = el('span', { class: 'clue-bar-text' });
     barEl.append(
@@ -54,7 +55,7 @@ export class CluesView {
         { class: 'clue-bar-nav', 'aria-label': 'Previous clue', onclick: () => onBarNav(-1) },
         '‹'
       ),
-      el('div', { class: 'clue-bar-main' }, [this.barNum, this.barText]),
+      el('div', { class: 'clue-bar-main', onclick: () => onBarTap?.() }, [this.barNum, this.barText]),
       el(
         'button',
         { class: 'clue-bar-nav', 'aria-label': 'Next clue', onclick: () => onBarNav(1) },
@@ -108,6 +109,32 @@ export class CluesView {
     for (const word of this.model.clueOrder) {
       const filled = word.cells.every((i) => record.fill[i] !== '');
       this.itemsByWordId.get(word.id).classList.toggle('filled', filled);
+    }
+  }
+
+  /**
+   * Colored dots on the clues other solvers are working on. A crowd on one
+   * clue shows two dots and "+N" (the tooltip names everyone).
+   * @param {Array<{wordId:string, color:string, label:string}>} markers
+   */
+  setRemoteMarkers(markers) {
+    for (const group of this.remoteDots ?? []) group.remove();
+    this.remoteDots = [];
+    const byWord = new Map();
+    for (const m of markers) {
+      if (!byWord.has(m.wordId)) byWord.set(m.wordId, []);
+      byWord.get(m.wordId).push(m);
+    }
+    for (const [wordId, here] of byWord) {
+      const li = this.itemsByWordId.get(wordId);
+      if (!li) continue;
+      const shown = here.length > 3 ? here.slice(0, 2) : here;
+      const group = el('span', { class: 'clue-remotes', title: here.map((m) => m.label).join(', ') }, [
+        ...shown.map(({ color }) => el('span', { class: 'clue-remote', style: `background:${color}` })),
+        shown.length < here.length ? el('span', { class: 'clue-remote-more' }, `+${here.length - shown.length}`) : null,
+      ]);
+      li.append(group);
+      this.remoteDots.push(group);
     }
   }
 }

@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Crossword Stats</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧩</text></svg>">
+  <script src="./js/theme.js"></script>
   <link rel="stylesheet" href="./css/base.css">
+  <link rel="stylesheet" href="./css/charts.css">
   <link rel="stylesheet" href="./css/stats.css">
 </head>
 <body>
@@ -16,18 +18,22 @@
       <a href="./stats.html">Stats</a>
     </nav>
     <span class="spacer"></span>
-    <span id="sync-badge" class="badge" hidden></span>
+    <button class="theme-toggle" type="button" title="Dark mode" aria-label="Dark mode" aria-pressed="false"></button>
     <span id="profile-chip" class="badge"></span>
   </header>
 
   <main class="stats-main">
-    <h1>Statistics</h1>
+    <div class="stats-top">
+      <h1>Statistics</h1>
+      <button id="export-btn" class="link-btn" type="button" title="Every solve of the people picked, all types, as CSV">Download data</button>
+    </div>
     <div class="type-tabs" id="type-tabs"></div>
     <div class="user-select" id="user-select"></div>
+    <div class="filter-bar" id="filter-bar"></div>
+    <nav class="section-tabs" id="section-tabs" role="tablist" aria-label="Sections"></nav>
     <div id="stats-body"></div>
   </main>
 
-  <script type="module" src="./js/move-banner.js"></script>
   <script type="module" src="./js/stats-page.js"></script>
 </body>
 </html>

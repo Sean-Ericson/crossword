@@ -1,0 +1,201 @@
+/* admin.css — account management page. */
+
+.admin-main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+
+.admin-main h1 {
+  font-size: 26px;
+  margin: 0 0 6px;
+}
+
+.admin-main h2 {
+  font-size: 18px;
+  margin: 32px 0 10px;
+}
+
+.admin-note {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+
+/* filter + count over a long list */
+.admin-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 0 10px;
+}
+
+.admin-tools input[type='search'] {
+  flex: 1 1 200px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.admin-count {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.admin-tools .btn-quiet {
+  color: var(--color-link);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.admin-none {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-table .acct {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-table .acct .user-dot {
+  flex: 0 0 auto;
+}
+
+.acct-names {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.acct-login {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.admin-table th {
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--color-text-muted);
+  border-bottom: 2px solid var(--color-text);
+  padding: 6px 8px;
+}
+
+.admin-table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 8px;
+  vertical-align: middle;
+}
+
+.admin-table td:last-child {
+  text-align: right;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.admin-table .btn-danger {
+  color: var(--color-error);
+}
+
+.admin-table .btn-danger:hover {
+  background: var(--color-error-bg);
+}
+
+.admin-table .tag {
+  font-size: 11px;
+  background: var(--color-bg-muted);
+  border-radius: 8px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  color: var(--color-text-muted);
+}
+
+.admin-table .btn {
+  padding: 4px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* phones: drop the date and shrink the buttons so rows stay short */
+@media (max-width: 600px) {
+  .admin-table .since {
+    display: none;
+  }
+
+  .admin-table td {
+    padding: 8px 4px;
+  }
+
+  .row-actions {
+    gap: 4px;
+  }
+
+  .admin-table .btn {
+    padding: 3px 9px;
+    font-size: 12px;
+  }
+}
+
+.admin-add form {
+  display: grid;
+  gap: 10px;
+  max-width: 360px;
+}
+
+.admin-add label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-add .hint {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.admin-add input:not([type='checkbox']) {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 10px;
+  font-size: 15px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.admin-add label.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 400;
+}
+
+.new-password {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+  background: var(--color-bg-muted);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin: 10px 0;
+  user-select: all;
+}

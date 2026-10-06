@@ -1,8 +1,9 @@
 /*
  * archive-page.js — home page. Tabs per puzzle type: Daily/Mini/Midi get a
  * month calendar with per-day solve status for the active profile; Bonus
- * (monthly) and Special get list views. The Daily tab also shows the
- * latest-puzzle hero.
+ * (monthly) and Special get list views; Custom (custom-tab.js) lists the
+ * puzzles people made here. The Daily tab also shows the latest-puzzle
+ * hero. index.html#custom opens the Custom tab.
  */
 
 import {
@@ -13,14 +14,13 @@ import {
   parsePuzzleId,
   themeTitle,
 } from './util.js';
-import { loadLocal, statusOf } from './state.js';
-import { getActiveUser } from './profiles.js';
+import { loadMe } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
-import { Sync } from './sync.js';
-import { initSyncBadge } from './sync-ui.js';
+import { api } from './api.js';
 import { ARCHIVE_START } from './config.js';
+import { listNames } from './people.js';
+import { renderCustomTab, isNew } from './custom-tab.js';
 
-const user = getActiveUser();
 const pad = (n) => String(n).padStart(2, '0');
 const TAB_KEY = 'xw:site:archive-tab';
 
@@ -30,6 +30,7 @@ const TABS = [
   ['midi', 'Midi'],
   ['bonus', 'Bonus'],
   ['special', 'Special'],
+  ['custom', 'Custom'],
 ];
 
 const STATUS_ICON = {
@@ -40,11 +41,14 @@ const STATUS_ICON = {
 };
 
 async function main() {
+  const me = await loadMe();
   initProfileChip(qs('#profile-chip'));
-  const sync = new Sync(user);
-  initSyncBadge(qs('#sync-badge'), sync);
   const todayStr = new Date().toISOString().slice(0, 10);
 
+  // your solo progress + the co-op solves you're in, for the status icons
+  const progressReq = api.get('progress').catch(() => ({ solo: {}, coop: {} }));
+  const usersReq = api.get('users').catch(() => ({ users: [] })); // display names
+  const customReq = api.get('custom-puzzles').catch(() => ({ puzzles: [] }));
   let index = null;
   try {
     const resp = await fetch('./puzzles/index.json', { cache: 'no-cache' });
@@ -52,26 +56,28 @@ async function main() {
   } catch {
     /* fall through to empty state */
   }
+  const progress = await progressReq;
+  const displayNames = new Map((await usersReq).users.map((u) => [u.name, u.display_name]));
+  const custom = (await customReq).puzzles;
+  const customById = new Map(custom.map((p) => [p.id, p]));
 
   const puzzles = (index?.puzzles ?? []).map((p) => ({
     ...p,
     type: p.type ?? parsePuzzleId(p.id).type,
   }));
-  if (!puzzles.length) {
-    qs('#archive-empty').hidden = false;
-    return;
-  }
 
   const byType = new Map(TABS.map(([t]) => [t, []]));
   for (const p of puzzles) {
     (byType.get(p.type) ?? byType.get('special')).push(p);
   }
 
-  // ----- tabs (only those with content; Daily always) -----
+  // ----- tabs (only those with content; Daily and Custom always) -----
   const tabsEl = qs('#type-tabs');
-  const available = TABS.filter(([t]) => t === 'daily' || byType.get(t).length);
-  let tab = localStorage.getItem(TAB_KEY);
+  const available = TABS.filter(([t]) => t === 'daily' || t === 'custom' || byType.get(t).length);
+  const fromHash = location.hash.slice(1);
+  let tab = available.some(([t]) => t === fromHash) ? fromHash : localStorage.getItem(TAB_KEY);
   if (!available.some(([t]) => t === tab)) tab = 'daily';
+  const newCustom = custom.filter((p) => isNew(p, progress)).length;
 
   const monthView = {}; // per-tab current "YYYY-MM"
 
@@ -87,57 +93,103 @@ async function main() {
             onclick: () => {
               tab = t;
               localStorage.setItem(TAB_KEY, t);
+              history.replaceState(null, '', t === 'custom' ? '#custom' : location.pathname + location.search);
               renderTabs();
               renderCurrent();
             },
           },
-          label
+          [label, t === 'custom' && newCustom ? el('span', { class: 'tab-new', title: `${newCustom} new to you` }, String(newCustom)) : null]
         )
       );
     }
+    // on a phone the tabs scroll sideways: keep the chosen one in sight
+    const active = tabsEl.querySelector('.type-tab.active');
+    if (active) {
+      const box = tabsEl.getBoundingClientRect();
+      const at = active.getBoundingClientRect();
+      if (at.right > box.right) tabsEl.scrollLeft += at.right - box.right + 8;
+      else if (at.left < box.left) tabsEl.scrollLeft -= box.left - at.left + 8;
+    }
   }
-
-  // What this device knows locally, plus whatever the data repo says about
-  // puzzles it has never opened - otherwise a second machine shows an empty
-  // archive even though everything is synced.
-  const remoteSolves = new Map();
-  const remoteStarted = new Set();
-  const loadedYears = new Set();
-  let statsRequested = false;
 
   function statusBits(id) {
-    const record = loadLocal(user, id);
-    if (record) return { record, status: statusOf(record) };
-
-    const solve = remoteSolves.get(id);
-    if (solve) {
-      // Stand in for the real record; opening the puzzle pulls the rest.
-      const stub = { completed: true, elapsed: solve.seconds, clean: !!solve.clean };
-      return { record: stub, status: solve.clean ? 'solved-clean' : 'solved' };
+    const solo = progress.solo[id];
+    if (!solo) return { record: null, status: 'unsolved' };
+    if (solo.completed) {
+      return { record: { completed: true, elapsed: solo.elapsed }, status: solo.clean ? 'solved-clean' : 'solved' };
     }
-    if (remoteStarted.has(id)) return { record: null, status: 'in-progress' };
-    return { record: null, status: 'unsolved' };
+    return { record: null, status: solo.pct > 0 || solo.elapsed > 0 ? 'in-progress' : 'unsolved' };
   }
 
-  async function ensureRemoteStats() {
-    if (!sync.active || statsRequested) return;
-    statsRequested = true;
-    const doc = await sync.pullStats(user);
-    const solves = doc?.solves ?? {};
-    if (!Object.keys(solves).length) return;
-    for (const [id, entry] of Object.entries(solves)) remoteSolves.set(id, entry);
-    renderCurrent();
+  /** The other people in a co-op solve: "Devon, Kam and 3 others". */
+  const others = (s, max) =>
+    listNames(
+      s.members.filter((n) => n !== me.name).map((n) => displayNames.get(n) || n),
+      max
+    ) || 'nobody else';
+
+  /** Small marker for days that have co-op solves you're part of. */
+  function coopMarker(id) {
+    const solves = progress.coop[id];
+    if (!solves?.length) return null;
+    const title = solves
+      .map((s) => `Co-op with ${others(s, 6)} — ${s.completed ? 'solved' : `${s.pct}%`}`)
+      .join('\n');
+    return el('span', { class: 'day-coop' + (solves.some((s) => s.completed) ? ' done' : ''), title }, '👥');
   }
 
-  /** Progress files are sharded by year, so fetch the year on screen. */
-  async function ensureRemoteYear(year) {
-    if (!sync.active || !year || loadedYears.has(year)) return;
-    loadedYears.add(year);
-    const ids = await sync.listProgress(user, year);
-    const added = ids.filter((id) => !remoteStarted.has(id));
-    if (!added.length) return;
-    for (const id of added) remoteStarted.add(id);
-    renderCurrent();
+  // ----- co-op solves still in progress -----
+  const STRIP_SHOWS = matchMedia('(max-width: 600px)').matches ? 4 : 8; // then "Show N more"
+  let stripExpanded = false;
+
+  function renderCoopStrip() {
+    const host = qs('#coop-strip');
+    const open = Object.values(progress.coop)
+      .flat()
+      .filter((s) => !s.completed)
+      .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
+    host.hidden = !open.length;
+    host.textContent = '';
+    if (!open.length) return;
+    host.append(el('h2', {}, 'Co-op solves in progress'));
+    const list = el('div', { class: 'coop-items' });
+    const shown = stripExpanded ? open : open.slice(0, STRIP_SHOWS);
+    for (const s of shown) {
+      const info = parsePuzzleId(s.puzzle_id);
+      const label = info.date
+        ? `${formatDateLong(info.date)}${info.type !== 'daily' ? ` (${info.type})` : ''}`
+        : customById.get(s.puzzle_id)?.title || (info.type === 'custom' ? 'A custom puzzle' : s.puzzle_id);
+      list.append(
+        el(
+          'a',
+          {
+            class: 'coop-item',
+            href: `./puzzle.html?id=${encodeURIComponent(s.puzzle_id)}&solve=${encodeURIComponent(s.id)}`,
+          },
+          [
+            el('span', { class: 'coop-title' }, label),
+            el('span', { class: 'coop-meta' }, `with ${others(s, 3)} · ${s.pct}% · ${formatTime(s.elapsed)}`),
+          ]
+        )
+      );
+    }
+    if (open.length > STRIP_SHOWS) {
+      list.append(
+        el(
+          'button',
+          {
+            class: 'coop-item coop-toggle',
+            type: 'button',
+            onclick: () => {
+              stripExpanded = !stripExpanded;
+              renderCoopStrip();
+            },
+          },
+          stripExpanded ? 'Show fewer' : `Show ${open.length - STRIP_SHOWS} more`
+        )
+      );
+    }
+    host.append(list);
   }
 
   // ----- hero (Daily tab only) -----
@@ -248,7 +300,6 @@ async function main() {
     const view = monthView[tab];
 
     const [y, m] = view.split('-').map(Number);
-    ensureRemoteYear(String(y));
     syncMonthYearPickers(view, minMonth, maxMonth);
     prevBtn.disabled = view <= minMonth;
     nextBtn.disabled = view >= maxMonth;
@@ -274,7 +325,7 @@ async function main() {
       if (!puzzle) {
         // Not downloaded. If NYT published one, offer to fetch it.
         const inArchive = archiveStart && date >= archiveStart && date <= todayStr;
-        if (inArchive && sync.active) {
+        if (inArchive) {
           const id = tab === 'daily' ? date : `${tab}-${date}`;
           calEl.append(
             el(
@@ -307,6 +358,7 @@ async function main() {
           [
             el('span', {}, String(day)),
             el('span', { class: `day-status ${iconClass}` }, icon),
+            coopMarker(puzzle.id),
             record?.completed
               ? el('span', { class: 'day-time' }, formatTime(record.elapsed))
               : el('span', { class: 'day-time' }, ' '),
@@ -360,7 +412,6 @@ async function main() {
     monthView.bonus = `${year}-01`;
 
     calHeader.hidden = false;
-    ensureRemoteYear(String(year));
     // Bonus puzzles are monthly, so only the year picker makes sense here.
     monthSel.hidden = true;
     fillSelect(
@@ -420,7 +471,7 @@ async function main() {
         continue;
       }
       const published = date >= start && date <= todayStr;
-      if (published && sync.active) {
+      if (published) {
         host.append(
           el(
             'a',
@@ -436,13 +487,6 @@ async function main() {
             ]
           )
         );
-      } else if (published) {
-        host.append(
-          el('div', { class: 'special-item unavailable' }, [
-            el('span', { class: 'sp-title' }, monthName),
-            el('span', { class: 'sp-meta' }, 'not downloaded — connect sync to fetch'),
-          ])
-        );
       }
     }
   }
@@ -451,10 +495,22 @@ async function main() {
     calHeader.hidden = true;
     calEl.textContent = '';
     qs('#special-list').hidden = true;
+    qs('#custom-tab').hidden = tab !== 'custom';
+    qs('#archive-empty').hidden = tab === 'custom' || puzzles.length > 0;
     renderHero();
 
     const entries = byType.get(tab);
-    if (tab === 'bonus') {
+    if (tab === 'custom') {
+      renderCustomTab(qs('#custom-tab'), {
+        me,
+        puzzles: custom,
+        progress,
+        nameOf: (n) => displayNames.get(n) || n,
+        statusOf: statusBits,
+        icons: STATUS_ICON,
+        coopMarker,
+      });
+    } else if (tab === 'bonus') {
       renderBonusYear(entries);
     } else if (tab === 'special') {
       renderList(entries, 'Special puzzles', (p) => themeTitle(p.title) || p.title || p.id);
@@ -465,7 +521,7 @@ async function main() {
 
   renderTabs();
   renderCurrent();
-  ensureRemoteStats();
+  renderCoopStrip();
 }
 
 main();

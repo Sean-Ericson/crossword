@@ -29,7 +29,11 @@ export const PUZZLE_TYPE_LABELS = {
   midi: 'The Midi',
   bonus: 'Bonus',
   special: 'Special',
+  custom: 'Custom',
 };
+
+/** Puzzles made on the site (js/custom-puzzle.js); they live in the database. */
+export const CUSTOM_ID_RE = /^custom-[A-Za-z0-9_-]{4,32}$/;
 
 /**
  * Strip the synthesized "NY Times, Weekday, Month D, YYYY" prefix that
@@ -44,6 +48,7 @@ export function themeTitle(title) {
  *   "2026-07-21"        -> {type:'daily', date:'2026-07-21'}
  *   "mini-2026-07-21"   -> {type:'mini',  date:'2026-07-21'}   (also midi)
  *   "bonus-2026-07-01"  -> {type:'bonus', date:'2026-07-01'}   (monthly)
+ *   "custom-Xy3k9_Qa"   -> {type:'custom', date:null}          (made on the site)
  *   anything else       -> {type:'special', date:null}
  */
 export function parsePuzzleId(id) {
@@ -51,6 +56,7 @@ export function parsePuzzleId(id) {
   if (m) return { type: 'daily', date: m[1] };
   m = /^(mini|midi|bonus)-(\d{4}-\d{2}-\d{2})$/.exec(id);
   if (m) return { type: m[1], date: m[2] };
+  if (CUSTOM_ID_RE.test(id)) return { type: 'custom', date: null };
   return { type: 'special', date: null };
 }
 

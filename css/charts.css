@@ -1,0 +1,398 @@
+/* charts.css — the chart kit (js/charts.js): cards, legends, axes, marks,
+   tooltip and table view. Colors are --color-chart-* / seq / div tokens. */
+
+.chart {
+  margin: 0;
+  min-width: 0; /* let grid cells shrink below their content */
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 14px 16px 12px;
+  background: var(--color-bg);
+}
+
+.chart-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.chart-titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.chart-head h3 {
+  font-size: 15px;
+  margin: 0 0 2px;
+}
+
+.chart-head .chart-sub {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.chart-table-btn {
+  flex: 0 0 auto;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  padding: 3px 9px;
+}
+
+.chart-table-btn:hover,
+.chart-table-btn[aria-pressed='true'] {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+.chart-plot {
+  width: 100%;
+  min-height: 40px;
+}
+
+.chart-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: var(--font-ui);
+}
+
+.chart-note {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 8px 0 0;
+}
+
+/* ---------- chrome: hairline, recessive ---------- */
+
+.ch-grid {
+  stroke: var(--color-chart-grid);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.ch-axis {
+  stroke: var(--color-chart-axis);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.ch-tick,
+.ch-axis-label,
+.ch-rule-label {
+  font-size: 11px;
+  fill: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ch-axis-label {
+  font-size: 11px;
+  fill: var(--color-text-subtle);
+}
+
+.ch-cat {
+  font-size: 12px;
+  fill: var(--color-text);
+}
+
+.ch-cat.strong {
+  font-weight: 700;
+}
+
+.ch-val {
+  font-size: 11px;
+  fill: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.ch-rule {
+  stroke: var(--color-text-subtle);
+  stroke-width: 1;
+}
+
+.ch-cross {
+  stroke: var(--color-text-subtle);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+/* ---------- marks ---------- */
+
+.ch-dot {
+  stroke: var(--color-bg); /* the 2px surface ring */
+  stroke-width: 1.5;
+}
+
+.ch-hover-ring {
+  fill: none;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.ch-muted {
+  opacity: 0.9;
+}
+
+.ch-density {
+  stroke: var(--color-text-muted);
+  stroke-width: 2;
+}
+
+.ch-whisker {
+  stroke-width: 1.5;
+}
+
+.ch-bar {
+  transition: opacity 0.1s;
+}
+
+.ch-hit {
+  cursor: default;
+}
+
+.ch-hit.link,
+.ch-cell.link {
+  cursor: pointer;
+}
+
+.ch-cell:hover,
+.ch-square:hover {
+  stroke: var(--color-text);
+  stroke-width: 1.5;
+}
+
+.ch-cell-text {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* the crossword-shaped heatmap */
+.ch-grid-frame {
+  fill: none;
+  stroke: var(--color-grid-frame);
+  stroke-width: 1;
+}
+
+.ch-black {
+  fill: var(--color-black);
+}
+
+.ch-square {
+  stroke: var(--color-cell-border);
+  stroke-width: 0.5;
+}
+
+.ch-num {
+  font-size: 7px;
+  pointer-events: none;
+}
+
+.ch-letter {
+  font-family: var(--font-grid);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.sparkline {
+  display: block;
+  margin-top: 6px;
+}
+
+/* ---------- legend ---------- */
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 12.5px;
+  margin: 2px 0 10px;
+}
+
+.lg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+}
+
+button.lg-item {
+  padding: 2px 6px;
+  margin: -2px -6px;
+  border-radius: 4px;
+}
+
+button.lg-item:hover {
+  background: var(--color-hover-tint);
+}
+
+.lg-item.muted {
+  color: var(--color-text-muted);
+}
+
+.lg-item.active {
+  font-weight: 700;
+}
+
+.lg-key {
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.lg-rect {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.lg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.lg-line {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.scale-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+  margin: 2px 0 10px;
+}
+
+.scale-steps {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.scale-steps span {
+  width: 16px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+}
+
+.chart-controls .chart-legend {
+  margin: 0;
+}
+
+/* ---------- tooltip ---------- */
+
+.chart-tip {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  max-width: 280px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-modal);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.tip-title {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 3px;
+}
+
+.tip-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.tip-row strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.tip-key {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+
+.tip-label {
+  color: var(--color-text-muted);
+}
+
+.tip-note {
+  margin-top: 4px;
+  color: var(--color-text-muted);
+  font-size: 11.5px;
+}
+
+/* ---------- table view ---------- */
+
+.chart-table .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-table .data-table th {
+  text-align: left;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--color-text-muted);
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
+.chart-table .data-table td {
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.chart-table .table-scroll {
+  max-height: 320px;
+  overflow: auto;
+}
+
+.chart-table-foot {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 6px;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-link);
+  font: inherit;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}

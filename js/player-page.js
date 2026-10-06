@@ -1,7 +1,16 @@
 /*
- * player-page.js — controller for puzzle.html. Loads the puzzle, wires the
- * engine to the views, and owns the keyboard, toolbar, overlays, timer,
- * autosave, and completion flows.
+ * player-page.js — controller for puzzle.html. Loads the puzzle, joins the
+ * live solve on the server (net.js), wires the engine to the views, and
+ * owns the keyboard, toolbar, overlays, timer, presence, and completion.
+ *
+ * URL: puzzle.html?id=<puzzle>              your solo solve
+ *      puzzle.html?id=<puzzle>&solve=<id>   a co-op solve you're in
+ *
+ * Custom puzzles (custom-… ids) come from the API instead of a .puz file;
+ * their authors get pointed to the builder, since nobody solves their own.
+ *      puzzle.html?id=<custom>&test=1       an author's test solve of the
+ *                                           working copy: LocalSolve, no
+ *                                           server, nothing saved
  */
 
 import { parsePuz } from './puz.js';
@@ -10,28 +19,26 @@ import { SolveEngine } from './engine.js';
 import { GridView } from './grid-view.js';
 import { CluesView } from './clues-view.js';
 import { Timer } from './timer.js';
+import { LiveSolve } from './net.js';
+import { LocalSolve } from './local-solve.js';
+import { feedbackForm, loadFeedback } from './feedback.js';
+import { downloadPuz, puzFileName } from './puz-write.js';
+import { api } from './api.js';
 import { showModal, confirmDialog, toast } from './modals.js';
-import {
-  newProgress,
-  loadLocal,
-  saveLocal,
-  recordFitsModel,
-  hasAnyFill,
-  fillPercent,
-  mergeProgress,
-  addSolveLocal,
-  solveEntryFrom,
-} from './state.js';
-import { Sync } from './sync.js';
-import { initSyncBadge } from './sync-ui.js';
-import { tryLoadPuzzle, fetchOnDemand, isFetchable } from './fetch-puzzle.js';
+import { newProgress, hasAnyFill, fillPercent } from './state.js';
+import { tryLoadPuzzle, fetchOnDemand, isFetchable, loadCustomPuzzle } from './fetch-puzzle.js';
+import { isCustomId } from './custom-puzzle.js';
 import { loadSettings, saveSettings, SETTING_LABELS } from './settings.js';
-import { getActiveUser } from './profiles.js';
+import { loadMe } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
+import { TouchKeyboard, isTouchDevice } from './touch-keyboard.js';
+import { pickPeople } from './people-picker.js';
+import { listNames } from './people.js';
+import { makeMenu } from './menus.js';
+import { openRebusInput as rebusPopup } from './rebus-input.js';
 import {
   el,
   qs,
-  debounce,
   formatTime,
   formatDateLong,
   parsePuzzleId,
@@ -40,40 +47,54 @@ import {
 } from './util.js';
 
 const params = new URLSearchParams(location.search);
-const user = getActiveUser();
+
+const flagsOf = (r) => ({ used_check: !!r.used_check, used_reveal: !!r.used_reveal, autocheck: !!r.autocheck });
+
+// Presence chips shown in the toolbar before the rest fold into "+N"
+const maxChips = () => (matchMedia('(max-width: 600px)').matches ? 3 : 6);
+const STATUS_TEXT = { solving: 'solving', here: 'here, paused', away: 'away' };
 
 async function main() {
+  const me = await loadMe();
+  const user = me.name;
+  initProfileChip(qs('#profile-chip'));
+
   // ----- load puzzle -----
-  const fileParam = params.get('file');
-  const id = params.get('id') || (fileParam ? fileParam.replace(/.*\//, '').replace(/\.puz$/i, '') : null);
+  const id = params.get('id');
+  const solveParam = params.get('solve');
   if (!id) {
     showFatal('No puzzle specified. Pick one from the archive.');
     return;
   }
-  // The sync client is needed early: it both loads progress and, when the
-  // puzzle isn't in the archive yet, queues it for download.
-  const sync = new Sync(user);
-
-  let buffer = null;
-  if (fileParam) {
-    const resp = await fetch(fileParam).catch(() => null);
-    if (resp?.ok) buffer = await resp.arrayBuffer();
-  } else {
-    buffer = await tryLoadPuzzle(id);
-    if (!buffer) buffer = await obtainMissingPuzzle(id, sync);
-    if (!buffer) return; // obtainMissingPuzzle explained why
-  }
-  if (!buffer) {
-    showFatal("Couldn't load this puzzle.");
-    return;
-  }
-
   let puz;
-  try {
-    puz = parsePuz(buffer);
-  } catch (err) {
-    showFatal(`This puzzle file looks corrupt (${err.message}).`);
-    return;
+  let custom = null; // a custom puzzle's listing entry (authors, audience...)
+  const testMode = params.has('test') && isCustomId(id);
+  if (isCustomId(id)) {
+    const got = await loadCustomPuzzle(id, { working: testMode });
+    if (got.error) {
+      showFatal(got.status === 404 ? 'That puzzle doesn’t exist, or it isn’t shared with you.' : got.error);
+      return;
+    }
+    custom = got.puzzle;
+    if (custom.mine && !testMode) {
+      showOwnPuzzle(custom);
+      return;
+    }
+    if (!got.puz) {
+      showFatal('That puzzle isn’t published yet.');
+      return;
+    }
+    puz = got.puz;
+  } else {
+    let buffer = await tryLoadPuzzle(id);
+    if (!buffer) buffer = await obtainMissingPuzzle(id);
+    if (!buffer) return; // obtainMissingPuzzle explained why
+    try {
+      puz = parsePuz(buffer);
+    } catch (err) {
+      showFatal(`This puzzle file looks corrupt (${err.message}).`);
+      return;
+    }
   }
 
   const model = new PuzzleModel(puz);
@@ -92,7 +113,7 @@ async function main() {
       timeZone: 'UTC',
     });
   } else {
-    dateText = idInfo.date ? formatDateLong(idInfo.date) : theme || id;
+    dateText = idInfo.date ? formatDateLong(idInfo.date) : theme || (custom ? 'Untitled' : id);
   }
   qs('.puzzle-title').textContent = typeLabel;
   document.title = [dateText, theme, typeLabel].filter(Boolean).join(' — ');
@@ -100,20 +121,32 @@ async function main() {
   const themeEl = qs('#puzzle-theme');
   themeEl.textContent = theme && theme !== dateText ? `“${theme}”` : '';
   qs('#puzzle-byline').textContent = puz.author ? `By ${puz.author}` : '';
-  initProfileChip(qs('#profile-chip'));
 
-  // ----- progress record -----
-  let record = loadLocal(user, id);
-  if (!recordFitsModel(record, model)) record = newProgress(model, id, user);
-
+  // ----- solve state -----
+  // A blank grid until the server's snapshot arrives (a few ms, normally).
+  const record = newProgress(model, id, user);
   const settings = loadSettings(user);
   const engine = new SolveEngine(model, record, settings);
-  const timer = new Timer(record.elapsed || 0);
+  engine.deferCompletion = !testMode; // the server decides when it's solved
+  const timer = new Timer(0);
+  const live = testMode ? new LocalSolve({ puzzleId: id, model, user: me }) : new LiveSolve({ puzzleId: id, solveId: solveParam });
+  if (testMode) {
+    // an author trying their working copy: nothing here is saved or shared
+    qs('#solve-btn').hidden = true;
+    qs('.puzzle-header').append(el('span', { class: 'test-badge', title: 'Nothing here is saved or counted' }, 'Test solve — nothing is saved'));
+  }
+
+  let solve = null; // snapshot.solve: {id, kind, puzzle_id, members}
+  let presence = []; // [{conn, user, display_name, color, cursor, active}]
+  let active = false; // this tab is solving (drives the shared timer)
+  let ready = false; // first snapshot applied
+  let sentFlags = flagsOf(record);
+  const isCoop = () => solve?.kind === 'coop';
 
   // ----- views -----
   const gridView = new GridView(qs('#board-wrap'), model, {
     onCellClick: (i) => {
-      if (!record.completed && !timer.running) resumeGame();
+      if (ready && !record.completed && !active) resumeGame();
       engine.clickCell(i);
     },
   });
@@ -124,6 +157,7 @@ async function main() {
     model,
     onSelectWord: (word) => engine.selectWord(word),
     onBarNav: (delta) => engine.nextClue(delta),
+    onBarTap: () => engine.toggleDirection(),
   });
 
   const progressEl = qs('#progress-pct');
@@ -134,12 +168,21 @@ async function main() {
   gridView.updateAll(record);
   cluesView.updateFilled(record);
   updateProgress();
-  gridView.setCompleted(record.completed);
 
   // keep the clue bar exactly as wide as the board
   new ResizeObserver(() => {
     qs('#clue-bar').style.width = `${gridView.board.offsetWidth}px`;
   }).observe(gridView.board);
+
+  // cursor positions go out at most every 50ms (the last one always does)
+  let cursorTimer = null;
+  const sendCursor = () => {
+    if (cursorTimer) return;
+    cursorTimer = setTimeout(() => {
+      cursorTimer = null;
+      live.sendCursor(engine.sel.index, engine.sel.dir);
+    }, 50);
+  };
 
   engine.on('selection', ({ index, word }) => {
     gridView.setSelection(index, word ? word.cells : []);
@@ -148,80 +191,380 @@ async function main() {
     const referenced = model.referencesOf(word);
     gridView.setReferenced(referenced.flatMap((w) => w.cells));
     cluesView.setReferenced(referenced);
+    sendCursor();
   });
-  engine.on('cells', (indexes) => {
+  engine.on('cells', (indexes, meta) => {
     for (const i of indexes) gridView.updateCell(i, record);
     cluesView.updateFilled(record);
     updateProgress();
+    if (!meta.remote) {
+      live.sendCells(
+        indexes.map((i) => ({ i, fill: record.fill[i], marks: record.marks[i] })),
+        { dir: engine.sel.dir }
+      );
+    }
+  });
+  // check / reveal / autocheck change the assist flags
+  engine.on('dirty', () => {
+    const now = flagsOf(record);
+    const diff = {};
+    for (const k of Object.keys(now)) if (now[k] !== sentFlags[k]) diff[k] = now[k];
+    if (Object.keys(diff).length) {
+      live.sendFlags(diff);
+      sentFlags = now;
+    }
   });
   engine.emitSelection();
 
-  // ----- autosave -----
-  // Only persist once this session has actually touched the puzzle;
-  // otherwise a pristine tab could clobber real progress on pagehide.
-  let dirtySinceLoad = false;
-  let remoteDirty = false;
-  const persist = () => {
-    if (!record.completed) record.elapsed = timer.seconds;
-    saveLocal(record);
-  };
-  const autosave = debounce(persist, 800);
-  engine.on('dirty', () => {
-    dirtySinceLoad = true;
-    remoteDirty = true;
-    autosave();
+  // ----- live connection -----
+  const liveBadge = qs('#sync-badge');
+  liveBadge.hidden = testMode;
+  liveBadge.className = 'live-dot';
+  let sessionCheck = null;
+  live.on('status', (status) => {
+    liveBadge.className = `live-dot ${status === 'live' ? 'live' : status === 'offline' ? 'offline' : ''}`;
+    liveBadge.textContent = status === 'live' ? 'Live' : status === 'offline' ? 'Reconnecting…' : 'Connecting…';
+    liveBadge.title =
+      status === 'live'
+        ? 'Connected — changes save as you type'
+        : 'Not connected — your changes are kept and sent when the connection returns';
+    if (status === 'offline' && !sessionCheck) {
+      // an expired session looks like a dropped socket; api.get sends
+      // the visitor to the login page if that's what it is
+      sessionCheck = setTimeout(() => api.get('me').catch(() => {}), 4000);
+    } else if (status === 'live') {
+      clearTimeout(sessionCheck);
+      sessionCheck = null;
+    }
   });
 
-  // ----- GitHub sync ----- (`sync` was built above, to load the puzzle)
-  initSyncBadge(qs('#sync-badge'), sync, { onSyncNow: () => pushRemote({ force: true }) });
-
-  /** Mutate `record` in place to match a merge winner and re-render. */
-  function applyRemote(winner) {
-    Object.assign(record, winner, {
-      fill: [...winner.fill],
-      marks: [...winner.marks],
-    });
-    gridView.updateAll(record);
-    cluesView.updateFilled(record);
-    updateProgress();
-    timer.setElapsed(record.elapsed || 0);
-    saveLocal(record);
-    engine.emitSelection();
+  live.on('snapshot', (msg, overlay) => {
+    const firstTime = !ready;
+    const wasCompleted = record.completed;
+    solve = msg.solve;
+    engine.replaceRecord(msg.record);
+    if (overlay.length) engine.applyRemoteCells(overlay);
+    sentFlags = flagsOf(record);
+    presence = msg.presence;
+    applyTimer(msg.timer);
+    gridView.setCompleted(record.completed);
+    document.body.classList.toggle('solved', record.completed); // hides the touch keyboard
+    ready = true;
+    renderSolveInfo();
+    renderPresence();
+    drawAllRemote();
+    if (firstTime && !testMode) {
+      loadSolveList();
+      loadDirectory().catch(() => {}); // display names in the solve menu
+    }
     if (record.completed) {
-      gridView.setCompleted(true);
-      timer.pause();
-      if (gameOverlayClose) {
-        gameOverlayClose();
-        gameOverlayClose = null;
-        veil(false);
-      }
-    } else if (gameOverlayClose) {
-      // refresh the begin/resume overlay so its time/text match
-      gameOverlayClose();
+      showFinalTime();
+      if (!firstTime && !wasCompleted) toast('Solved!');
+    } else if (firstTime || msg.reset) {
+      // a fresh start (or someone reset the puzzle): wait for Begin
+      active = false;
+      qs('#timer-btn').title = 'Pause';
       showStartOverlay();
+    }
+  });
+  live.on('cells', (changes) => engine.applyRemoteCells(changes));
+  live.on('flags', (msg) => {
+    engine.applyRemoteFlags(msg);
+    sentFlags = flagsOf(record);
+  });
+  live.on('cursor', (msg) => {
+    const p = presence.find((x) => x.conn === msg.conn);
+    if (!p) return;
+    p.cursor = { index: msg.index, dir: msg.dir };
+    drawRemote(p);
+    updateClueMarkers();
+  });
+  live.on('presence', (msg) => {
+    const before = new Set(presence.filter((p) => p.user !== user).map((p) => p.user));
+    presence = msg.presence;
+    const after = new Set(presence.filter((p) => p.user !== user).map((p) => p.user));
+    if (ready && isCoop()) {
+      // one toast per update, however many arrive at once
+      const joined = [...after].filter((n) => !before.has(n)).map(displayName);
+      const left = [...before].filter((n) => !after.has(n)).map(displayName);
+      if (joined.length) toast(`${listNames(joined, 3)} joined`);
+      if (left.length) toast(`${listNames(left, 3)} left`);
+    }
+    renderPresence();
+    drawAllRemote();
+    // "Ready to get started?" becomes "Devon is solving" and back
+    if (overlayKind === 'start') showStartOverlay();
+  });
+  live.on('timer', (msg) => applyTimer(msg));
+  live.on('paused', (msg) => {
+    if (msg.conn === live.connId || record.completed) return;
+    active = false;
+    showPauseOverlay(`${displayName(msg.by)} paused the game.`);
+  });
+  live.on('completed', (msg) => {
+    timer.pause();
+    timer.setElapsed(msg.elapsed);
+    engine.markCompleted(msg);
+  });
+  live.on('members', (msg) => {
+    if (solve) solve.members = msg.members;
+    renderSolveInfo();
+    renderPresence();
+    if (overlayKind === 'start') showStartOverlay(); // "You're solving with …"
+  });
+  // a custom puzzle's constructors published a new version
+  live.on('puzzle-updated', () => {
+    showModal({
+      title: 'This puzzle was updated',
+      body: 'Its constructors just changed some clues or answers. Reload to get the new version; your progress stays.',
+      actions: [{ label: 'Later' }, { label: 'Reload', primary: true, onClick: () => location.reload() }],
+    });
+  });
+  live.on('error', (msg) => {
+    if (['not-member', 'no-solve', 'no-puzzle', 'own-puzzle'].includes(msg.code)) {
+      live.close();
+      showFatal(msg.message);
+    } else {
+      toast(msg.message, { error: true });
+    }
+  });
+
+  const displayName = (name) =>
+    solve?.members.find((m) => m.name === name)?.display_name ||
+    presence.find((p) => p.user === name)?.display_name ||
+    name;
+
+  // ----- presence + remote cursors -----
+  // One chip per member, the people who are here first. A big solve shows
+  // the first few and a "+N" chip; clicking opens the full list.
+  const presenceBtn = qs('#presence');
+
+  /** Solve members with their status: solving, then here, then away. */
+  function memberStates() {
+    const rank = { solving: 0, here: 1, away: 2 };
+    return solve.members
+      .map((m) => {
+        const conns = presence.filter((p) => p.user === m.name);
+        const status = conns.some((p) => p.active) ? 'solving' : conns.length ? 'here' : 'away';
+        const who = m.name === user ? `${m.display_name} (you)` : m.display_name;
+        return { ...m, status, who };
+      })
+      .sort((a, b) => rank[a.status] - rank[b.status]);
+  }
+
+  function renderPresence() {
+    presenceBtn.textContent = '';
+    presenceBtn.hidden = !isCoop();
+    if (!isCoop()) return;
+    const members = memberStates();
+    const max = maxChips();
+    const shown = members.length > max ? members.slice(0, max - 1) : members;
+    for (const m of shown) {
+      presenceBtn.append(
+        el(
+          'span',
+          {
+            class: `presence-chip${m.status === 'away' ? ' offline' : ''}${m.status === 'here' ? ' idle' : ''}`,
+            style: `--pc:${m.color}`,
+            title: `${m.who} — ${STATUS_TEXT[m.status]}`,
+          },
+          (m.display_name || m.name).slice(0, 1)
+        )
+      );
+    }
+    const folded = members.length - shown.length;
+    if (folded) presenceBtn.append(el('span', { class: 'presence-chip more' }, `+${folded}`));
+    const here = members.filter((m) => m.status !== 'away').length;
+    presenceBtn.title = `${members.length} people in this solve, ${here} here now`;
+    presenceBtn.setAttribute('aria-label', `${presenceBtn.title}. Show everyone.`);
+  }
+  matchMedia('(max-width: 600px)').addEventListener('change', () => ready && renderPresence());
+
+  makeMenu(presenceBtn, () => {
+    const members = memberStates();
+    const here = members.filter((m) => m.status !== 'away').length;
+    return [
+      { info: el('div', { class: 'menu-heading' }, `${members.length} in this solve · ${here} here now`) },
+      ...members.map((m) => ({
+        info: el('div', { class: 'menu-person' }, [
+          el('span', { class: 'user-dot', style: `background:${m.color}` }),
+          el('span', { class: 'menu-person-name' }, m.who),
+          el('span', { class: `menu-person-status ${m.status}` }, STATUS_TEXT[m.status]),
+        ]),
+      })),
+      'hr',
+      { label: 'Add people to this solve…', action: () => openAddPeople() },
+    ];
+  });
+
+  function drawRemote(p) {
+    if (p.conn === live.connId || !p.cursor) {
+      gridView.clearRemoteCursor(p.conn);
+      return;
+    }
+    const word = model.wordAt(p.cursor.index, p.cursor.dir);
+    gridView.setRemoteCursor(p.conn, {
+      index: p.cursor.index,
+      cells: word ? word.cells : [],
+      color: p.color,
+      label: p.user === user ? 'you (other tab)' : p.display_name,
+    });
+  }
+
+  function drawAllRemote() {
+    gridView.pruneRemoteCursors(new Set(presence.filter((p) => p.conn !== live.connId).map((p) => p.conn)));
+    for (const p of presence) drawRemote(p);
+    updateClueMarkers();
+  }
+
+  function updateClueMarkers() {
+    const markers = [];
+    for (const p of presence) {
+      if (p.conn === live.connId || !p.cursor) continue;
+      const word = model.wordAt(p.cursor.index, p.cursor.dir);
+      if (word) markers.push({ wordId: word.id, color: p.color, label: p.display_name });
+    }
+    cluesView.setRemoteMarkers(markers);
+  }
+
+  // ----- solo / co-op switcher -----
+  const solveBtn = qs('#solve-btn');
+  let mySolves = [];
+  let directory = new Map(); // every account by name, for display names
+
+  async function loadSolveList() {
+    try {
+      mySolves = (await api.get(`solves?puzzle=${encodeURIComponent(id)}`)).solves;
+    } catch {
+      mySolves = [];
     }
   }
 
-  function pushRemote({ keepalive = false, force = false } = {}) {
-    if (!sync.active) return;
-    if (!force && (!remoteDirty || !dirtySinceLoad)) return;
-    persist();
-    remoteDirty = false;
-    sync.pushProgress(record, { keepalive }).then((remoteRecord) => {
-      if (remoteRecord !== record) applyRemote(remoteRecord);
-    });
+  /** Every account; the co-op pickers fetch a fresh copy each time. */
+  async function loadDirectory() {
+    const { users } = await api.get('users');
+    directory = new Map(users.map((u) => [u.name, u]));
+    return users;
   }
 
-  if (sync.active) {
-    sync.ensureProfile();
-    sync.pullProgress(id).then((remote) => {
-      if (!remote || !recordFitsModel(remote, model)) return;
-      const winner = mergeProgress(record, remote);
-      if (winner !== record) applyRemote(winner);
+  const nameOf = (name) => directory.get(name)?.display_name || displayName(name);
+
+  function renderSolveInfo() {
+    if (!solve) return;
+    const others = solve.members.filter((m) => m.name !== user).map((m) => m.display_name);
+    solveBtn.textContent = '';
+    if (!isCoop() || others.length <= 2) {
+      const label = !isCoop() ? 'Solo' : others.length ? `Co-op with ${listNames(others)}` : 'Co-op';
+      solveBtn.append(el('span', { class: 'solve-kind' }, label), '▾');
+      solveBtn.setAttribute('aria-label', label);
+    } else {
+      // a long first name gets cut short, never the count
+      solveBtn.append(
+        el('span', { class: 'solve-kind' }, `Co-op with ${others[0]}`),
+        el('span', { class: 'solve-kind solve-rest' }, `and ${others.length - 1} others`),
+        '▾'
+      );
+      solveBtn.setAttribute('aria-label', `Co-op with ${listNames(others, 2)}`);
+    }
+    solveBtn.title = isCoop() && others.length ? `Co-op with ${listNames(others)}` : 'Solo or co-op';
+    qs('.toolbar').classList.toggle('coop', isCoop()); // phones: tools and chips on a line of their own
+    document.title = [isCoop() ? 'Co-op' : null, dateText, theme, typeLabel].filter(Boolean).join(' — ');
+  }
+
+  const solveHref = (s) =>
+    `./puzzle.html?id=${encodeURIComponent(id)}${s?.kind === 'coop' ? `&solve=${encodeURIComponent(s.id)}` : ''}`;
+
+  /** Stars and a note for a custom puzzle's constructors, any time after finishing it. */
+  async function openRating() {
+    const fb = await loadFeedback(id);
+    if (!fb?.can_rate) {
+      toast('Finish the puzzle first, then tell its constructors what you thought.', { error: true });
+      return;
+    }
+    showModal({ title: puz.title || 'This puzzle', body: [feedbackForm(id, { byline: puz.author, existing: fb.mine })] });
+  }
+
+  makeMenu(solveBtn, () => {
+    const coops = mySolves.filter((s) => s.kind === 'coop');
+    const items = [
+      { label: 'Solo', checked: !isCoop(), action: () => isCoop() && (location.href = solveHref(null)) },
+      ...coops.map((s) => {
+        const others = s.members.filter((n) => n !== user).map(nameOf);
+        return {
+          label: `With ${others.length ? listNames(others, 3) : 'nobody else'} · ${s.completed ? 'solved' : `${s.pct}%`}`,
+          checked: solve?.id === s.id,
+          action: () => solve?.id !== s.id && (location.href = solveHref(s)),
+        };
+      }),
+      'hr',
+      { label: 'New co-op solve…', action: () => openNewCoop() },
+    ];
+    if (isCoop()) {
+      items.push({ label: 'Add people to this solve…', action: () => openAddPeople() });
+      items.push({
+        label: 'Copy link',
+        action: () =>
+          navigator.clipboard
+            ?.writeText(location.origin + solveHref(solve).slice(1))
+            .then(() => toast('Link copied — anyone in this solve can open it.')),
+      });
+    }
+    if (custom) {
+      items.push('hr');
+      if (record.completed) items.push({ label: 'Rate this puzzle…', action: () => openRating() });
+      items.push({ label: 'Download .puz', action: () => downloadPuz(puz, puzFileName(puz.title, id)) });
+    }
+    return items;
+  });
+
+  /** A custom puzzle's authors can't solve it; a restricted one only goes to its audience. */
+  const canInvite = (u) =>
+    !custom || (!custom.authors.includes(u.name) && (custom.visibility !== 'people' || custom.audience?.includes(u.name)));
+
+  async function choosePeople({ title, exclude, confirmLabel }) {
+    let users;
+    try {
+      users = (await loadDirectory()).filter((u) => !exclude.has(u.name) && canInvite(u));
+    } catch (err) {
+      toast(err.message, { error: true });
+      return null;
+    }
+    if (!users.length) {
+      toast(custom ? 'Nobody else can be invited to this one.' : 'Nobody else to invite — the admin can add accounts.', { error: true });
+      return null;
+    }
+    return pickPeople({ title, users, confirmLabel });
+  }
+
+  async function openNewCoop() {
+    const names = await choosePeople({
+      title: 'Solve with…',
+      exclude: new Set([user]),
+      confirmLabel: 'Start co-op solve',
     });
-    setInterval(() => {
-      if (timer.running) pushRemote();
-    }, 120000);
+    if (!names?.length) return;
+    try {
+      const { solve: created } = await api.post('solves', { puzzle_id: id, members: names });
+      location.href = solveHref({ ...created, kind: 'coop' });
+    } catch (err) {
+      toast(err.message, { error: true });
+    }
+  }
+
+  async function openAddPeople() {
+    const names = await choosePeople({
+      title: 'Add people to this solve',
+      exclude: new Set(solve.members.map((m) => m.name)),
+      confirmLabel: 'Add',
+    });
+    if (!names?.length) return;
+    try {
+      await api.post(`solves/${encodeURIComponent(solve.id)}/members`, { add: names });
+      toast(`Added ${listNames(names.map(nameOf), 3)}.`);
+      loadSolveList();
+    } catch (err) {
+      toast(err.message, { error: true });
+    }
   }
 
   // ----- timer + game overlays -----
@@ -232,37 +575,55 @@ async function main() {
   timerDisplay.textContent = formatTime(timer.seconds);
   applyTimerVisibility();
 
+  /** The server owns the clock; this just mirrors it. */
+  function applyTimer({ elapsed, running }) {
+    timer.pause();
+    timer.setElapsed(elapsed);
+    if (running) timer.start();
+  }
+
   let gameOverlayClose = null;
+  let overlayKind = null; // 'start' | 'pause' while one is up
   const board = gridView.board;
+  veil(true); // until the first snapshot
 
   function veil(on) {
     board.classList.toggle('veiled', on);
   }
 
+  function closeOverlay() {
+    gameOverlayClose?.();
+    gameOverlayClose = null;
+    overlayKind = null;
+  }
+
+  function setActive(on) {
+    active = on;
+    live.setActive(on);
+  }
+
+  /** Pause button: in a co-op solve it pauses everyone. */
   function pauseGame() {
-    if (record.completed || !timer.running) return;
-    timer.pause();
-    persist();
-    pushRemote();
+    if (record.completed || !active) return;
+    active = false;
+    if (isCoop()) live.pauseAll();
+    else live.setActive(false);
     showPauseOverlay();
   }
 
   function resumeGame() {
-    gameOverlayClose?.();
-    gameOverlayClose = null;
+    closeOverlay();
     veil(false);
-    if (!record.completed) {
-      timer.start();
-      dirtySinceLoad = true; // elapsed time is progress worth saving
-    }
+    if (!record.completed) setActive(true);
   }
 
-  function showPauseOverlay() {
+  function showPauseOverlay(reason = '') {
     veil(true);
-    gameOverlayClose?.();
+    closeOverlay();
+    overlayKind = 'pause';
     gameOverlayClose = showModal({
       title: 'Your game is paused',
-      body: `Current time: ${formatTime(timer.seconds)}`,
+      body: [reason, `Current time: ${formatTime(timer.seconds)}`].filter(Boolean).join(' '),
       dismissible: false,
       actions: [{ label: 'Resume', primary: true, onClick: resumeGame }],
     });
@@ -270,73 +631,113 @@ async function main() {
 
   function showStartOverlay() {
     veil(true);
-    const fresh = !hasAnyFill(record) && record.elapsed === 0;
-    gameOverlayClose = showModal({
-      title: fresh ? 'Ready to get started?' : 'Keep going?',
-      body: fresh
-        ? idInfo.date && idInfo.type !== 'bonus'
+    closeOverlay();
+    const solvingNow = [...new Set(presence.filter((p) => p.active && p.user !== user).map((p) => displayName(p.user)))];
+    const fresh = !hasAnyFill(record) && Math.floor(timer.seconds) === 0;
+    let title;
+    let body;
+    let label;
+    if (solvingNow.length) {
+      title = `${listNames(solvingNow, 3)} ${solvingNow.length === 1 ? 'is' : 'are'} solving`;
+      body = 'Jump in — everyone’s edits show up live.';
+      label = 'Join';
+    } else if (fresh) {
+      title = 'Ready to get started?';
+      body =
+        idInfo.date && idInfo.type !== 'bonus'
           ? `The ${formatDateLong(idInfo.date)} ${idInfo.type === 'daily' ? 'crossword' : idInfo.type} awaits.`
-          : 'The puzzle awaits.'
-        : `You're at ${formatTime(record.elapsed)}. Pick up where you left off.`,
+          : 'The puzzle awaits.';
+      const partners = isCoop() ? solve.members.filter((m) => m.name !== user).map((m) => m.display_name) : [];
+      if (partners.length) body += ` You’re solving with ${listNames(partners, 4)}.`;
+      label = 'Begin';
+    } else {
+      title = 'Keep going?';
+      body = `You're at ${formatTime(timer.seconds)}. Pick up where you left off.`;
+      label = 'Resume';
+    }
+    overlayKind = 'start';
+    gameOverlayClose = showModal({
+      title,
+      body,
       dismissible: false,
-      actions: [{ label: fresh ? 'Begin' : 'Resume', primary: true, onClick: resumeGame }],
+      actions: [{ label, primary: true, onClick: resumeGame }],
     });
   }
 
+  function showFinalTime() {
+    closeOverlay();
+    veil(false);
+    timerDisplay.textContent = formatTime(record.elapsed);
+    qs('#timer-btn').title = 'Final time';
+  }
+
   qs('#timer-btn').addEventListener('click', () => {
-    if (record.completed) return;
-    if (timer.running) pauseGame();
+    if (!ready || record.completed) return;
+    if (active) pauseGame();
     else resumeGame();
   });
 
+  // Stepping away stops *your* clock; in co-op, the others keep going.
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-      if (timer.running) pauseGame();
-      autosave.flush();
-      pushRemote({ keepalive: true });
+      if (active && !record.completed) {
+        setActive(false);
+        showPauseOverlay();
+      }
+    } else {
+      live.nudge();
     }
   });
-  window.addEventListener('pagehide', () => {
-    if (dirtySinceLoad) {
-      persist();
-      pushRemote({ keepalive: true });
-    }
-  });
-
-  if (record.completed) {
-    timerDisplay.textContent = formatTime(record.elapsed);
-    qs('#timer-btn').title = 'Final time';
-  } else {
-    showStartOverlay();
-  }
+  window.addEventListener('online', () => live.nudge());
 
   // ----- completion -----
   let fullModalOpen = false;
   engine.on('full', ({ solved, clean }) => {
     if (solved) {
-      timer.pause();
-      record.elapsed = timer.seconds;
-      persist();
-      gridView.setCompleted(true);
-      // record the solve in the local stats log and sync everything up
-      const statsDoc = addSolveLocal(user, id, solveEntryFrom(record));
-      if (sync.active) {
-        sync.pushProgress(record);
-        sync.pushStats(statsDoc);
-        remoteDirty = false;
+      active = false;
+      if (testMode) {
+        // no server to stop the clock and say so
+        live.setActive(false);
+        record.elapsed = Math.floor(timer.seconds);
       }
+      closeOverlay();
+      veil(false);
+      gridView.setCompleted(true);
+      document.body.classList.add('solved');
+      showFinalTime();
       if (settings.playSound) playJingle();
+      const partners = isCoop() ? solve.members.filter((m) => m.name !== user).map((m) => m.display_name) : [];
+      const rating = el('div'); // a custom puzzle's constructors hear what you thought
+      if (custom && !testMode) {
+        loadFeedback(id).then((fb) => {
+          if (fb?.can_rate) rating.append(feedbackForm(id, { byline: puz.author, existing: fb.mine }));
+        });
+      }
       showModal({
-        title: 'Congratulations!',
+        title: testMode ? 'It works!' : 'Congratulations!',
         body: el('div', {}, [
-          el('p', {}, 'You solved the puzzle.'),
+          el(
+            'p',
+            {},
+            testMode
+              ? 'The grid checks out. Nothing was saved.'
+              : partners.length
+              ? `You solved it with ${listNames(partners, 4)}.`
+              : 'You solved the puzzle.'
+          ),
           el('div', { class: 'solve-time' }, formatTime(record.elapsed)),
           clean ? el('div', { class: 'gold-star' }, '★ Clean solve') : null,
+          rating,
         ]),
-        actions: [
-          { label: 'Back to archive', onClick: () => (location.href = './index.html') },
-          { label: 'Admire the puzzle', primary: true },
-        ],
+        actions: testMode
+          ? [{ label: 'Back to the builder', primary: true, onClick: () => (location.href = `./builder.html?id=${encodeURIComponent(id)}`) }]
+          : [
+              { label: 'Back to archive', onClick: () => (location.href = custom ? './index.html#custom' : './index.html') },
+              ...(solve?.id
+                ? [{ label: 'See the breakdown', onClick: () => (location.href = `./analysis.html?puzzle=${encodeURIComponent(id)}&solve=${encodeURIComponent(solve.id)}`) }]
+                : []),
+              { label: 'Admire the puzzle', primary: true },
+            ],
       });
     } else if (!fullModalOpen) {
       fullModalOpen = true;
@@ -352,95 +753,71 @@ async function main() {
   });
 
   // ----- keyboard -----
+  // Physical keys and the on-screen keyboard both land here. Returns true
+  // if the key did something.
+  function handleKey(key, shift = false) {
+    if (document.querySelector('.overlay')) return false; // a modal is up
+    if (!ready) return false;
+
+    if (/^[a-zA-Z0-9]$/.test(key)) {
+      if (!record.completed && !active) resumeGame();
+      engine.typeLetter(key);
+    } else if (key === 'Backspace') {
+      engine.backspace();
+    } else if (key === 'Delete') {
+      engine.deleteKey();
+    } else if (key === ' ') {
+      engine.space();
+    } else if (key === 'ArrowLeft') {
+      engine.moveArrow(0, -1);
+    } else if (key === 'ArrowRight') {
+      engine.moveArrow(0, 1);
+    } else if (key === 'ArrowUp') {
+      engine.moveArrow(-1, 0);
+    } else if (key === 'ArrowDown') {
+      engine.moveArrow(1, 0);
+    } else if (key === 'Tab' || key === 'Enter') {
+      engine.nextClue(shift ? -1 : 1);
+    } else if (key === 'Escape' || key === 'Insert') {
+      openRebusInput();
+    } else {
+      return false;
+    }
+    return true;
+  }
+
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const t = e.target;
     if (t.matches?.('input, textarea, select') || t.isContentEditable) return;
-    if (document.querySelector('.overlay')) return; // a modal is up
-
-    if (/^[a-zA-Z0-9]$/.test(e.key)) {
-      e.preventDefault();
-      if (!record.completed && !timer.running) resumeGame();
-      engine.typeLetter(e.key);
-    } else if (e.key === 'Backspace') {
-      e.preventDefault();
-      engine.backspace();
-    } else if (e.key === 'Delete') {
-      e.preventDefault();
-      engine.deleteKey();
-    } else if (e.key === ' ') {
-      e.preventDefault();
-      engine.space();
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      engine.moveArrow(0, -1);
-    } else if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      engine.moveArrow(0, 1);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      engine.moveArrow(-1, 0);
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      engine.moveArrow(1, 0);
-    } else if (e.key === 'Tab' || e.key === 'Enter') {
-      e.preventDefault();
-      engine.nextClue(e.shiftKey ? -1 : 1);
-    } else if (e.key === 'Escape' || e.key === 'Insert') {
-      e.preventDefault();
-      openRebusInput();
-    }
+    if (handleKey(e.key, e.shiftKey)) e.preventDefault();
   });
 
+  // Phones and tablets: tapping a square can't raise the system keyboard
+  // (the grid isn't a text field), so dock our own under the play area,
+  // with the current clue just above it.
+  if (isTouchDevice()) {
+    document.body.classList.add('touch');
+    const dock = el('div', { class: 'kb-dock' });
+    dock.append(qs('#clue-bar'));
+    new TouchKeyboard(dock, { onKey: (key) => handleKey(key) });
+    document.body.append(dock);
+  }
+
   // ----- rebus input -----
-  let rebusInput = null;
+  let rebusOpen = false;
   function openRebusInput() {
-    if (record.completed || rebusInput) return;
+    if (!ready || record.completed || rebusOpen) return;
     if (engine.isLocked(engine.sel.index)) return;
-    if (!timer.running) resumeGame();
+    if (!active) resumeGame();
     const i = engine.sel.index;
-    const rect = gridView.cellRect(i);
-    const input = el('input', {
-      class: 'rebus-input',
-      type: 'text',
-      maxlength: '12',
-      autocapitalize: 'characters',
-      spellcheck: 'false',
-      'aria-label': 'Rebus entry',
+    rebusOpen = true;
+    rebusPopup({
+      rect: gridView.cellRect(i),
+      value: record.fill[i] || '',
+      onCommit: (value) => engine.typeRebus(value),
+      onClose: () => (rebusOpen = false),
     });
-    const width = Math.max(rect.width * 1.8, 96);
-    Object.assign(input.style, {
-      left: `${rect.left + rect.width / 2 - width / 2}px`,
-      top: `${rect.top - 2}px`,
-      width: `${width}px`,
-      height: `${rect.height + 4}px`,
-      fontSize: `${rect.height * 0.55}px`,
-    });
-    input.value = record.fill[i] || '';
-    let cancelled = false;
-    const closeRebus = (commit) => {
-      if (!rebusInput) return;
-      const value = input.value;
-      rebusInput = null;
-      input.remove();
-      if (commit) engine.typeRebus(value);
-    };
-    input.addEventListener('keydown', (e) => {
-      e.stopPropagation();
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        closeRebus(true);
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        cancelled = true;
-        closeRebus(false);
-      }
-    });
-    input.addEventListener('blur', () => closeRebus(!cancelled));
-    document.body.append(input);
-    rebusInput = input;
-    input.focus();
-    input.select();
   }
   qs('#rebus-btn').addEventListener('click', () => openRebusInput());
 
@@ -456,7 +833,10 @@ async function main() {
     {
       label: 'Clear puzzle',
       action: async () => {
-        if (await confirmDialog('Clear all your entries? The timer keeps running.', { confirmLabel: 'Clear puzzle' })) {
+        const msg = isCoop()
+          ? 'Clear every entry — everyone’s? The timer keeps running.'
+          : 'Clear all your entries? The timer keeps running.';
+        if (await confirmDialog(msg, { confirmLabel: 'Clear puzzle' })) {
           engine.clearPuzzle();
         }
       },
@@ -465,38 +845,55 @@ async function main() {
     {
       label: 'Reset puzzle & timer…',
       action: async () => {
-        if (
-          await confirmDialog('Erase all progress on this puzzle, including the timer? This cannot be undone.', {
-            confirmLabel: 'Reset everything',
-          })
-        ) {
-          localStorage.removeItem(`xw:${user}:progress:${id}`);
-          location.reload();
+        const msg = isCoop()
+          ? 'Erase this co-op solve for everyone, including the timer? This cannot be undone.'
+          : 'Erase all progress on this puzzle, including the timer? This cannot be undone. Your first solve stays in your stats.';
+        if (await confirmDialog(msg, { confirmLabel: 'Reset everything' })) {
+          active = false;
+          live.reset();
         }
       },
     },
   ]);
 
+  // Assists go to the solve log first, so it reads "check word" before the
+  // squares that check marked.
+  const assist = (kind, scope) => {
+    if (record.completed || (kind !== 'autocheck' && model.puz.scrambled)) return;
+    live.sendAssist(kind, scope, engine.sel.index, engine.sel.dir);
+  };
+  const check = (scope) => {
+    assist('check', scope);
+    engine.check(scope);
+  };
+  const reveal = (scope) => {
+    assist('reveal', scope);
+    engine.reveal(scope);
+  };
+
   makeMenu(qs('#check-btn'), () => [
     {
       label: 'Autocheck',
       checked: record.autocheck,
-      action: () => engine.setAutocheck(!record.autocheck),
+      action: () => {
+        assist('autocheck', record.autocheck ? 'off' : 'on');
+        engine.setAutocheck(!record.autocheck);
+      },
     },
     'hr',
-    { label: 'Check letter', action: () => engine.check('letter') },
-    { label: 'Check word', action: () => engine.check('word') },
-    { label: 'Check puzzle', action: () => engine.check('puzzle') },
+    { label: 'Check letter', action: () => check('letter') },
+    { label: 'Check word', action: () => check('word') },
+    { label: 'Check puzzle', action: () => check('puzzle') },
   ]);
 
   makeMenu(qs('#reveal-btn'), () => [
-    { label: 'Reveal letter', action: () => engine.reveal('letter') },
-    { label: 'Reveal word', action: () => engine.reveal('word') },
+    { label: 'Reveal letter', action: () => reveal('letter') },
+    { label: 'Reveal word', action: () => reveal('word') },
     {
       label: 'Reveal puzzle',
       action: async () => {
         if (await confirmDialog('Reveal the entire puzzle? You will lose the clean-solve star.', { confirmLabel: 'Reveal all' })) {
-          engine.reveal('puzzle');
+          reveal('puzzle');
         }
       },
     },
@@ -556,17 +953,18 @@ async function main() {
     qs('#check-btn').disabled = true;
     qs('#reveal-btn').disabled = true;
   }
+
+  live.connect();
 }
 
 /* ---------- helpers ---------- */
 
 /**
- * The archive doesn't have this puzzle. If it's something NYT published and
- * sync is set up, queue it for the fetcher machine and wait; otherwise
- * explain why it can't be had. Returns the bytes, or null after showing a
- * message of its own.
+ * The archive doesn't have this puzzle. If it's something NYT published,
+ * have the server download it; otherwise explain why it can't be had.
+ * Returns the bytes, or null after showing a message of its own.
  */
-async function obtainMissingPuzzle(id, sync) {
+async function obtainMissingPuzzle(id) {
   const { type, date } = parsePuzzleId(id);
   const pretty = date ? formatDateLong(date) : id;
 
@@ -578,52 +976,54 @@ async function obtainMissingPuzzle(id, sync) {
     );
     return null;
   }
-  if (!sync.active) {
-    showFatal(
-      `${pretty} hasn't been downloaded yet. Connect GitHub sync (the badge up top) and it can be fetched on demand.`
-    );
-    return null;
-  }
 
-  const status = el('p', {}, 'Asking for this puzzle…');
-  const hint = el('p', { style: 'font-size:12px;color:var(--color-text-muted)' }, '');
   const closeWaiting = showModal({
     title: 'Fetching this puzzle',
     body: el('div', {}, [
       el('p', {}, `${pretty} isn’t in the archive yet, so it’s being downloaded now.`),
-      status,
-      hint,
+      el('p', { style: 'font-size:12px;color:var(--color-text-muted)' }, 'This usually takes a few seconds.'),
     ]),
     dismissible: false,
   });
-
-  const started = Date.now();
-  const result = await fetchOnDemand(id, sync, (stage) => {
-    if (stage === 'waiting') {
-      status.textContent = 'Waiting for the download…';
-      const secs = Math.round((Date.now() - started) / 1000);
-      hint.textContent =
-        secs > 90
-          ? 'Taking a while — is the machine that downloads puzzles switched on?'
-          : 'This usually takes a couple of minutes.';
-    } else if (stage === 'publishing') {
-      status.textContent = 'Downloaded — waiting for the site to publish it…';
-      hint.textContent = '';
-    }
-  });
+  const result = await fetchOnDemand(id);
   closeWaiting();
 
-  if (result.ok) return result.buffer;
-
-  const reasons = {
-    missing: result.message || `NYT doesn’t have a ${type} puzzle for ${pretty}.`,
-    error: `Something went wrong fetching it. ${result.message ?? ''}`.trim(),
-    timeout:
-      'It hasn’t arrived yet. The downloader may be offline — the request stays queued, so try again in a few minutes.',
-    offline: 'Connect GitHub sync to fetch puzzles on demand.',
-  };
-  showFatal(reasons[result.reason] ?? 'Could not fetch this puzzle.');
+  if (result.ok) {
+    if (result.id !== id) {
+      // a monthly bonus that ran on another day than the 1st
+      const url = new URL(location.href);
+      url.searchParams.set('id', result.id);
+      location.replace(url);
+      return null;
+    }
+    return result.buffer;
+  }
+  showFatal(
+    result.reason === 'missing'
+      ? result.message || `NYT doesn’t have a ${type} puzzle for ${pretty}.`
+      : `Something went wrong fetching it. ${result.message ?? ''}`.trim()
+  );
   return null;
+}
+
+/** Authors don't solve their own puzzle: offer the builder and the results instead. */
+function showOwnPuzzle(p) {
+  const id = encodeURIComponent(p.id);
+  showModal({
+    title: 'You made this one',
+    body:
+      p.status === 'draft'
+        ? 'It’s still a draft. Authors can’t solve their own puzzle here.'
+        : 'Authors can’t solve their own puzzle here. See how everyone else is doing instead.',
+    dismissible: false,
+    actions: [
+      { label: 'Edit it', onClick: () => (location.href = `./builder.html?id=${id}`) },
+      { label: 'Test solve', onClick: () => (location.href = `./puzzle.html?id=${id}&test=1`) },
+      ...(p.status !== 'draft'
+        ? [{ label: 'See how people did', primary: true, onClick: () => (location.href = `./analysis.html?puzzle=${id}`) }]
+        : []),
+    ],
+  });
 }
 
 function showFatal(message) {
@@ -632,45 +1032,6 @@ function showFatal(message) {
     body: message,
     dismissible: false,
     actions: [{ label: 'Back to archive', primary: true, onClick: () => (location.href = './index.html') }],
-  });
-}
-
-/** Dropdown menu on a toolbar button; items provided lazily each open. */
-function makeMenu(button, getItems) {
-  let panel = null;
-  const close = () => {
-    panel?.remove();
-    panel = null;
-    document.removeEventListener('mousedown', onOutside, true);
-  };
-  const onOutside = (e) => {
-    if (panel && !panel.contains(e.target) && e.target !== button) close();
-  };
-  button.addEventListener('click', () => {
-    if (panel) {
-      close();
-      return;
-    }
-    panel = el(
-      'div',
-      { class: 'menu-panel' },
-      getItems().map((item) =>
-        item === 'hr'
-          ? el('hr')
-          : el(
-              'button',
-              {
-                onclick: () => {
-                  close();
-                  item.action();
-                },
-              },
-              [el('span', { class: 'menu-check' }, item.checked ? '✓' : ''), item.label]
-            )
-      )
-    );
-    button.parentElement.append(panel);
-    document.addEventListener('mousedown', onOutside, true);
   });
 }
 

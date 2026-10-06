@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Crossword Archive</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧩</text></svg>">
+  <script src="./js/theme.js"></script>
   <link rel="stylesheet" href="./css/base.css">
   <link rel="stylesheet" href="./css/archive.css">
 </head>
@@ -16,12 +17,14 @@
       <a href="./stats.html">Stats</a>
     </nav>
     <span class="spacer"></span>
-    <span id="sync-badge" class="badge" hidden></span>
+    <button class="theme-toggle" type="button" title="Dark mode" aria-label="Dark mode" aria-pressed="false"></button>
     <span id="profile-chip" class="badge"></span>
   </header>
 
   <main class="archive-main">
     <div class="type-tabs" id="type-tabs" hidden></div>
+
+    <section class="coop-strip" id="coop-strip" hidden></section>
 
     <div class="archive-hero" id="hero" hidden>
       <div>
@@ -41,6 +44,8 @@
     </div>
     <div class="calendar" id="calendar"></div>
 
+    <section class="custom-tab" id="custom-tab" hidden></section>
+
     <div class="special-list" id="special-list" hidden>
       <h2 id="special-title">Special puzzles</h2>
       <div id="special-items"></div>
@@ -53,7 +58,6 @@
     </div>
   </main>
 
-  <script type="module" src="./js/move-banner.js"></script>
   <script type="module" src="./js/archive-page.js"></script>
 </body>
 </html>

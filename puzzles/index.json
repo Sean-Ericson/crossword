@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-10-05T05:15:27Z",
+  "generated_at": "2026-10-06T00:39:58Z",
   "puzzles": [
     {
       "id": "mini-2026-10-05",
@@ -10,7 +10,12 @@
       "title": "NY Times, Monday, October 5, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-10-05",
@@ -20,7 +25,12 @@
       "title": "NY Times, Monday, October 5, 2026 SWITCH POSITIONS",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 10
+      "height": 10,
+      "blocks": 15,
+      "words": 32,
+      "avg_len": 4.69,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-10-05",
@@ -30,7 +40,12 @@
       "title": "NY Times, Monday, October 5, 2026",
       "author": "Chase Dittrich / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 78,
+      "avg_len": 4.79,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-10-04",
@@ -40,7 +55,12 @@
       "title": "NY Times, Sunday, October 4, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 6,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 11,
+      "avg_len": 4.73,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-10-04",
@@ -50,7 +70,12 @@
       "title": "NY Times, Sunday, October 4, 2026 DRAW A LINE IN THE SAND",
       "author": "Paolo Pasco / Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 20,
+      "words": 29,
+      "avg_len": 4.83,
+      "rebus": 0,
+      "circles": 8
     },
     {
       "id": "2026-10-04",
@@ -60,7 +85,12 @@
       "title": "NY Times, Sunday, October 4, 2026 10-4",
       "author": "Kathryn Bale / Will Shortz",
       "width": 22,
-      "height": 22
+      "height": 22,
+      "blocks": 132,
+      "words": 128,
+      "avg_len": 5.5,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-10-03",
@@ -70,7 +100,12 @@
       "title": "NY Times, Saturday, October 3, 2026",
       "author": "Joel Fagliano",
       "width": 7,
-      "height": 7
+      "height": 7,
+      "blocks": 12,
+      "words": 14,
+      "avg_len": 5.29,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-10-03",
@@ -80,7 +115,12 @@
       "title": "NY Times, Saturday, October 3, 2026 GET IN LINE",
       "author": "Sid Sivakumar / Ian Livengood",
       "width": 9,
-      "height": 10
+      "height": 10,
+      "blocks": 25,
+      "words": 31,
+      "avg_len": 4.19,
+      "rebus": 0,
+      "circles": 9
     },
     {
       "id": "2026-10-03",
@@ -90,7 +130,12 @@
       "title": "NY Times, Saturday, October 3, 2026",
       "author": "Kameron Austin Collins / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 27,
+      "words": 70,
+      "avg_len": 5.66,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-10-02",
@@ -100,7 +145,12 @@
       "title": "NY Times, Friday, October 2, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-10-02",
@@ -110,7 +160,12 @@
       "title": "NY Times, Friday, October 2, 2026 ENDPIECES",
       "author": "Evan Kalish / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 15,
+      "words": 31,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 14
     },
     {
       "id": "2026-10-02",
@@ -120,7 +175,12 @@
       "title": "NY Times, Friday, October 2, 2026",
       "author": "Joe Marquez / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 30,
+      "words": 70,
+      "avg_len": 5.57,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-10-01",
@@ -130,7 +190,12 @@
       "title": "NY Times, Thursday, October 1, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 3,
+      "words": 10,
+      "avg_len": 4.4,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-10-01",
@@ -140,7 +205,12 @@
       "title": "NY Times, Thursday, October 1, 2026 CLOSE ENCOUNTERS OF THE CROSSWORD KIND",
       "author": "Ian Livengood",
       "width": 10,
-      "height": 10
+      "height": 10,
+      "blocks": 22,
+      "words": 36,
+      "avg_len": 4.33,
+      "rebus": 0,
+      "circles": 14
     },
     {
       "id": "bonus-2026-10-01",
@@ -150,7 +220,12 @@
       "title": "NY Times, Thursday, October 1, 2026 THE ANSWER, MY FRIEND ...",
       "author": "Kate Jensen / Christina Iverson",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 35,
+      "words": 82,
+      "avg_len": 4.63,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-10-01",
@@ -160,7 +235,12 @@
       "title": "NY Times, Thursday, October 1, 2026",
       "author": "Jill Singer / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 78,
+      "avg_len": 4.85,
+      "rebus": 3,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-30",
@@ -170,7 +250,12 @@
       "title": "NY Times, Wednesday, September 30, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 0,
+      "words": 10,
+      "avg_len": 5.0,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-30",
@@ -180,7 +265,12 @@
       "title": "NY Times, Wednesday, September 30, 2026 UNDERSTATED",
       "author": "Hanh Huynh / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 16,
+      "words": 30,
+      "avg_len": 4.33,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-09-30",
@@ -190,7 +280,12 @@
       "title": "NY Times, Wednesday, September 30, 2026",
       "author": "Joel Woodford / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 34,
+      "words": 72,
+      "avg_len": 5.31,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-29",
@@ -200,7 +295,12 @@
       "title": "NY Times, Tuesday, September 29, 2026",
       "author": "Ian Livengood / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 1,
+      "words": 10,
+      "avg_len": 4.8,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-29",
@@ -210,7 +310,12 @@
       "title": "NY Times, Tuesday, September 29, 2026 LOOK TO THE SKIES",
       "author": "Rebecca Goldstein / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 16,
+      "words": 29,
+      "avg_len": 4.48,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-09-29",
@@ -220,7 +325,12 @@
       "title": "NY Times, Tuesday, September 29, 2026",
       "author": "Hanh Huynh / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 78,
+      "avg_len": 4.85,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-28",
@@ -230,7 +340,12 @@
       "title": "NY Times, Monday, September 28, 2026",
       "author": "Christina Iverson / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-28",
@@ -240,7 +355,12 @@
       "title": "NY Times, Monday, September 28, 2026 CRAFT FROM THE PAST",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 12,
+      "words": 28,
+      "avg_len": 4.93,
+      "rebus": 0,
+      "circles": 6
     },
     {
       "id": "2026-09-28",
@@ -250,7 +370,12 @@
       "title": "NY Times, Monday, September 28, 2026",
       "author": "Helen Chen / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 37,
+      "words": 78,
+      "avg_len": 4.82,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-27",
@@ -260,7 +385,12 @@
       "title": "NY Times, Sunday, September 27, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-27",
@@ -270,7 +400,12 @@
       "title": "NY Times, Sunday, September 27, 2026 SHADY CHARACTERS",
       "author": "Andy Kravis / Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 14,
+      "words": 34,
+      "avg_len": 4.47,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-09-27",
@@ -280,7 +415,12 @@
       "title": "NY Times, Sunday, September 27, 2026 THE FULL 12 ROUNDS",
       "author": "Adam Wagner / Will Shortz",
       "width": 21,
-      "height": 21
+      "height": 21,
+      "blocks": 83,
+      "words": 140,
+      "avg_len": 5.11,
+      "rebus": 0,
+      "circles": 72
     },
     {
       "id": "mini-2026-09-26",
@@ -290,7 +430,12 @@
       "title": "NY Times, Saturday, September 26, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 7,
-      "height": 7
+      "height": 7,
+      "blocks": 4,
+      "words": 18,
+      "avg_len": 5.0,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-26",
@@ -300,7 +445,12 @@
       "title": "NY Times, Saturday, September 26, 2026 TAKE TWO!",
       "author": "Nguhi Ross and Erik Agard / Ian Livengood",
       "width": 10,
-      "height": 10
+      "height": 10,
+      "blocks": 17,
+      "words": 36,
+      "avg_len": 4.61,
+      "rebus": 0,
+      "circles": 12
     },
     {
       "id": "2026-09-26",
@@ -310,7 +460,12 @@
       "title": "NY Times, Saturday, September 26, 2026",
       "author": "Brian Callahan / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 64,
+      "avg_len": 5.91,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-25",
@@ -320,7 +475,12 @@
       "title": "NY Times, Friday, September 25, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-25",
@@ -330,7 +490,12 @@
       "title": "NY Times, Friday, September 25, 2026 A LITTLE SOMETHING EXTRA",
       "author": "Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 17,
+      "words": 33,
+      "avg_len": 4.42,
+      "rebus": 0,
+      "circles": 18
     },
     {
       "id": "2026-09-25",
@@ -340,7 +505,12 @@
       "title": "NY Times, Friday, September 25, 2026",
       "author": "Rafael Musa / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 32,
+      "words": 70,
+      "avg_len": 5.51,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-24",
@@ -350,7 +520,12 @@
       "title": "NY Times, Thursday, September 24, 2026",
       "author": "Christina Iverson / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 1,
+      "words": 10,
+      "avg_len": 4.8,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-24",
@@ -360,7 +535,12 @@
       "title": "NY Times, Thursday, September 24, 2026 ON TRACK",
       "author": "Aaron Gee and Avery Gee Katz / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 14,
+      "words": 32,
+      "avg_len": 4.19,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-09-24",
@@ -370,7 +550,12 @@
       "title": "Times, Thursday, September 24, 2026",
       "author": "Jeff Stillman / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 44,
+      "words": 72,
+      "avg_len": 5.03,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-23",
@@ -380,7 +565,12 @@
       "title": "NY Times, Wednesday, September 23, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-23",
@@ -390,7 +580,12 @@
       "title": "NY Times, Wednesday, September 23, 2026 START THE MUSIC!",
       "author": "Tarun Krishnamurthy / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 12,
+      "words": 30,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 4
     },
     {
       "id": "2026-09-23",
@@ -400,7 +595,12 @@
       "title": "NY Times, Wednesday, September 23, 2026",
       "author": "Dana Edwards / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 34,
+      "words": 74,
+      "avg_len": 5.16,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-22",
@@ -410,7 +610,12 @@
       "title": "NY Times, Tuesday, September 22, 2026",
       "author": "Ian Livengood / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-22",
@@ -420,7 +625,12 @@
       "title": "NY Times, Tuesday, September 22, 2026 THAT'S THE SPIRIT!",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 12,
+      "words": 30,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 10
     },
     {
       "id": "2026-09-22",
@@ -430,7 +640,12 @@
       "title": "NY Times, Tuesday, September 22, 2026",
       "author": "Erik Agard / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 40,
+      "words": 72,
+      "avg_len": 5.14,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-21",
@@ -440,7 +655,12 @@
       "title": "NY Times, Monday, September 21, 2026",
       "author": "Joel Fagliano",
       "width": 6,
-      "height": 5
+      "height": 5,
+      "blocks": 6,
+      "words": 11,
+      "avg_len": 4.36,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-21",
@@ -450,7 +670,12 @@
       "title": "NY Times, Monday, September 21, 2026 MAKE A BEELINE FOR IT",
       "author": "Zhou Zhang and Kevin Curry / Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 16,
+      "words": 34,
+      "avg_len": 4.35,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-09-21",
@@ -460,7 +685,12 @@
       "title": "NY Times, Monday, September 21, 2026",
       "author": "Alexander Liebeskind / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 76,
+      "avg_len": 4.97,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-20",
@@ -470,7 +700,12 @@
       "title": "NY Times, Sunday, September 20, 2026",
       "author": "Tracy Bennett / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-20",
@@ -480,7 +715,12 @@
       "title": "NY Times, Sunday, September 20, 2026 WELL-SUITED",
       "author": "Ian Livengood",
       "width": 11,
-      "height": 11
+      "height": 11,
+      "blocks": 23,
+      "words": 39,
+      "avg_len": 5.03,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-09-20",
@@ -490,7 +730,12 @@
       "title": "NY Times, Sunday, September 20, 2026 RISE TO THE POWER",
       "author": "Tracy Gray / Will Shortz",
       "width": 21,
-      "height": 21
+      "height": 21,
+      "blocks": 77,
+      "words": 140,
+      "avg_len": 5.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-19",
@@ -500,7 +745,12 @@
       "title": "NY Times, Saturday, September 19, 2026",
       "author": "Joel Fagliano",
       "width": 6,
-      "height": 8
+      "height": 8,
+      "blocks": 4,
+      "words": 18,
+      "avg_len": 4.89,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-19",
@@ -510,7 +760,12 @@
       "title": "NY Times, Saturday, September 19, 2026 SEA WHAT I'M SAYING",
       "author": "Jeremy Newton / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 16,
+      "words": 32,
+      "avg_len": 4.06,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-09-19",
@@ -520,7 +775,12 @@
       "title": "NY Times, Saturday, September 19, 2026",
       "author": "Hannah Slovut-Einertson / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 32,
+      "words": 64,
+      "avg_len": 6.03,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-18",
@@ -530,7 +790,12 @@
       "title": "NY Times, Friday, September 18, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-18",
@@ -540,7 +805,12 @@
       "title": "NY Times, Friday, September 18, 2026 BRAND SPELL CHECK",
       "author": "Aidan Deshong / Ian Livengood",
       "width": 10,
-      "height": 10
+      "height": 10,
+      "blocks": 18,
+      "words": 37,
+      "avg_len": 4.43,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-09-18",
@@ -550,7 +820,12 @@
       "title": "NY Times, Friday, September 18, 2026",
       "author": "Ryan Mathiason / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 68,
+      "avg_len": 5.5,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-17",
@@ -560,7 +835,12 @@
       "title": "NY Times, Thursday, September 17, 2026",
       "author": "Christina Iverson / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 1,
+      "words": 10,
+      "avg_len": 4.8,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-17",
@@ -570,7 +850,12 @@
       "title": "NY Times, Thursday, September 17, 2026 SO MANY WAYS TO GO",
       "author": "Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 17,
+      "words": 35,
+      "avg_len": 4.17,
+      "rebus": 0,
+      "circles": 12
     },
     {
       "id": "2026-09-17",
@@ -580,7 +865,12 @@
       "title": "NY Times, Thursday, September 17, 2026",
       "author": "Enrique Henestroza Anguiano / Will Shortz",
       "width": 14,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 79,
+      "avg_len": 4.35,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-16",
@@ -590,7 +880,12 @@
       "title": "NY Times, Wednesday, September 16, 2026",
       "author": "Adam Aaronson / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 3,
+      "words": 10,
+      "avg_len": 4.4,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-16",
@@ -600,7 +895,12 @@
       "title": "NY Times, Wednesday, September 16, 2026 TEA PARTY",
       "author": "Adrianne Baik / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 17,
+      "words": 30,
+      "avg_len": 4.27,
+      "rebus": 0,
+      "circles": 14
     },
     {
       "id": "2026-09-16",
@@ -610,7 +910,12 @@
       "title": "NY Times, Wednesday, September 16, 2026",
       "author": "Peter Gorman / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 39,
+      "words": 78,
+      "avg_len": 4.77,
+      "rebus": 7,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-15",
@@ -620,7 +925,12 @@
       "title": "NY Times, Tuesday, September 15, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-15",
@@ -630,7 +940,12 @@
       "title": "NY Times, Tuesday, September 15, 2026 TO BE CONTINUED ...",
       "author": "Rena Cohen / Ian Livengood",
       "width": 11,
-      "height": 11
+      "height": 11,
+      "blocks": 42,
+      "words": 31,
+      "avg_len": 4.74,
+      "rebus": 0,
+      "circles": 11
     },
     {
       "id": "2026-09-15",
@@ -640,7 +955,12 @@
       "title": "NY Times, Tuesday, September 15, 2026",
       "author": "Nate Cardin / Will Shortz",
       "width": 15,
-      "height": 16
+      "height": 16,
+      "blocks": 42,
+      "words": 81,
+      "avg_len": 4.89,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-14",
@@ -650,7 +970,12 @@
       "title": "NY Times, Monday, September 14, 2026",
       "author": "Christina Iverson / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 3,
+      "words": 10,
+      "avg_len": 4.4,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-14",
@@ -660,7 +985,12 @@
       "title": "NY Times, Monday, September 14, 2026 TWO OF A KIND",
       "author": "Alina Abidi / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 15,
+      "words": 28,
+      "avg_len": 4.71,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-09-14",
@@ -670,7 +1000,12 @@
       "title": "NY Times, Monday, September 14, 2026",
       "author": "Andrea Carla Michaels and Dena R. Verkuil / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 78,
+      "avg_len": 4.79,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-13",
@@ -680,7 +1015,12 @@
       "title": "NY Times, Sunday, September 13, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 3,
+      "words": 10,
+      "avg_len": 4.4,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-13",
@@ -690,7 +1030,12 @@
       "title": "NY Times, Sunday, September 13, 2026 BALLPARK FIGURES",
       "author": "Natan Last / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 14,
+      "words": 30,
+      "avg_len": 4.47,
+      "rebus": 0,
+      "circles": 12
     },
     {
       "id": "2026-09-13",
@@ -700,7 +1045,12 @@
       "title": "NY Times, Sunday, September 13, 2026 THINKING INSIDE THE BOX",
       "author": "Henry Lin-David and Frank S. David / Will Shortz",
       "width": 22,
-      "height": 22
+      "height": 22,
+      "blocks": 85,
+      "words": 160,
+      "avg_len": 4.99,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-12",
@@ -710,7 +1060,12 @@
       "title": "NY Times, Saturday, September 12, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 7,
-      "height": 7
+      "height": 7,
+      "blocks": 6,
+      "words": 17,
+      "avg_len": 5.06,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-12",
@@ -720,7 +1075,12 @@
       "title": "NY Times, Saturday, September 12, 2026 HOUSING BUBBLES",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 18,
+      "words": 28,
+      "avg_len": 4.5,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-09-12",
@@ -730,7 +1090,12 @@
       "title": "NY Times, Saturday, September 12, 2026",
       "author": "Adam Wagner and Michael Lieberman / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 28,
+      "words": 70,
+      "avg_len": 5.63,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-11",
@@ -740,7 +1105,12 @@
       "title": "NY Times, Friday, September 11, 2026",
       "author": "Wyna Liu / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-11",
@@ -750,7 +1120,12 @@
       "title": "NY Times, Friday, September 11, 2026 TEAM BUILDING EXERCISE",
       "author": "Nate Cardin / Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 16,
+      "words": 31,
+      "avg_len": 4.77,
+      "rebus": 0,
+      "circles": 10
     },
     {
       "id": "2026-09-11",
@@ -760,7 +1135,12 @@
       "title": "NY Times, Friday, September 11, 2026",
       "author": "Robyn Weintraub / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 30,
+      "words": 72,
+      "avg_len": 5.42,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-10",
@@ -770,7 +1150,12 @@
       "title": "NY Times, Thursday, September 10, 2026",
       "author": "Ian Livengood / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-10",
@@ -780,7 +1165,12 @@
       "title": "NY Times, Thursday, September 10, 2026 INTERSTATES",
       "author": "Kareem Ayas / Ian Livengood",
       "width": 10,
-      "height": 11
+      "height": 11,
+      "blocks": 20,
+      "words": 41,
+      "avg_len": 4.39,
+      "rebus": 0,
+      "circles": 8
     },
     {
       "id": "2026-09-10",
@@ -790,7 +1180,12 @@
       "title": "NY Times, Thursday, September 10, 2026",
       "author": "Simeon Seigel / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 32,
+      "words": 70,
+      "avg_len": 5.51,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-09",
@@ -800,7 +1195,12 @@
       "title": "NY Times, Wednesday, September 9, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-09",
@@ -810,7 +1210,12 @@
       "title": "NY Times, Wednesday, September 9, 2026 GREEN ENERGY",
       "author": "Erica Hsiung Wojcik / Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 21,
+      "words": 33,
+      "avg_len": 4.18,
+      "rebus": 0,
+      "circles": 10
     },
     {
       "id": "2026-09-09",
@@ -820,7 +1225,12 @@
       "title": "NY Times, Wednesday, September 9, 2026",
       "author": "Dario Salvucci / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 78,
+      "avg_len": 4.85,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-08",
@@ -830,7 +1240,12 @@
       "title": "NY Times, Tuesday, September 8, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-08",
@@ -840,7 +1255,12 @@
       "title": "NY Times, Tuesday, September 8, 2026 EXTENDED PLAY",
       "author": "Victor Schmitt / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 15,
+      "words": 31,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 8
     },
     {
       "id": "2026-09-08",
@@ -850,7 +1270,12 @@
       "title": "NY Times, Tuesday, September 8, 2026",
       "author": "Sunny Maharjan / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 76,
+      "avg_len": 4.97,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-07",
@@ -860,7 +1285,12 @@
       "title": "NY Times, Monday, September 7, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-07",
@@ -870,7 +1300,12 @@
       "title": "NY Times, Monday, September 7, 2026 GRILL MARKS",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 18,
+      "words": 29,
+      "avg_len": 4.34,
+      "rebus": 0,
+      "circles": 8
     },
     {
       "id": "2026-09-07",
@@ -880,7 +1315,12 @@
       "title": "NY Times, Monday, September 7, 2026",
       "author": "Jeff Chen and Stephan Prock / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 78,
+      "avg_len": 4.79,
+      "rebus": 0,
+      "circles": 18
     },
     {
       "id": "mini-2026-09-06",
@@ -890,7 +1330,12 @@
       "title": "NY Times, Sunday, September 6, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-06",
@@ -900,7 +1345,12 @@
       "title": "NY Times, Sunday, September 6, 2026 DOUBLE FEATURE",
       "author": "Erik Agard / Ian Livengood",
       "width": 10,
-      "height": 10
+      "height": 10,
+      "blocks": 23,
+      "words": 34,
+      "avg_len": 4.53,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-09-06",
@@ -910,7 +1360,12 @@
       "title": "NY Times, Sunday, September 6, 2026 CROSSOVER FILMS",
       "author": "John Kugelman / Will Shortz",
       "width": 21,
-      "height": 21
+      "height": 21,
+      "blocks": 69,
+      "words": 138,
+      "avg_len": 5.39,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-05",
@@ -920,7 +1375,12 @@
       "title": "NY Times, Saturday, September 5, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 7,
-      "height": 7
+      "height": 7,
+      "blocks": 10,
+      "words": 16,
+      "avg_len": 4.88,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-05",
@@ -930,7 +1390,12 @@
       "title": "NY Times, Saturday, September 5, 2026 AROUND THE BEND",
       "author": "Evan Kalish / Ian Livengood",
       "width": 9,
-      "height": 10
+      "height": 10,
+      "blocks": 15,
+      "words": 34,
+      "avg_len": 4.41,
+      "rebus": 0,
+      "circles": 11
     },
     {
       "id": "2026-09-05",
@@ -940,7 +1405,12 @@
       "title": "NY Times, Saturday, September 5, 2026",
       "author": "Fritz Juhnke / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 25,
+      "words": 72,
+      "avg_len": 5.56,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-04",
@@ -950,7 +1420,12 @@
       "title": "NY Times, Friday, September 4, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 3,
+      "words": 10,
+      "avg_len": 4.4,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-04",
@@ -960,7 +1435,12 @@
       "title": "NY Times, Friday, September 4, 2026 THREE STRIKES AND YER OUT!",
       "author": "Rena Cohen / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 17,
+      "words": 31,
+      "avg_len": 4.13,
+      "rebus": 0,
+      "circles": 8
     },
     {
       "id": "2026-09-04",
@@ -970,7 +1450,12 @@
       "title": "NY Times, Friday, September 4, 2026",
       "author": "Julian Xiao / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 25,
+      "words": 66,
+      "avg_len": 6.06,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-03",
@@ -980,7 +1465,12 @@
       "title": "NY Times, Thursday, September 3, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-03",
@@ -990,7 +1480,12 @@
       "title": "NY Times, Thursday, September 3, 2026 RO-BLOX",
       "author": "Hanh Huynh / Ian Livengood",
       "width": 9,
-      "height": 10
+      "height": 10,
+      "blocks": 20,
+      "words": 31,
+      "avg_len": 4.52,
+      "rebus": 0,
+      "circles": 9
     },
     {
       "id": "2026-09-03",
@@ -1000,7 +1495,12 @@
       "title": "NY Times, Thursday, September 3, 2026",
       "author": "Zhou Zhang / Will Shortz",
       "width": 15,
-      "height": 16
+      "height": 16,
+      "blocks": 44,
+      "words": 80,
+      "avg_len": 4.9,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-02",
@@ -1010,7 +1510,12 @@
       "title": "NY Times, Wednesday, September 2, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-02",
@@ -1020,7 +1525,12 @@
       "title": "NY Times, Wednesday, September 2, 2026 SOCIAL CLIMBER",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 13,
+      "words": 30,
+      "avg_len": 4.53,
+      "rebus": 0,
+      "circles": 12
     },
     {
       "id": "2026-09-02",
@@ -1030,7 +1540,12 @@
       "title": "NY Times, Wednesday, September 2, 2026",
       "author": "Mac Motz / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 78,
+      "avg_len": 4.79,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-09-01",
@@ -1040,7 +1555,12 @@
       "title": "NY Times, Tuesday, September 1, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-09-01",
@@ -1050,7 +1570,12 @@
       "title": "NY Times, Tuesday, September 1, 2026 QUICK START",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 13,
+      "words": 32,
+      "avg_len": 4.25,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2026-09-01",
@@ -1060,7 +1585,12 @@
       "title": "NY Times, Tuesday, September 1, 2026 1-ACROSS FROM NEW YORK, IT'S SATURDAY NIGHT!",
       "author": "Christina Iverson and Rachel Dratch / Christina Iverson",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 42,
+      "words": 80,
+      "avg_len": 4.58,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-09-01",
@@ -1070,7 +1600,12 @@
       "title": "NY Times, Tuesday, September 1, 2026",
       "author": "Paul Hudes and Margot Kohn / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 34,
+      "words": 74,
+      "avg_len": 5.16,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-31",
@@ -1080,7 +1615,12 @@
       "title": "NY Times, Monday, August 31, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 5,
+      "words": 10,
+      "avg_len": 4.0,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-31",
@@ -1090,7 +1630,12 @@
       "title": "NY Times, Monday, August 31, 2026 OH, WHAT A MEAL",
       "author": "Tom McCoy / Ian Livengood",
       "width": 9,
-      "height": 10
+      "height": 10,
+      "blocks": 15,
+      "words": 34,
+      "avg_len": 4.41,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-31",
@@ -1100,7 +1645,12 @@
       "title": "NY Times, Monday, August 31, 2026",
       "author": "Christopher Youngs / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 37,
+      "words": 78,
+      "avg_len": 4.82,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-30",
@@ -1110,7 +1660,12 @@
       "title": "NY Times, Sunday, August 30, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-30",
@@ -1120,7 +1675,12 @@
       "title": "NY Times, Sunday, August 30, 2026 PYRAMID SCHEME",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 15,
+      "words": 31,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 14
     },
     {
       "id": "2026-08-30",
@@ -1130,7 +1690,12 @@
       "title": "NY Times, Sunday, August 30, 2026 WRITTEN IN THE STARS",
       "author": "Daniel Grinberg / Will Shortz",
       "width": 21,
-      "height": 21
+      "height": 21,
+      "blocks": 78,
+      "words": 140,
+      "avg_len": 5.19,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-29",
@@ -1140,7 +1705,12 @@
       "title": "NY Times, Saturday, August 29, 2026",
       "author": "Joel Fagliano",
       "width": 7,
-      "height": 7
+      "height": 7,
+      "blocks": 12,
+      "words": 16,
+      "avg_len": 4.62,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-29",
@@ -1150,7 +1720,12 @@
       "title": "NY Times, Saturday, August 29, 2026 WILDFLOWERS",
       "author": "Olivia Mitra Framke / Ian Livengood",
       "width": 9,
-      "height": 10
+      "height": 10,
+      "blocks": 18,
+      "words": 30,
+      "avg_len": 4.8,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-29",
@@ -1160,7 +1735,12 @@
       "title": "NY Times, Saturday, August 29, 2026",
       "author": "Rafael Musa and Kate Chin Park / Will Shortz",
       "width": 15,
-      "height": 16
+      "height": 16,
+      "blocks": 36,
+      "words": 69,
+      "avg_len": 5.91,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-28",
@@ -1170,7 +1750,12 @@
       "title": "NY Times, Friday, August 28, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 3,
+      "words": 10,
+      "avg_len": 4.4,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-28",
@@ -1180,7 +1765,12 @@
       "title": "NY Times, Friday, August 28, 2026 PAY UP FRONT",
       "author": "Aaron Gee and Avery Gee Katz / Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 16,
+      "words": 33,
+      "avg_len": 4.48,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-28",
@@ -1190,7 +1780,12 @@
       "title": "NY Times, Friday, August 28, 2026",
       "author": "Jack Hatchett / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 68,
+      "avg_len": 5.56,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-27",
@@ -1200,7 +1795,12 @@
       "title": "NY Times, Thursday, August 27, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-27",
@@ -1210,7 +1810,12 @@
       "title": "NY Times, Thursday, August 27, 2026 PARTY ANIMAL",
       "author": "Tarun Krishnamurthy / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 12,
+      "words": 31,
+      "avg_len": 4.45,
+      "rebus": 0,
+      "circles": 10
     },
     {
       "id": "2026-08-27",
@@ -1220,7 +1825,12 @@
       "title": "NY Times, Thursday, August 27, 2026",
       "author": "Zachary David Levy / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 40,
+      "words": 78,
+      "avg_len": 4.74,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-26",
@@ -1230,7 +1840,12 @@
       "title": "NY Times, Wednesday, August 26, 2026",
       "author": "Adam Aaronson / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-26",
@@ -1240,7 +1855,12 @@
       "title": "NY Times, Wednesday, August 26, 2026 BOTH SIDES NOW",
       "author": "Paolo Pasco / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 13,
+      "words": 29,
+      "avg_len": 4.69,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-26",
@@ -1250,7 +1870,12 @@
       "title": "NY Times, Wednesday, August 26, 2026",
       "author": "John Kugelman and Lance Enfinger / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 40,
+      "words": 76,
+      "avg_len": 4.87,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-25",
@@ -1260,7 +1885,12 @@
       "title": "NY Times, Tuesday, August 25, 2026",
       "author": "Ian Livengood / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-25",
@@ -1270,7 +1900,12 @@
       "title": "NY Times, Tuesday, August 25, 2026 BUT FIRST, COFFEE",
       "author": "Shannon Rapp / Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 34,
+      "words": 25,
+      "avg_len": 4.48,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-25",
@@ -1280,7 +1915,12 @@
       "title": "NY Times, Tuesday, August 25, 2026",
       "author": "Bryan Kaproth-Gerecht / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 37,
+      "words": 76,
+      "avg_len": 4.95,
+      "rebus": 0,
+      "circles": 8
     },
     {
       "id": "mini-2026-08-24",
@@ -1290,7 +1930,12 @@
       "title": "NY Times, Monday, August 24, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 1,
+      "words": 10,
+      "avg_len": 4.8,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-24",
@@ -1300,7 +1945,12 @@
       "title": "NY Times, Monday, August 24, 2026 THINGS ARE LOOKING UP",
       "author": "Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 17,
+      "words": 32,
+      "avg_len": 4.56,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-24",
@@ -1310,7 +1960,12 @@
       "title": "NY Times, Monday, August 24, 2026",
       "author": "Steven Jopek / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 42,
+      "words": 78,
+      "avg_len": 4.69,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-23",
@@ -1320,7 +1975,12 @@
       "title": "NY Times, Sunday, August 23, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 6
+      "height": 6,
+      "blocks": 9,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 6
     },
     {
       "id": "midi-2026-08-23",
@@ -1330,7 +1990,12 @@
       "title": "NY Times, Sunday, August 23, 2026 CROSSBONES",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 10
+      "height": 10,
+      "blocks": 15,
+      "words": 35,
+      "avg_len": 4.29,
+      "rebus": 0,
+      "circles": 12
     },
     {
       "id": "2026-08-23",
@@ -1340,7 +2005,12 @@
       "title": "NY Times, Sunday, August 23, 2026 SMALL CHANGE",
       "author": "Jill Singer / Will Shortz",
       "width": 22,
-      "height": 21
+      "height": 21,
+      "blocks": 76,
+      "words": 145,
+      "avg_len": 5.32,
+      "rebus": 4,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-22",
@@ -1350,7 +2020,12 @@
       "title": "NY Times, Saturday, August 22, 2026",
       "author": "Ian Livengood / Joel Fagliano",
       "width": 7,
-      "height": 7
+      "height": 7,
+      "blocks": 4,
+      "words": 18,
+      "avg_len": 5.0,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-22",
@@ -1360,7 +2035,12 @@
       "title": "NY Times, Saturday, August 22, 2026 SOLID LINEUP",
       "author": "Jeremy Newton / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 17,
+      "words": 33,
+      "avg_len": 3.88,
+      "rebus": 0,
+      "circles": 7
     },
     {
       "id": "2026-08-22",
@@ -1370,7 +2050,12 @@
       "title": "NY Times, Saturday, August 22, 2026",
       "author": "Adrian Johnson / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 34,
+      "words": 68,
+      "avg_len": 5.62,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-21",
@@ -1380,7 +2065,12 @@
       "title": "NY Times, Friday, August 21, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-21",
@@ -1390,7 +2080,12 @@
       "title": "NY Times, Friday, August 21, 2026 HAT TRICK",
       "author": "Zhou Zhang and Kevin Curry / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 11,
+      "words": 30,
+      "avg_len": 4.67,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-21",
@@ -1400,7 +2095,12 @@
       "title": "NY Times, Friday, August 21, 2026",
       "author": "Adryel W. Robles Ojeda / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 68,
+      "avg_len": 5.56,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-20",
@@ -1410,7 +2110,12 @@
       "title": "NY Times, Thursday, August 20, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-20",
@@ -1420,7 +2125,12 @@
       "title": "NY Times, Thursday, August 20, 2026 LINES FROM A SCRIPT",
       "author": "Nguhi Ross and Erik Agard / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 16,
+      "words": 30,
+      "avg_len": 4.33,
+      "rebus": 0,
+      "circles": 8
     },
     {
       "id": "2026-08-20",
@@ -1430,7 +2140,12 @@
       "title": "NY Times, Thursday, August 20, 2026",
       "author": "Hoang-Kim Vu / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 78,
+      "avg_len": 4.79,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-19",
@@ -1440,7 +2155,12 @@
       "title": "NY Times, Wednesday, August 19, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 3,
+      "words": 10,
+      "avg_len": 4.4,
+      "rebus": 0,
+      "circles": 4
     },
     {
       "id": "midi-2026-08-19",
@@ -1450,7 +2170,12 @@
       "title": "NY Times, Wednesday, August 19, 2026 FRANKLY SPEAKING",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 16,
+      "words": 29,
+      "avg_len": 4.48,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-19",
@@ -1460,7 +2185,12 @@
       "title": "NY Times, Wednesday, August 19, 2026",
       "author": "Kareem Ayas / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 76,
+      "avg_len": 4.92,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-18",
@@ -1470,7 +2200,12 @@
       "title": "NY Times, Tuesday, August 18, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 0,
+      "words": 10,
+      "avg_len": 5.0,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-18",
@@ -1480,7 +2215,12 @@
       "title": "NY Times, Tuesday, August 18, 2026 THEMELESS PUZZLE",
       "author": "Alina Abidi / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 14,
+      "words": 30,
+      "avg_len": 4.47,
+      "rebus": 0,
+      "circles": 12
     },
     {
       "id": "2026-08-18",
@@ -1490,7 +2230,12 @@
       "title": "NY Times, Tuesday, August 18, 2026",
       "author": "Jeremy Venook / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 34,
+      "words": 76,
+      "avg_len": 5.03,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-17",
@@ -1500,7 +2245,12 @@
       "title": "NY Times, Monday, August 17, 2026",
       "author": "Ian Livengood / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 1,
+      "words": 10,
+      "avg_len": 4.8,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-17",
@@ -1510,7 +2260,12 @@
       "title": "NY Times, Monday, August 17, 2026 SPLIT HAIRS",
       "author": "Adrianne Baik / Ian Livengood",
       "width": 11,
-      "height": 9
+      "height": 9,
+      "blocks": 17,
+      "words": 36,
+      "avg_len": 4.56,
+      "rebus": 0,
+      "circles": 15
     },
     {
       "id": "2026-08-17",
@@ -1520,7 +2275,12 @@
       "title": "NY Times, Monday, August 17, 2026",
       "author": "Zhouqin Burnikel / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 78,
+      "avg_len": 4.85,
+      "rebus": 0,
+      "circles": 18
     },
     {
       "id": "mini-2026-08-16",
@@ -1530,7 +2290,12 @@
       "title": "NY Times, Sunday, August 16, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-16",
@@ -1540,7 +2305,12 @@
       "title": "NY Times, Sunday, August 16, 2026 PUT A TENT ON THIS CIRCUS!",
       "author": "Kareem Ayas / Ian Livengood",
       "width": 10,
-      "height": 10
+      "height": 10,
+      "blocks": 26,
+      "words": 36,
+      "avg_len": 4.11,
+      "rebus": 0,
+      "circles": 2
     },
     {
       "id": "2026-08-16",
@@ -1550,7 +2320,12 @@
       "title": "NY Times, Sunday, August 16, 2026 TAKE THE EDGE OFF",
       "author": "Sam Brody / Will Shortz",
       "width": 21,
-      "height": 21
+      "height": 21,
+      "blocks": 73,
+      "words": 140,
+      "avg_len": 5.26,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-15",
@@ -1560,7 +2335,12 @@
       "title": "NY Times, Saturday, August 15, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 7,
-      "height": 7
+      "height": 7,
+      "blocks": 12,
+      "words": 14,
+      "avg_len": 5.29,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-15",
@@ -1570,7 +2350,12 @@
       "title": "NY Times, Saturday, August 15, 2026 CIRCLE OF LIFE",
       "author": "Joel Fagliano / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 12,
+      "words": 31,
+      "avg_len": 4.45,
+      "rebus": 0,
+      "circles": 8
     },
     {
       "id": "2026-08-15",
@@ -1580,7 +2365,12 @@
       "title": "NY Times, Saturday, August 15, 2026",
       "author": "Blake Slonecker / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 24,
+      "words": 66,
+      "avg_len": 6.09,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-14",
@@ -1590,7 +2380,12 @@
       "title": "NY Times, Friday, August 14, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-14",
@@ -1600,7 +2395,12 @@
       "title": "NY Times, Friday, August 14, 2026 LAND OF OZ",
       "author": "Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 17,
+      "words": 31,
+      "avg_len": 4.71,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-14",
@@ -1610,7 +2410,12 @@
       "title": "NY Times, Friday, August 14, 2026",
       "author": "Zhou Zhang / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 32,
+      "words": 70,
+      "avg_len": 5.51,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-13",
@@ -1620,7 +2425,12 @@
       "title": "NY Times, Thursday, August 13, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-13",
@@ -1630,7 +2440,12 @@
       "title": "NY Times, Thursday, August 13, 2026 LOST IN TRANSLATION",
       "author": "Andy Kravis / Ian Livengood",
       "width": 11,
-      "height": 11
+      "height": 11,
+      "blocks": 21,
+      "words": 44,
+      "avg_len": 4.55,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-13",
@@ -1640,7 +2455,12 @@
       "title": "NY Times, Thursday, August 13, 2026",
       "author": "Killian Olson / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 34,
+      "words": 78,
+      "avg_len": 4.9,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-12",
@@ -1650,7 +2470,12 @@
       "title": "NY Times, Wednesday, August 12, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-12",
@@ -1660,7 +2485,12 @@
       "title": "NY Times, Wednesday, August 12, 2026 MIC DROP",
       "author": "Nate Cardin / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 16,
+      "words": 30,
+      "avg_len": 4.33,
+      "rebus": 0,
+      "circles": 9
     },
     {
       "id": "2026-08-12",
@@ -1670,7 +2500,12 @@
       "title": "NY Times, Wednesday, August 12, 2026",
       "author": "Adrianne Baik / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 42,
+      "words": 76,
+      "avg_len": 4.82,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-11",
@@ -1680,7 +2515,12 @@
       "title": "NY Times, Tuesday, August 11, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 3,
+      "words": 10,
+      "avg_len": 4.4,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-11",
@@ -1690,7 +2530,12 @@
       "title": "NY Times, Tuesday, August 11, 2026 TWO WAYS OF SAYING IT",
       "author": "Evan Kalish / Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 12,
+      "words": 33,
+      "avg_len": 4.73,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-11",
@@ -1700,7 +2545,12 @@
       "title": "NY Times, Tuesday, August 11, 2026",
       "author": "Wade Bednar / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 78,
+      "avg_len": 4.85,
+      "rebus": 0,
+      "circles": 11
     },
     {
       "id": "mini-2026-08-10",
@@ -1710,7 +2560,12 @@
       "title": "NY Times, Monday, August 10, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-10",
@@ -1720,7 +2575,12 @@
       "title": "NY Times, Monday, August 10, 2026 IT'S SHOWTIME",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 12,
+      "words": 29,
+      "avg_len": 4.76,
+      "rebus": 0,
+      "circles": 4
     },
     {
       "id": "2026-08-10",
@@ -1730,7 +2590,12 @@
       "title": "NY Times, Monday, August 10, 2026",
       "author": "Nate Cardin / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 78,
+      "avg_len": 4.79,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-09",
@@ -1740,7 +2605,12 @@
       "title": "NY Times, Sunday, August 9, 2026",
       "author": "Ian Livengood / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 0,
+      "words": 10,
+      "avg_len": 5.0,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-09",
@@ -1750,7 +2620,12 @@
       "title": "NY Times, Sunday, August 9, 2026 TAKE THE L",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 14,
+      "words": 30,
+      "avg_len": 4.47,
+      "rebus": 0,
+      "circles": 9
     },
     {
       "id": "2026-08-09",
@@ -1760,7 +2635,12 @@
       "title": "NY Times, Sunday, August 9, 2026 FREESTYLE EXERCISE",
       "author": "Erik Agard / Will Shortz",
       "width": 21,
-      "height": 21
+      "height": 21,
+      "blocks": 58,
+      "words": 128,
+      "avg_len": 5.98,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-08",
@@ -1770,7 +2650,12 @@
       "title": "NY Times, Saturday, August 8, 2026",
       "author": "Joel Fagliano",
       "width": 7,
-      "height": 7
+      "height": 7,
+      "blocks": 8,
+      "words": 16,
+      "avg_len": 5.12,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-08",
@@ -1780,7 +2665,12 @@
       "title": "NY Times, Saturday, August 8, 2026 BANG! BANG!",
       "author": "Hanh Huynh / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 15,
+      "words": 31,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-08",
@@ -1790,7 +2680,12 @@
       "title": "NY Times, Saturday, August 8, 2026",
       "author": "Kameron Austin Collins / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 35,
+      "words": 62,
+      "avg_len": 6.13,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-07",
@@ -1800,7 +2695,12 @@
       "title": "NY Times, Friday, August 7, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-07",
@@ -1810,7 +2710,12 @@
       "title": "NY Times, Friday, August 7, 2026 TIPPING THE SCALES",
       "author": "Natan Last / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 15,
+      "words": 30,
+      "avg_len": 4.4,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-07",
@@ -1820,7 +2725,12 @@
       "title": "NY Times, Friday, August 7, 2026",
       "author": "Jesse Cohn / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 30,
+      "words": 70,
+      "avg_len": 5.57,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-06",
@@ -1830,7 +2740,12 @@
       "title": "NY Times, Thursday, August 6, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 6,
+      "words": 10,
+      "avg_len": 3.8,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-06",
@@ -1840,7 +2755,12 @@
       "title": "NY Times, Thursday, August 6, 2026 HELLO, SAILOR!",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 18,
+      "words": 30,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 13
     },
     {
       "id": "2026-08-06",
@@ -1850,7 +2770,12 @@
       "title": "NY Times, Thursday, August 6, 2026",
       "author": "Dena R. Verkuil and John Kugelman / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 34,
+      "words": 74,
+      "avg_len": 5.16,
+      "rebus": 3,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-05",
@@ -1860,7 +2785,12 @@
       "title": "NY Times, Wednesday, August 5, 2026",
       "author": "Ian Livengood / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-05",
@@ -1870,7 +2800,12 @@
       "title": "NY Times, Wednesday, August 5, 2026 CLOSE BUT NO CIGAR",
       "author": "Rena Cohen / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 12,
+      "words": 30,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 9
     },
     {
       "id": "2026-08-05",
@@ -1880,7 +2815,12 @@
       "title": "NY Times, Wednesday, August 5, 2026",
       "author": "Daniel Bodily / Will Shortz",
       "width": 15,
-      "height": 14
+      "height": 14,
+      "blocks": 48,
+      "words": 72,
+      "avg_len": 4.5,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-04",
@@ -1890,7 +2830,12 @@
       "title": "NY Times, Tuesday, August 4, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 0,
+      "words": 10,
+      "avg_len": 5.0,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-04",
@@ -1900,7 +2845,12 @@
       "title": "NY Times, Tuesday, August 4, 2026 ELVIS HAS LEFT THE BUILDING",
       "author": "Aaron Gee and Avery Gee Katz / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 15,
+      "words": 29,
+      "avg_len": 4.55,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-04",
@@ -1910,7 +2860,12 @@
       "title": "NY Times, Tuesday, August 4, 2026",
       "author": "Vasu Seralathan / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 41,
+      "words": 76,
+      "avg_len": 4.84,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-03",
@@ -1920,7 +2875,12 @@
       "title": "NY Times, Monday, August 3, 2026",
       "author": "Christina Iverson / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-03",
@@ -1930,7 +2890,12 @@
       "title": "NY Times, Monday, August 3, 2026 VOWEL PLAY",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 18,
+      "words": 30,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-03",
@@ -1940,7 +2905,12 @@
       "title": "NY Times, Monday, August 3, 2026",
       "author": "Willa Angel Chen Miller / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 76,
+      "avg_len": 4.97,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-02",
@@ -1950,7 +2920,12 @@
       "title": "NY Times, Sunday, August 2, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-02",
@@ -1960,7 +2935,12 @@
       "title": "NY Times, Sunday, August 2, 2026 MIXED DRINKS",
       "author": "Erik Agard / Ian Livengood",
       "width": 11,
-      "height": 11
+      "height": 11,
+      "blocks": 21,
+      "words": 40,
+      "avg_len": 5.0,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-02",
@@ -1970,7 +2950,12 @@
       "title": "NY Times, Sunday, August 2, 2026 GOING FOR A SPIN",
       "author": "Ralph Sharaga and Doug Peterson / Will Shortz",
       "width": 21,
-      "height": 21
+      "height": 21,
+      "blocks": 76,
+      "words": 140,
+      "avg_len": 5.21,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-08-01",
@@ -1980,7 +2965,12 @@
       "title": "NY Times, Saturday, August 1, 2026",
       "author": "Joel Fagliano",
       "width": 7,
-      "height": 7
+      "height": 7,
+      "blocks": 10,
+      "words": 16,
+      "avg_len": 4.88,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-08-01",
@@ -1990,7 +2980,12 @@
       "title": "NY Times, Saturday, August 1, 2026 SUGAR CRASH",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 14,
+      "words": 30,
+      "avg_len": 4.47,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2026-08-01",
@@ -2000,7 +2995,12 @@
       "title": "NY Times, Saturday, August 1, 2026 TIME'S FUN WHEN YOU'RE HAVING FLIES",
       "author": "Christina Iverson and Rob Rausch / Christina Iverson",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 78,
+      "avg_len": 4.79,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-08-01",
@@ -2010,7 +3010,12 @@
       "title": "NY Times, Saturday, August 1, 2026",
       "author": "Zachary David Levy / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 29,
+      "words": 70,
+      "avg_len": 5.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-07-31",
@@ -2020,7 +3025,12 @@
       "title": "NY Times, Friday, July 31, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-31",
@@ -2030,7 +3040,12 @@
       "title": "NY Times, Friday, July 31, 2026 MAKE IT COUNT",
       "author": "Paolo Pasco / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 15,
+      "words": 29,
+      "avg_len": 4.55,
+      "rebus": 0,
+      "circles": 11
     },
     {
       "id": "2026-07-31",
@@ -2040,7 +3055,12 @@
       "title": "NY Times, Friday, July 31, 2026",
       "author": "Rafael Musa / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 37,
+      "words": 68,
+      "avg_len": 5.53,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-07-30",
@@ -2050,7 +3070,12 @@
       "title": "NY Times, Thursday, July 30, 2026",
       "author": "Ian Livengood / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-30",
@@ -2060,7 +3085,12 @@
       "title": "NY Times, Thursday, July 30, 2026 PRECIPITATION NATION",
       "author": "Tom McCoy / Ian Livengood",
       "width": 11,
-      "height": 11
+      "height": 11,
+      "blocks": 19,
+      "words": 41,
+      "avg_len": 4.98,
+      "rebus": 0,
+      "circles": 8
     },
     {
       "id": "2026-07-30",
@@ -2070,7 +3100,12 @@
       "title": "NY Times, Thursday, July 30, 2026",
       "author": "Joel Woodford / Will Shortz",
       "width": 16,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 79,
+      "avg_len": 5.16,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-07-29",
@@ -2080,7 +3115,12 @@
       "title": "NY Times, Wednesday, July 29, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-29",
@@ -2090,7 +3130,12 @@
       "title": "NY Times, Wednesday, July 29, 2026 ON TILT",
       "author": "Olivia Mitra Framke / Ian Livengood",
       "width": 10,
-      "height": 10
+      "height": 10,
+      "blocks": 24,
+      "words": 31,
+      "avg_len": 4.81,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-07-29",
@@ -2100,7 +3145,12 @@
       "title": "NY Times, Wednesday, July 29, 2026",
       "author": "Emily Biegas and Sala Wanetick / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 76,
+      "avg_len": 4.97,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-07-28",
@@ -2110,7 +3160,12 @@
       "title": "NY Times, Tuesday, July 28, 2026",
       "author": "Ian Livengood / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-28",
@@ -2120,7 +3175,12 @@
       "title": "NY Times, Tuesday, July 28, 2026 CARBO LOADING",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 14,
+      "words": 30,
+      "avg_len": 4.47,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-07-28",
@@ -2130,7 +3190,12 @@
       "title": "NY Times, Tuesday, July 28, 2026",
       "author": "Adam Vincent / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 39,
+      "words": 74,
+      "avg_len": 5.03,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-07-27",
@@ -2140,7 +3205,12 @@
       "title": "NY Times, Monday, July 27, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-27",
@@ -2150,7 +3220,12 @@
       "title": "NY Times, Monday, July 27, 2026 CUTTING BOARD",
       "author": "Erica Hsiung Wojcik / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 14,
+      "words": 31,
+      "avg_len": 4.32,
+      "rebus": 0,
+      "circles": 9
     },
     {
       "id": "2026-07-27",
@@ -2160,7 +3235,12 @@
       "title": "NY Times, Monday, July 27, 2026",
       "author": "Aidan Deshong / Will Shortz",
       "width": 14,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 71,
+      "avg_len": 4.9,
+      "rebus": 0,
+      "circles": 17
     },
     {
       "id": "mini-2026-07-26",
@@ -2170,7 +3250,12 @@
       "title": "NY Times, Sunday, July 26, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 3,
+      "words": 10,
+      "avg_len": 4.4,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-26",
@@ -2180,7 +3265,12 @@
       "title": "NY Times, Sunday, July 26, 2026 DOING LAPS",
       "author": "Evan Kalish / Ian Livengood",
       "width": 11,
-      "height": 11
+      "height": 11,
+      "blocks": 54,
+      "words": 30,
+      "avg_len": 4.47,
+      "rebus": 0,
+      "circles": 12
     },
     {
       "id": "2026-07-26",
@@ -2190,7 +3280,12 @@
       "title": "NY Times, Sunday, July 26, 2026 DOWN THE TUBES",
       "author": "Kim Alswager / Will Shortz",
       "width": 21,
-      "height": 21
+      "height": 21,
+      "blocks": 88,
+      "words": 136,
+      "avg_len": 5.19,
+      "rebus": 0,
+      "circles": 5
     },
     {
       "id": "mini-2026-07-25",
@@ -2200,7 +3295,12 @@
       "title": "NY Times, Saturday, July 25, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 7,
-      "height": 7
+      "height": 7,
+      "blocks": 4,
+      "words": 18,
+      "avg_len": 5.0,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-25",
@@ -2210,7 +3310,12 @@
       "title": "NY Times, Saturday, July 25, 2026 DOUBLE DIGITS",
       "author": "Zhou Zhang and Kevin Curry / Ian Livengood",
       "width": 10,
-      "height": 10
+      "height": 10,
+      "blocks": 20,
+      "words": 35,
+      "avg_len": 4.57,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-07-25",
@@ -2220,7 +3325,12 @@
       "title": "NY Times, Saturday, July 25, 2026",
       "author": "Katie Hoody / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 30,
+      "words": 72,
+      "avg_len": 5.42,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-07-24",
@@ -2230,7 +3340,12 @@
       "title": "NY Times, Friday, July 24, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-24",
@@ -2240,7 +3355,12 @@
       "title": "NY Times, Friday, July 24, 2026 KINDA SORTA",
       "author": "Alina Abidi / Ian Livengood",
       "width": 11,
-      "height": 11
+      "height": 11,
+      "blocks": 18,
+      "words": 41,
+      "avg_len": 5.02,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-07-24",
@@ -2250,7 +3370,12 @@
       "title": "NY Times, Friday, July 24, 2026",
       "author": "Geoffrey Schorkopf / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 70,
+      "avg_len": 5.4,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-07-23",
@@ -2260,7 +3385,12 @@
       "title": "NY Times, Thursday, July 23, 2026",
       "author": "Tracy Bennett / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-23",
@@ -2270,7 +3400,12 @@
       "title": "NY Times, Thursday, July 23, 2026 MASTER OF SUSPENSE",
       "author": "Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 12,
+      "words": 31,
+      "avg_len": 4.45,
+      "rebus": 0,
+      "circles": 6
     },
     {
       "id": "2026-07-23",
@@ -2280,7 +3415,12 @@
       "title": "NY Times, Thursday, July 23, 2026",
       "author": "Damon Gulczynski / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 42,
+      "words": 74,
+      "avg_len": 4.95,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-07-22",
@@ -2290,7 +3430,12 @@
       "title": "NY Times, Wednesday, July 22, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 6,
+      "words": 10,
+      "avg_len": 3.8,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-22",
@@ -2300,7 +3445,12 @@
       "title": "NY Times, Wednesday, July 22, 2026 HIGHER-UPS",
       "author": "Adrianne Baik / Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 15,
+      "words": 34,
+      "avg_len": 4.41,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-07-22",
@@ -2310,7 +3460,12 @@
       "title": "NY Times, Wednesday, July 22, 2026",
       "author": "Rebecca Goldstein / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 39,
+      "words": 76,
+      "avg_len": 4.89,
+      "rebus": 1,
+      "circles": 5
     },
     {
       "id": "mini-2026-07-21",
@@ -2320,7 +3475,12 @@
       "title": "NY Times, Tuesday, July 21, 2026",
       "author": "Sam Ezersky / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 0,
+      "words": 10,
+      "avg_len": 5.0,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-21",
@@ -2330,7 +3490,12 @@
       "title": "NY Times, Tuesday, July 21, 2026 THREE-FOR-ONE FUN",
       "author": "Ian Livengood",
       "width": 10,
-      "height": 10
+      "height": 10,
+      "blocks": 18,
+      "words": 36,
+      "avg_len": 4.56,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-07-21",
@@ -2340,7 +3505,12 @@
       "title": "NY Times, Tuesday, July 21, 2026",
       "author": "Kenneth Cortes / Will Shortz",
       "width": 16,
-      "height": 15
+      "height": 15,
+      "blocks": 46,
+      "words": 77,
+      "avg_len": 5.04,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-07-20",
@@ -2350,7 +3520,12 @@
       "title": "NY Times, Monday, July 20, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 2,
+      "words": 10,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-20",
@@ -2360,7 +3535,12 @@
       "title": "NY Times, Monday, July 20, 2026 LOW-HANGING FRUIT",
       "author": "Tarun Krishnamurthy / Ian Livengood",
       "width": 9,
-      "height": 9
+      "height": 9,
+      "blocks": 15,
+      "words": 30,
+      "avg_len": 4.4,
+      "rebus": 0,
+      "circles": 14
     },
     {
       "id": "2026-07-20",
@@ -2370,7 +3550,12 @@
       "title": "NY Times, Monday, July 20, 2026",
       "author": "Eric Rollfing / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 76,
+      "avg_len": 4.92,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2026-07-19",
@@ -2380,7 +3565,12 @@
       "title": "NY Times, Sunday, July 19, 2026",
       "author": "Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 4,
+      "words": 10,
+      "avg_len": 4.2,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "midi-2026-07-19",
@@ -2390,7 +3580,12 @@
       "title": "NY Times, Sunday, July 19, 2026 FA-MOUS LAST WORDS",
       "author": "Hanh Huynh / Ian Livengood",
       "width": 10,
-      "height": 9
+      "height": 9,
+      "blocks": 16,
+      "words": 32,
+      "avg_len": 4.62,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-07-19",
@@ -2400,7 +3595,72 @@
       "title": "NY Times, Sunday, July 19, 2026 RAISING CAPITAL",
       "author": "Michael Lieberman / Will Shortz",
       "width": 21,
-      "height": 21
+      "height": 21,
+      "blocks": 76,
+      "words": 140,
+      "avg_len": 5.21,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "midi-2026-07-18",
+      "file": "puzzles/midi-2026-07-18.puz",
+      "type": "midi",
+      "date": "2026-07-18",
+      "title": "NY Times, Saturday, July 18, 2026 RING LIGHT",
+      "author": "Nate Cardin / Ian Livengood",
+      "width": 9,
+      "height": 9,
+      "blocks": 17,
+      "words": 28,
+      "avg_len": 4.57,
+      "rebus": 0,
+      "circles": 9
+    },
+    {
+      "id": "midi-2026-07-17",
+      "file": "puzzles/midi-2026-07-17.puz",
+      "type": "midi",
+      "date": "2026-07-17",
+      "title": "NY Times, Friday, July 17, 2026 TAKING CARE OF BUSINESS",
+      "author": "Kareem Ayas / Ian Livengood",
+      "width": 10,
+      "height": 11,
+      "blocks": 30,
+      "words": 36,
+      "avg_len": 4.44,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "midi-2026-07-16",
+      "file": "puzzles/midi-2026-07-16.puz",
+      "type": "midi",
+      "date": "2026-07-16",
+      "title": "NY Times, Thursday, July 16, 2026 YANKEE INGENUITY",
+      "author": "Ian Livengood",
+      "width": 10,
+      "height": 9,
+      "blocks": 14,
+      "words": 34,
+      "avg_len": 4.47,
+      "rebus": 0,
+      "circles": 12
+    },
+    {
+      "id": "midi-2026-07-15",
+      "file": "puzzles/midi-2026-07-15.puz",
+      "type": "midi",
+      "date": "2026-07-15",
+      "title": "NY Times, Wednesday, July 15, 2026 CLOSE THE LOOP",
+      "author": "Jeremy Newton / Ian Livengood",
+      "width": 10,
+      "height": 11,
+      "blocks": 26,
+      "words": 39,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-07-15",
@@ -2410,7 +3670,132 @@
       "title": "NY Times, Wednesday, July 15, 2026",
       "author": "Jonathan Raksin and Jeff Chen / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 78,
+      "avg_len": 4.85,
+      "rebus": 0,
+      "circles": 9
+    },
+    {
+      "id": "midi-2026-07-14",
+      "file": "puzzles/midi-2026-07-14.puz",
+      "type": "midi",
+      "date": "2026-07-14",
+      "title": "NY Times, Tuesday, July 14, 2026 GOING BOTH WAYS",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 9,
+      "blocks": 12,
+      "words": 30,
+      "avg_len": 4.6,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "midi-2026-07-13",
+      "file": "puzzles/midi-2026-07-13.puz",
+      "type": "midi",
+      "date": "2026-07-13",
+      "title": "NY Times, Monday, July 13, 2026 TRUE TO THE LETTER(S)",
+      "author": "Rena Cohen / Ian Livengood",
+      "width": 9,
+      "height": 9,
+      "blocks": 16,
+      "words": 30,
+      "avg_len": 4.33,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "midi-2026-07-12",
+      "file": "puzzles/midi-2026-07-12.puz",
+      "type": "midi",
+      "date": "2026-07-12",
+      "title": "NY Times, Sunday, July 12, 2026 MEDIA MOGULS",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 9,
+      "blocks": 13,
+      "words": 32,
+      "avg_len": 4.25,
+      "rebus": 0,
+      "circles": 14
+    },
+    {
+      "id": "midi-2026-07-11",
+      "file": "puzzles/midi-2026-07-11.puz",
+      "type": "midi",
+      "date": "2026-07-11",
+      "title": "NY Times, Saturday, July 11, 2026 KINDRED SPIRITS",
+      "author": "Avery Gee Katz and Aaron Gee / Ian Livengood",
+      "width": 10,
+      "height": 9,
+      "blocks": 17,
+      "words": 33,
+      "avg_len": 4.42,
+      "rebus": 0,
+      "circles": 8
+    },
+    {
+      "id": "midi-2026-07-10",
+      "file": "puzzles/midi-2026-07-10.puz",
+      "type": "midi",
+      "date": "2026-07-10",
+      "title": "NY Times, Friday, July 10, 2026 WEB HITS",
+      "author": "Erik Agard / Ian Livengood",
+      "width": 11,
+      "height": 11,
+      "blocks": 23,
+      "words": 39,
+      "avg_len": 5.03,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "midi-2026-07-09",
+      "file": "puzzles/midi-2026-07-09.puz",
+      "type": "midi",
+      "date": "2026-07-09",
+      "title": "NY Times, Thursday, July 9, 2026 IT'S ELECTRIC!",
+      "author": "Ian Livengood",
+      "width": 11,
+      "height": 11,
+      "blocks": 26,
+      "words": 40,
+      "avg_len": 4.72,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "midi-2026-07-08",
+      "file": "puzzles/midi-2026-07-08.puz",
+      "type": "midi",
+      "date": "2026-07-08",
+      "title": "NY Times, Wednesday, July 8, 2026 MEET ME IN THE MIDDLE",
+      "author": "Tom McCoy / Ian Livengood",
+      "width": 11,
+      "height": 11,
+      "blocks": 21,
+      "words": 42,
+      "avg_len": 4.76,
+      "rebus": 0,
+      "circles": 6
+    },
+    {
+      "id": "midi-2026-07-07",
+      "file": "puzzles/midi-2026-07-07.puz",
+      "type": "midi",
+      "date": "2026-07-07",
+      "title": "NY Times, Tuesday, July 7, 2026 FLEXIBLE PERFORMERS",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 9,
+      "blocks": 15,
+      "words": 29,
+      "avg_len": 4.55,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-07-07",
@@ -2420,7 +3805,27 @@
       "title": "NY Times, Tuesday, July 7, 2026",
       "author": "Brad Lively / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 76,
+      "avg_len": 4.92,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "midi-2026-07-06",
+      "file": "puzzles/midi-2026-07-06.puz",
+      "type": "midi",
+      "date": "2026-07-06",
+      "title": "NY Times, Monday, July 6, 2026 OZONE",
+      "author": "Paolo Pasco / Ian Livengood",
+      "width": 9,
+      "height": 9,
+      "blocks": 18,
+      "words": 32,
+      "avg_len": 3.94,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-07-06",
@@ -2430,7 +3835,72 @@
       "title": "NY Times, Monday, July 6, 2026",
       "author": "Alex Eaton-Salners / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 74,
+      "avg_len": 5.11,
+      "rebus": 0,
+      "circles": 20
+    },
+    {
+      "id": "midi-2026-07-05",
+      "file": "puzzles/midi-2026-07-05.puz",
+      "type": "midi",
+      "date": "2026-07-05",
+      "title": "NY Times, Sunday, July 5, 2026 CORNER STORES",
+      "author": "Zhou Zhang and Kevin Curry / Ian Livengood",
+      "width": 11,
+      "height": 11,
+      "blocks": 19,
+      "words": 43,
+      "avg_len": 4.74,
+      "rebus": 0,
+      "circles": 20
+    },
+    {
+      "id": "midi-2026-07-04",
+      "file": "puzzles/midi-2026-07-04.puz",
+      "type": "midi",
+      "date": "2026-07-04",
+      "title": "NY Times, Saturday, July 4, 2026 FIRECRACKERS",
+      "author": "Ian Livengood",
+      "width": 9,
+      "height": 9,
+      "blocks": 12,
+      "words": 31,
+      "avg_len": 4.45,
+      "rebus": 0,
+      "circles": 12
+    },
+    {
+      "id": "midi-2026-07-03",
+      "file": "puzzles/midi-2026-07-03.puz",
+      "type": "midi",
+      "date": "2026-07-03",
+      "title": "NY Times, Friday, July 3, 2026 FIT CHECK",
+      "author": "Adrianne Baik / Ian Livengood",
+      "width": 10,
+      "height": 10,
+      "blocks": 18,
+      "words": 36,
+      "avg_len": 4.56,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "midi-2026-07-02",
+      "file": "puzzles/midi-2026-07-02.puz",
+      "type": "midi",
+      "date": "2026-07-02",
+      "title": "NY Times, Thursday, July 2, 2026 A LITTLE HELP HERE",
+      "author": "Ian Livengood",
+      "width": 11,
+      "height": 10,
+      "blocks": 17,
+      "words": 39,
+      "avg_len": 4.77,
+      "rebus": 0,
+      "circles": 8
     },
     {
       "id": "bonus-2026-07-01",
@@ -2440,7 +3910,12 @@
       "title": "NY Times, Wednesday, July 1, 2026 GO-O-O-OAL ORIENTED",
       "author": "Katie Hale and Adesina O. Koiki / Christina Iverson",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 80,
+      "avg_len": 4.67,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-07-01",
@@ -2450,7 +3925,12 @@
       "title": "NY Times, Wednesday, July 1, 2026",
       "author": "Jeffrey Martinovic / Will Shortz",
       "width": 16,
-      "height": 15
+      "height": 15,
+      "blocks": 40,
+      "words": 82,
+      "avg_len": 4.88,
+      "rebus": 0,
+      "circles": 8
     },
     {
       "id": "bonus-2026-06-01",
@@ -2460,7 +3940,12 @@
       "title": "NY Times, Monday, June 1, 2026 ... AND THE REST IS DRAG",
       "author": "Christina Iverson and Bianca Del Rio / Christina Iverson",
       "width": 16,
-      "height": 15
+      "height": 15,
+      "blocks": 46,
+      "words": 79,
+      "avg_len": 4.91,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2026-05-01",
@@ -2470,7 +3955,12 @@
       "title": "NY Times, Friday, May 1, 2026 MY LIFE WAS SAVED BY ROCK 'N' ROLL",
       "author": "Jeff Tweedy and Christina Iverson / Christina Iverson",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 82,
+      "avg_len": 4.56,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-04-08",
@@ -2480,7 +3970,12 @@
       "title": "NY Times, Wednesday, April 8, 2026",
       "author": "Philippe Monfiston / Will Shortz",
       "width": 16,
-      "height": 15
+      "height": 15,
+      "blocks": 40,
+      "words": 79,
+      "avg_len": 5.06,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2026-03-04",
@@ -2490,7 +3985,27 @@
       "title": "NY Times, Wednesday, March 4, 2026",
       "author": "Wayne Bergman / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 39,
+      "words": 76,
+      "avg_len": 4.89,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "2026-01-07",
+      "file": "puzzles/2026-01-07.puz",
+      "type": "daily",
+      "date": "2026-01-07",
+      "title": "NY Times, Wednesday, January 7, 2026",
+      "author": "Adrianne Baik / Will Shortz",
+      "width": 15,
+      "height": 15,
+      "blocks": 36,
+      "words": 76,
+      "avg_len": 4.97,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2026-01-01",
@@ -2500,7 +4015,12 @@
       "title": "NY Times, Thursday, January 1, 2026 YOUR TIME STARTS NOW",
       "author": "Rena Cohen / Christina Iverson",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 44,
+      "words": 76,
+      "avg_len": 4.76,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2025-10-04",
@@ -2510,7 +4030,12 @@
       "title": "NY Times, Saturday, October 4, 2025",
       "author": "Ryan McCarty / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 34,
+      "words": 62,
+      "avg_len": 6.16,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "mini-2025-09-12",
@@ -2520,7 +4045,12 @@
       "title": "NY Times, Friday, September 12, 2025",
       "author": "Wyna Liu / Joel Fagliano",
       "width": 5,
-      "height": 5
+      "height": 5,
+      "blocks": 0,
+      "words": 10,
+      "avg_len": 5.0,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2025-08-01",
@@ -2530,7 +4060,12 @@
       "title": "NY Times, Friday, August 1, 2025 SUMMER SYLLABUS",
       "author": "Aimee Lucido / Christina Iverson",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 43,
+      "words": 85,
+      "avg_len": 4.28,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2024-08-05",
@@ -2540,7 +4075,27 @@
       "title": "NY Times, Monday, August 5, 2024",
       "author": "Andy Walker / Joel Fagliano",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 36,
+      "words": 78,
+      "avg_len": 4.85,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "2022-09-26",
+      "file": "puzzles/2022-09-26.puz",
+      "type": "daily",
+      "date": "2022-09-26",
+      "title": "NY Times, Monday, September 26, 2022",
+      "author": "Margaret Seikel / Will Shortz",
+      "width": 15,
+      "height": 15,
+      "blocks": 36,
+      "words": 76,
+      "avg_len": 4.97,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2022-09-14",
@@ -2550,7 +4105,12 @@
       "title": "NY Times, Wednesday, September 14, 2022",
       "author": "Michael Dewey / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 76,
+      "avg_len": 4.92,
+      "rebus": 0,
+      "circles": 32
     },
     {
       "id": "2021-09-15",
@@ -2560,7 +4120,12 @@
       "title": "NY Times, Wednesday, September 15, 2021",
       "author": "Sophie Buchmueller and Ross Trudeau / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 74,
+      "avg_len": 5.05,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2021-04-26",
@@ -2570,7 +4135,12 @@
       "title": "NY Times, Monday, April 26, 2021",
       "author": "Eric and Lori Bornstein / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 40,
+      "words": 75,
+      "avg_len": 4.93,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2021-01-06",
@@ -2580,7 +4150,12 @@
       "title": "NY Times, Wednesday, January 6, 2021",
       "author": "Eric Bornstein / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 78,
+      "avg_len": 4.79,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2020-04-22",
@@ -2590,7 +4165,12 @@
       "title": "NY Times, Wednesday, April 22, 2020",
       "author": "Jules Markey / Will Shortz",
       "width": 16,
-      "height": 15
+      "height": 15,
+      "blocks": 40,
+      "words": 75,
+      "avg_len": 5.33,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2019-10-16",
@@ -2600,7 +4180,12 @@
       "title": "NY Times, Wednesday, October 16, 2019",
       "author": "Peter A. Collins / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 76,
+      "avg_len": 4.92,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2019-09-15",
@@ -2610,7 +4195,12 @@
       "title": "NY Times, Sunday, September 15, 2019 GET YOUR MIND OUT OF THE GUTTER",
       "author": "Andrew Kingsley / Will Shortz",
       "width": 21,
-      "height": 21
+      "height": 21,
+      "blocks": 85,
+      "words": 140,
+      "avg_len": 5.09,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2019-06-17",
@@ -2620,7 +4210,12 @@
       "title": "NY Times, Monday, June 17, 2019",
       "author": "Erik Agard, Yacob Yonas / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 40,
+      "words": 76,
+      "avg_len": 4.87,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2019-03-01",
@@ -2630,7 +4225,27 @@
       "title": "NY Times, Friday, March 1, 2019 NATIONAL SLEEP MONTH",
       "author": "Fred Piscop",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "2018-08-12",
+      "file": "puzzles/2018-08-12.puz",
+      "type": "daily",
+      "date": "2018-08-12",
+      "title": "NY Times, Sunday, August 12, 2018 IF I WERE YOU ...",
+      "author": "Ross Trudeau / Will Shortz",
+      "width": 21,
+      "height": 21,
+      "blocks": 70,
+      "words": 138,
+      "avg_len": 5.38,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2018-08-07",
@@ -2640,7 +4255,12 @@
       "title": "NY Times, Tuesday, August 7, 2018",
       "author": "Alex Eaton-Salners / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 42,
+      "words": 78,
+      "avg_len": 4.69,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2016-08-18",
@@ -2650,7 +4270,57 @@
       "title": "NY Times, Thursday, August 18, 2016",
       "author": "Jeff Chen, Parker Lewis / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 34,
+      "words": 72,
+      "avg_len": 5.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2015-08-01",
+      "file": "puzzles/bonus-2015-08-01.puz",
+      "type": "bonus",
+      "date": "2015-08-01",
+      "title": "NY Times, Saturday, August 1, 2015 INDIAN INDEPENDENCE DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 50,
+      "words": 84,
+      "avg_len": 4.17,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2015-02-01",
+      "file": "puzzles/bonus-2015-02-01.puz",
+      "type": "bonus",
+      "date": "2015-02-01",
+      "title": "NY Times, Sunday, February 1, 2015 WASHINGTON'S BIRTHDAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2015-01-01",
+      "file": "puzzles/bonus-2015-01-01.puz",
+      "type": "bonus",
+      "date": "2015-01-01",
+      "title": "NY Times, Thursday, January 1, 2015 NATIONAL NOTHING DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 50,
+      "words": 82,
+      "avg_len": 4.27,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2014-09-10",
@@ -2660,7 +4330,12 @@
       "title": "NY Times, Wednesday, September 10, 2014",
       "author": "Jim Peredo / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 37,
+      "words": 76,
+      "avg_len": 4.95,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2014-07-01",
@@ -2670,7 +4345,12 @@
       "title": "NY Times, Tuesday, July 1, 2014 NATIONAL HOT DOG MONTH",
       "author": "Fred Piscop",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 49,
+      "words": 84,
+      "avg_len": 4.19,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2014-06-01",
@@ -2680,7 +4360,12 @@
       "title": "NY Times, Sunday, June 1, 2014 THEIR FINEST HOUR",
       "author": "Fred Piscop",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 48,
+      "words": 84,
+      "avg_len": 4.21,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2014-05-01",
@@ -2690,7 +4375,12 @@
       "title": "NY Times, Thursday, May 1, 2014 THE MERRY MONTH OF MAY",
       "author": "Fred Piscop",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2014-04-01",
@@ -2700,7 +4390,12 @@
       "title": "NY Times, Tuesday, April 1, 2014 EASTER EGGS",
       "author": "Fred Piscop",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2014-03-01",
@@ -2710,7 +4405,12 @@
       "title": "NY Times, Saturday, March 1, 2014 NATIONAL SAVE A SPIDER DAY",
       "author": "Fred Piscop",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 48,
+      "words": 84,
+      "avg_len": 4.21,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2014-02-01",
@@ -2720,7 +4420,12 @@
       "title": "NY Times, Saturday, February 1, 2014 NATIONAL WEAR RED DAY",
       "author": "Fred Piscop",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2014-01-01",
@@ -2730,7 +4435,12 @@
       "title": "NY Times, Wednesday, January 1, 2014 RING IN THE NEW",
       "author": "Fred Piscop",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 48,
+      "words": 84,
+      "avg_len": 4.21,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2012-05-12",
@@ -2740,7 +4450,12 @@
       "title": "NY Times, Saturday, May 12, 2012",
       "author": "Caleb Madison / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 32,
+      "words": 68,
+      "avg_len": 5.68,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2010-01-01",
@@ -2750,7 +4465,12 @@
       "title": "NY Times, Friday, January 1, 2010",
       "author": "Brad Wilber / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 32,
+      "words": 70,
+      "avg_len": 5.51,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "2003-05-03",
@@ -2760,7 +4480,12 @@
       "title": "NY Times, Saturday, May 3, 2003",
       "author": "John Scott Marrone / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 44,
+      "words": 72,
+      "avg_len": 5.03,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "bonus-2001-10-01",
@@ -2770,7 +4495,237 @@
       "title": "NY Times, Monday, October 1, 2001 HALLOWEEN COLORS",
       "author": "Fred Piscop",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2001-08-01",
+      "file": "puzzles/bonus-2001-08-01.puz",
+      "type": "bonus",
+      "date": "2001-08-01",
+      "title": "NY Times, Wednesday, August 1, 2001 NATIONAL INVENTORS' MONTH",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 45,
+      "words": 84,
+      "avg_len": 4.29,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2001-02-01",
+      "file": "puzzles/bonus-2001-02-01.puz",
+      "type": "bonus",
+      "date": "2001-02-01",
+      "title": "NY Times, Thursday, February 1, 2001 BLACK HISTORY MONTH",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2001-01-01",
+      "file": "puzzles/bonus-2001-01-01.puz",
+      "type": "bonus",
+      "date": "2001-01-01",
+      "title": "NY Times, Monday, January 1, 2001 2001: A SPACE ODYSSEY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2000-12-01",
+      "file": "puzzles/bonus-2000-12-01.puz",
+      "type": "bonus",
+      "date": "2000-12-01",
+      "title": "NY Times, Friday, December 1, 2000 JINGLE BELLS",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2000-11-01",
+      "file": "puzzles/bonus-2000-11-01.puz",
+      "type": "bonus",
+      "date": "2000-11-01",
+      "title": "NY Times, Wednesday, November 1, 2000 ALL SAINTS' DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2000-10-01",
+      "file": "puzzles/bonus-2000-10-01.puz",
+      "type": "bonus",
+      "date": "2000-10-01",
+      "title": "NY Times, Sunday, October 1, 2000 \"TEN\"",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2000-09-01",
+      "file": "puzzles/bonus-2000-09-01.puz",
+      "type": "bonus",
+      "date": "2000-09-01",
+      "title": "NY Times, Friday, September 1, 2000 FALL COLORS",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2000-08-01",
+      "file": "puzzles/bonus-2000-08-01.puz",
+      "type": "bonus",
+      "date": "2000-08-01",
+      "title": "NY Times, Tuesday, August 1, 2000 THE HOT MONTH",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 48,
+      "words": 82,
+      "avg_len": 4.32,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2000-07-01",
+      "file": "puzzles/bonus-2000-07-01.puz",
+      "type": "bonus",
+      "date": "2000-07-01",
+      "title": "NY Times, Saturday, July 1, 2000 INDEPENDENCE DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2000-06-01",
+      "file": "puzzles/bonus-2000-06-01.puz",
+      "type": "bonus",
+      "date": "2000-06-01",
+      "title": "NY Times, Thursday, June 1, 2000 JUNE BUGS",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2000-05-01",
+      "file": "puzzles/bonus-2000-05-01.puz",
+      "type": "bonus",
+      "date": "2000-05-01",
+      "title": "NY Times, Monday, May 1, 2000 MAY-LANGE",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 48,
+      "words": 84,
+      "avg_len": 4.21,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2000-04-01",
+      "file": "puzzles/bonus-2000-04-01.puz",
+      "type": "bonus",
+      "date": "2000-04-01",
+      "title": "NY Times, Saturday, April 1, 2000 SPRING BREAK",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 46,
+      "words": 82,
+      "avg_len": 4.37,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2000-03-01",
+      "file": "puzzles/bonus-2000-03-01.puz",
+      "type": "bonus",
+      "date": "2000-03-01",
+      "title": "NY Times, Wednesday, March 1, 2000 THE THIRD MONTH",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2000-02-01",
+      "file": "puzzles/bonus-2000-02-01.puz",
+      "type": "bonus",
+      "date": "2000-02-01",
+      "title": "NY Times, Tuesday, February 1, 2000 PRESIDENTS' DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-2000-01-01",
+      "file": "puzzles/bonus-2000-01-01.puz",
+      "type": "bonus",
+      "date": "2000-01-01",
+      "title": "NY Times, Saturday, January 1, 2000 PUZZLE FOR TWO THOUSAND",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
     },
     {
       "id": "1999-12-31",
@@ -2780,7 +4735,537 @@
       "title": "NY Times, Friday, December 31, 1999",
       "author": "Peter Gordon / Will Shortz",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 40,
+      "words": 78,
+      "avg_len": 4.74,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1999-12-01",
+      "file": "puzzles/bonus-1999-12-01.puz",
+      "type": "bonus",
+      "date": "1999-12-01",
+      "title": "NY Times, Wednesday, December 1, 1999 THE END OF THE 1900'S",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1999-11-01",
+      "file": "puzzles/bonus-1999-11-01.puz",
+      "type": "bonus",
+      "date": "1999-11-01",
+      "title": "NY Times, Monday, November 1, 1999 NOVEMBER IN HISTORY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 48,
+      "words": 82,
+      "avg_len": 4.32,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1999-10-01",
+      "file": "puzzles/bonus-1999-10-01.puz",
+      "type": "bonus",
+      "date": "1999-10-01",
+      "title": "NY Times, Friday, October 1, 1999 CELEBRATING UNITED NATIONS DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 47,
+      "words": 86,
+      "avg_len": 4.14,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1999-09-01",
+      "file": "puzzles/bonus-1999-09-01.puz",
+      "type": "bonus",
+      "date": "1999-09-01",
+      "title": "NY Times, Wednesday, September 1, 1999 MONTH NUMBER NINE",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1999-08-01",
+      "file": "puzzles/bonus-1999-08-01.puz",
+      "type": "bonus",
+      "date": "1999-08-01",
+      "title": "NY Times, Sunday, August 1, 1999 THE MONTH WITH NO HOLIDAYS",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 41,
+      "words": 84,
+      "avg_len": 4.38,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1999-07-01",
+      "file": "puzzles/bonus-1999-07-01.puz",
+      "type": "bonus",
+      "date": "1999-07-01",
+      "title": "NY Times, Thursday, July 1, 1999 HAPPY FOURTH!",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 41,
+      "words": 84,
+      "avg_len": 4.38,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1999-06-01",
+      "file": "puzzles/bonus-1999-06-01.puz",
+      "type": "bonus",
+      "date": "1999-06-01",
+      "title": "NY Times, Tuesday, June 1, 1999 D DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 42,
+      "words": 84,
+      "avg_len": 4.36,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1999-05-01",
+      "file": "puzzles/bonus-1999-05-01.puz",
+      "type": "bonus",
+      "date": "1999-05-01",
+      "title": "NY Times, Saturday, May 1, 1999 MOTHER'S DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1999-04-01",
+      "file": "puzzles/bonus-1999-04-01.puz",
+      "type": "bonus",
+      "date": "1999-04-01",
+      "title": "NY Times, Thursday, April 1, 1999 EARTH DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1999-03-01",
+      "file": "puzzles/bonus-1999-03-01.puz",
+      "type": "bonus",
+      "date": "1999-03-01",
+      "title": "NY Times, Monday, March 1, 1999 IN LIKE A LION, OUT LIKE A LAMB",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1999-02-01",
+      "file": "puzzles/bonus-1999-02-01.puz",
+      "type": "bonus",
+      "date": "1999-02-01",
+      "title": "NY Times, Monday, February 1, 1999 THE SHORT MONTH",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1999-01-01",
+      "file": "puzzles/bonus-1999-01-01.puz",
+      "type": "bonus",
+      "date": "1999-01-01",
+      "title": "NY Times, Friday, January 1, 1999 HAPPY FIRST!",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1998-12-01",
+      "file": "puzzles/bonus-1998-12-01.puz",
+      "type": "bonus",
+      "date": "1998-12-01",
+      "title": "NY Times, Tuesday, December 1, 1998 LET IT SNOW!",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1998-11-01",
+      "file": "puzzles/bonus-1998-11-01.puz",
+      "type": "bonus",
+      "date": "1998-11-01",
+      "title": "NY Times, Sunday, November 1, 1998 FALL FUN",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1998-10-01",
+      "file": "puzzles/bonus-1998-10-01.puz",
+      "type": "bonus",
+      "date": "1998-10-01",
+      "title": "NY Times, Thursday, October 1, 1998 HAPPY HALLOWEEN",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1998-08-01",
+      "file": "puzzles/bonus-1998-08-01.puz",
+      "type": "bonus",
+      "date": "1998-08-01",
+      "title": "NY Times, Saturday, August 1, 1998 AUGUST IN HISTORY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1998-07-01",
+      "file": "puzzles/bonus-1998-07-01.puz",
+      "type": "bonus",
+      "date": "1998-07-01",
+      "title": "NY Times, Wednesday, July 1, 1998 JULY IN HISTORY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1998-06-01",
+      "file": "puzzles/bonus-1998-06-01.puz",
+      "type": "bonus",
+      "date": "1998-06-01",
+      "title": "NY Times, Monday, June 1, 1998 FATHER'S DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1998-05-01",
+      "file": "puzzles/bonus-1998-05-01.puz",
+      "type": "bonus",
+      "date": "1998-05-01",
+      "title": "NY Times, Friday, May 1, 1998 THE FLOWERY MONTH",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 43,
+      "words": 84,
+      "avg_len": 4.33,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1998-04-01",
+      "file": "puzzles/bonus-1998-04-01.puz",
+      "type": "bonus",
+      "date": "1998-04-01",
+      "title": "NY Times, Wednesday, April 1, 1998 THE SHOWERY MONTH",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 42,
+      "words": 84,
+      "avg_len": 4.36,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1998-03-01",
+      "file": "puzzles/bonus-1998-03-01.puz",
+      "type": "bonus",
+      "date": "1998-03-01",
+      "title": "NY Times, Sunday, March 1, 1998 HAPPY ST. PATRICK'S DAY!",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 42,
+      "words": 84,
+      "avg_len": 4.36,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1998-02-01",
+      "file": "puzzles/bonus-1998-02-01.puz",
+      "type": "bonus",
+      "date": "1998-02-01",
+      "title": "NY Times, Sunday, February 1, 1998 HAPPY VALENTINE'S DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1998-01-01",
+      "file": "puzzles/bonus-1998-01-01.puz",
+      "type": "bonus",
+      "date": "1998-01-01",
+      "title": "NY Times, Thursday, January 1, 1998 HAPPY 1998!",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1997-12-01",
+      "file": "puzzles/bonus-1997-12-01.puz",
+      "type": "bonus",
+      "date": "1997-12-01",
+      "title": "NY Times, Monday, December 1, 1997 WINTER PUZZLE",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 48,
+      "words": 84,
+      "avg_len": 4.21,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1997-11-01",
+      "file": "puzzles/bonus-1997-11-01.puz",
+      "type": "bonus",
+      "date": "1997-11-01",
+      "title": "NY Times, Saturday, November 1, 1997 VETERANS DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1997-10-01",
+      "file": "puzzles/bonus-1997-10-01.puz",
+      "type": "bonus",
+      "date": "1997-10-01",
+      "title": "NY Times, Wednesday, October 1, 1997 COLUMBUS DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1997-09-01",
+      "file": "puzzles/bonus-1997-09-01.puz",
+      "type": "bonus",
+      "date": "1997-09-01",
+      "title": "NY Times, Monday, September 1, 1997 BACK TO SCHOOL",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1997-08-01",
+      "file": "puzzles/bonus-1997-08-01.puz",
+      "type": "bonus",
+      "date": "1997-08-01",
+      "title": "NY Times, Friday, August 1, 1997 DOG DAYS",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1997-07-01",
+      "file": "puzzles/bonus-1997-07-01.puz",
+      "type": "bonus",
+      "date": "1997-07-01",
+      "title": "NY Times, Tuesday, July 1, 1997 REMEMBERING THE REVOLUTIONARY WAR",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1997-06-01",
+      "file": "puzzles/bonus-1997-06-01.puz",
+      "type": "bonus",
+      "date": "1997-06-01",
+      "title": "NY Times, Sunday, June 1, 1997 HERE COMES THE SUMMER!",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 42,
+      "words": 84,
+      "avg_len": 4.36,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1997-05-01",
+      "file": "puzzles/bonus-1997-05-01.puz",
+      "type": "bonus",
+      "date": "1997-05-01",
+      "title": "NY Times, Thursday, May 1, 1997 MAY DAY!",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1997-04-01",
+      "file": "puzzles/bonus-1997-04-01.puz",
+      "type": "bonus",
+      "date": "1997-04-01",
+      "title": "NY Times, Tuesday, April 1, 1997 PLAY BALL!",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 44,
+      "words": 84,
+      "avg_len": 4.31,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1997-03-01",
+      "file": "puzzles/bonus-1997-03-01.puz",
+      "type": "bonus",
+      "date": "1997-03-01",
+      "title": "NY Times, Saturday, March 1, 1997 MARCH!",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "bonus-1997-02-01",
+      "file": "puzzles/bonus-1997-02-01.puz",
+      "type": "bonus",
+      "date": "1997-02-01",
+      "title": "NY Times, Saturday, February 1, 1997 PRESIDENTS' DAY",
+      "author": "Fred Piscop",
+      "width": 15,
+      "height": 15,
+      "blocks": 46,
+      "words": 84,
+      "avg_len": 4.26,
+      "rebus": 0,
+      "circles": 0
+    },
+    {
+      "id": "1993-11-21",
+      "file": "puzzles/1993-11-21.puz",
+      "type": "daily",
+      "date": "1993-11-21",
+      "title": "NY Times, Sunday, November 21, 1993 SPECTRAL ANALYSIS",
+      "author": "Peter Gordon / Will Shortz",
+      "width": 21,
+      "height": 21,
+      "blocks": 86,
+      "words": 150,
+      "avg_len": 4.73,
+      "rebus": 14,
+      "circles": 0
     },
     {
       "id": "sample",
@@ -2790,7 +5275,12 @@
       "title": "Test Fixture ’ 15×15",
       "author": "make_fixture.py / Crossword Site",
       "width": 15,
-      "height": 15
+      "height": 15,
+      "blocks": 38,
+      "words": 81,
+      "avg_len": 4.6,
+      "rebus": 2,
+      "circles": 5
     },
     {
       "id": "mega2025",
@@ -2800,7 +5290,12 @@
       "title": "Super Mega 2025",
       "author": "NY Times",
       "width": 51,
-      "height": 49
+      "height": 49,
+      "blocks": 356,
+      "words": 748,
+      "avg_len": 5.73,
+      "rebus": 0,
+      "circles": 18
     }
   ]
 }

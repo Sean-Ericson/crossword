@@ -1,0 +1,17 @@
+{
+  "name": "crossword-site",
+  "private": true,
+  "type": "module",
+  "description": "NYT-style crossword player with real-time co-op, self-hosted.",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node server/server.mjs",
+    "admin": "node server/admin.mjs",
+    "test": "node tests/run_tests.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.21.3"
+  }
+}

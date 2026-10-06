@@ -1,14 +1,257 @@
-/* stats.css — stat tiles, weekday bars, comparison table. */
+/* stats.css — the stats page: selectors, filter bar, section tabs, tiles,
+   tables. The charts themselves are styled in charts.css. */
 
 .stats-main {
-  max-width: 820px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 24px 20px 60px;
+}
+
+.stats-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .stats-main h1 {
   font-size: 26px;
   margin: 0 0 14px;
+}
+
+.stats-main .type-tabs,
+.section-tabs {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.stats-main .type-tab {
+  white-space: nowrap;
+}
+
+/* ---------- filter bar: one row above everything it scopes ---------- */
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: -6px 0 18px;
+  font-size: 13px;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segmented button {
+  border: none;
+  border-left: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.segmented button:first-child {
+  border-left: none;
+}
+
+.segmented button:hover {
+  color: var(--color-text);
+  background: var(--color-hover-tint);
+}
+
+.segmented button.active {
+  background: var(--color-bg-muted);
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.segmented.weekdays button {
+  padding: 5px 8px;
+  min-width: 32px;
+}
+
+.segmented.small button {
+  font-size: 12px;
+  padding: 3px 9px;
+}
+
+.filter-bar .check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+/* ---------- section tabs ---------- */
+
+.section-tabs {
+  display: flex;
+  gap: 6px;
+  padding-bottom: 14px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.section-tab {
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background: none;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 14px;
+  white-space: nowrap;
+}
+
+.section-tab:hover {
+  color: var(--color-text);
+  background: var(--color-hover-tint);
+}
+
+.section-tab.active {
+  color: var(--color-text);
+  font-weight: 700;
+  border-color: var(--color-text);
+}
+
+.stats-scope {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0 0 16px;
+}
+
+/* ---------- sections ---------- */
+
+.section-head {
+  margin: 30px 0 10px;
+}
+
+.section-head h2 {
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+
+.section-head .chart-sub {
+  margin: 0;
+  max-width: 72ch;
+}
+
+.section-head.row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.chart-grid.small {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+
+.stats-note {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 6px 0 12px;
+}
+
+.headline {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.pair-pick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.pair-pick select {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.clip {
+  display: inline-block;
+  max-width: 14em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.fastest {
+  font-weight: 700;
+}
+
+.gold {
+  color: var(--color-gold);
+}
+
+.table-more {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+
+/* an answer hidden until the viewer has solved the puzzle (or clicks) */
+.spoiler {
+  border: none;
+  padding: 0 4px;
+  border-radius: 3px;
+  font: inherit;
+  letter-spacing: 0.05em;
+  color: transparent;
+  background: var(--color-text-subtle);
+  cursor: pointer;
+  user-select: none;
+}
+
+.spoiler.shown {
+  color: inherit;
+  background: none;
+  cursor: text;
+  user-select: text;
+}
+
+@media (max-width: 600px) {
+  .stats-main {
+    padding: 16px 16px 48px;
+  }
+
+  .stats-main h1 {
+    font-size: 22px;
+  }
+
+  .chart {
+    padding: 12px 10px 10px;
+  }
 }
 
 /* ---------- user selector ---------- */
@@ -56,37 +299,110 @@
   align-self: center;
 }
 
+/* long account lists: just the people compared, each removable */
+.user-chip .chip-name {
+  max-width: 16em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-chip .chip-x {
+  margin: -4px -8px -4px -2px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.user-chip .chip-x:hover {
+  background: var(--color-hover-tint);
+  color: var(--color-text);
+}
+
+.user-chip.compare-btn {
+  border-style: dashed;
+  color: var(--color-text);
+  font-family: inherit;
+}
+
+.user-chip.compare-btn:hover {
+  border-color: var(--color-text);
+}
+
+/* a person's color, wherever their name is */
+.stats-main .dot {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* a name in a table: long ones are cut short (the full one is the tooltip) */
+.who {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.who-name {
+  display: inline-block;
+  max-width: 12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+@media (max-width: 600px) {
+  .who-name {
+    max-width: 7em;
+  }
+}
+
 /* ---------- stat tiles ---------- */
 
 .stat-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr));
   gap: 12px;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
 .stat-tile {
   border: 1px solid var(--color-border);
   border-radius: 10px;
-  padding: 14px 16px;
+  padding: 12px 14px;
+  min-width: 0;
 }
 
+/* big standalone numbers keep proportional figures */
 .stat-tile .tile-value {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.15;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .stat-tile .tile-label {
   font-size: 12px;
   color: var(--color-text-muted);
-  margin-top: 2px;
+  margin-bottom: 2px;
 }
 
 .stat-tile .tile-sub {
-  font-size: 11px;
+  font-size: 11.5px;
+  line-height: 1.35;
   color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.stat-tile .tile-sub a {
+  color: var(--color-link);
 }
 
 /* ---------- weekday bars ---------- */
@@ -183,7 +499,7 @@
 
 .wk-empty {
   font-size: 12px;
-  color: #c9c9c9;
+  color: var(--color-text-faint);
   padding-top: 1px;
 }
 
@@ -236,6 +552,69 @@
   font-weight: 700;
 }
 
+/* wide tables (many people) scroll sideways; the first column stays put */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll .h2h-table th,
+.table-scroll .h2h-table td {
+  white-space: nowrap;
+}
+
+.table-scroll .h2h-table td.with {
+  white-space: normal;
+}
+
+.table-scroll .h2h-table th:first-child,
+.table-scroll .h2h-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-bg);
+  box-shadow: inset -1px 0 0 var(--color-border); /* the edge columns slide under */
+}
+
+.h2h-table th.num,
+.h2h-table td.num {
+  text-align: right;
+}
+
+.h2h-table td.empty {
+  color: var(--color-text-faint);
+}
+
+.h2h-table tr.you td:first-child {
+  font-weight: 700;
+}
+
+.board {
+  margin-bottom: 34px;
+}
+
+.board h2 {
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+
+/* leaderboard headings sort the table */
+.sort-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  white-space: nowrap;
+}
+
+.sort-btn:hover,
+.sort-btn.active {
+  color: var(--color-text);
+}
+
 .h2h-table a {
   color: var(--color-link);
   text-decoration: none;
@@ -249,4 +628,39 @@
   color: var(--color-text-muted);
   padding: 30px 0;
   text-align: center;
+}
+
+/* ---------- co-op solves ---------- */
+
+.coop-stats {
+  margin-top: 32px;
+}
+
+.coop-stats h2 {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.coop-partner {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 10px;
+}
+
+.coop-partner .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.coop-more {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.h2h-table td.gold {
+  color: var(--color-gold);
 }

@@ -1,165 +1,273 @@
 # Crossword
 
-A self-hosted, NYT-style crossword site for GitHub Pages. Plays `.puz` files
-with the full NYT Games experience — keyboard behavior, check/reveal/autocheck,
-pencil mode, rebus entry, timer with pause, clean-solve gold stars — plus a
-puzzle archive with a calendar, saved progress, solve-time statistics, and
-multi-user comparison synced through a private GitHub repo.
+A self-hosted, NYT-style crossword site with **real-time co-op**. It plays
+`.puz` files with the full NYT Games experience: keyboard behavior,
+check/reveal/autocheck, pencil mode, rebus entry, a timer with pause, and
+clean-solve gold stars. It also has a puzzle archive with a calendar, and
+deep solve statistics: trends, distributions, habits, correlations with
+puzzle features, skill ratings, head-to-head tests, replays of every solve
+and more, for one person or any group. People can also **make their own
+puzzles**, alone or together live, and publish them for everyone (or just
+a few people) to solve. On phones and tablets the puzzle
+page docks an on-screen keyboard (with the current clue above it) under the
+grid, since tapping a square can't raise the system keyboard. There is a
+dark mode: it follows the system setting until you flip the ☾/☀ toggle in
+the header, which each browser remembers.
 
-Everything is vanilla JS ES modules. **No build step, no framework, no
-dependencies.**
+Co-op works like Google Docs. Any group of people can open a shared solve of
+a puzzle, and each person sees the others' letters as they type, their
+cursors and highlighted words in each person's color, and who is currently
+there. Solo and co-op solves of the same puzzle don't affect each other. For
+example, Sean, Devon, and Kam can each have a solo solve of Monday's
+puzzle. At the same time, Sean + Devon, Devon + Kam, and all three can have
+their own co-op solves of it.
+
+The browser code is vanilla JS ES modules with no build step and no
+framework. The server is a small Node program. Its only dependency is `ws`,
+and it stores data in SQLite through the `node:sqlite` module built into
+Node. It runs on Windows or Linux.
 
 ## Quick start (local)
 
 ```bash
-python -m http.server 8000
-# open http://localhost:8000
+npm install
+node server/admin.mjs add-user yourname --admin     # prints a temporary password
+npm start                                           # http://127.0.0.1:8080
 ```
 
-(Any static server works; `file://` does not, because the site uses `fetch`.)
-
-Run the test suite (needs Node 18+ and Python 3.9+):
+Run the tests. They need Node 22.13+ and Python 3.9+.
 
 ```bash
-node tests/run_tests.mjs
+npm test
 ```
 
-The parser tests cross-check `js/puz.js` against the vendored Python
-reference (`tools/puz.py`) — if you regenerate fixtures, run
-`python tests/make_fixture.py` and `python tests/dump_puz.py <file> <out>`.
+To put the site on the internet (home machine behind Cloudflare, published
+as https://cross.ho.house), see
+**[DEPLOY.md](DEPLOY.md)**.
+
+## Accounts
+
+Only the admin can create accounts; nobody can sign themselves up. Run
+these on the server:
+
+```bash
+node server/admin.mjs add-user devon --display "Devon"   # prints a temp password
+node server/admin.mjs reset-password devon
+node server/admin.mjs list
+node server/admin.mjs set-admin devon on|off
+node server/admin.mjs delete-user devon
+```
+
+Admins can do the same from anywhere on the web: account chip → **Manage
+accounts** (`admin.html`) lists everyone, adds and deletes accounts,
+resets passwords (temporary or chosen; the person is signed out
+everywhere), and makes people admins or removes them. Admins can't change
+or delete their own account there, so there's always at least one admin.
+
+Each person can change their own password from the account chip in the top
+right. The same menu can import progress that was saved in that browser
+before accounts existed.
+
+## Solo and co-op
+
+- Opening a puzzle (`puzzle.html?id=2026-09-22`) opens **your solo solve**.
+  It is saved on the server as you type, so it follows you between devices.
+  You can even have it open on two devices at once.
+- To start a co-op solve, click **Solo ▾ → New co-op solve…** in the
+  toolbar and pick people. Once there are more than eight accounts, the
+  picker has a search box and lists the people you solved with recently
+  first. Everyone you pick gets the solve in the
+  "Co-op solves in progress" strip on their archive page. The same menu
+  switches between your solo solve and any co-op solves you're in for that
+  puzzle, and it can add more people to a co-op solve. In a co-op solve,
+  the colored chips next to it show who is there; click them for everyone
+  in the solve. There are only eight user colors, so people who share one
+  get different colors inside a solve.
+- The co-op timer is shared. It runs while at least one member is actively
+  solving. The pause button pauses everyone. Switching tabs only pauses you.
+- Only the server can mark a solve complete, and it checks the grid itself.
+  Check and reveal work in co-op exactly as they do solo; if anyone uses
+  them, the solve loses its gold star.
+- **Stats:** solo solves drive streaks, averages, and best times. Co-op
+  solves have their own section of the stats page and never mix into the
+  solo numbers.
+- **Every solve is recorded move by move** (since the stats update): each
+  letter typed or erased and its direction, checks and reveals, which entry
+  each person is on, pauses. That drives replays, time per entry, typo and
+  fix counts, fill-order heatmaps and co-op credit. Older solves only have
+  their time.
+
+### Stats
+
+`stats.html` has a filter bar (date range, weekdays, clean only, and
+"relative" times: each solve against that person's usual for the weekday)
+over eight sections. **Overview**: headline tiles, records by weekday,
+recent solves, a prediction for the newest puzzle. **Trends**: every solve
+over time with a rolling median, the improvement rate with its confidence
+interval, per-weekday personal-record staircases. **Distributions**:
+histograms, box and violin plots, percentiles, consistency. **Habits**: a
+calendar, a solving-hour punchcard, how soon after release, sittings,
+unfinished puzzles. **Puzzles**: every puzzle with its grid features and
+difficulty, constructors (your nemesis and favorite), a correlation matrix.
+**Solve style** (from the recordings): pace, first letter, typos, typo
+hunts, across vs down, the average progress curve, letter mix-ups,
+most-missed answers. **Compare**: skill ratings from a model of everyone's
+times, Elo and Bradley–Terry, win and speed matrices with significance
+tests, a paired scatter for any two people. **Co-op**: synergy (the team
+against its members' predicted solo times), who filled what, who fixed
+whose mistakes. Every chart has a Table toggle with the numbers and a CSV
+download.
+
+`analysis.html?puzzle=…` breaks one puzzle down: everyone's results against
+what the model expected, the race between every recorded solve, a replay on
+the real grid with each person's cursor, grid heatmaps and an entry-by-entry
+table. If you haven't solved the puzzle yet, letters, answers and clues are
+hidden until you click "Show anyway".
+
+### How live sync works
+
+The server holds the authoritative copy of each open solve. The last edit
+to reach the server wins for each square. That is enough for crosswords
+because every square is independent, so no CRDT or OT is needed.
+
+1. Your edits show on your screen immediately and are sent to the server
+   over a WebSocket.
+2. The server applies edits in the order they arrive and broadcasts the
+   result to everyone in the solve.
+3. If someone else's edit to a square arrives while your own edit to that
+   square is still on its way, your screen ignores theirs. Your edit
+   reaches the server later, so it wins there too.
+4. If the connection drops, your unsent edits are kept and sent again when
+   it comes back.
+
+The protocol is documented in `js/net.js`. The server side is in
+`server/rooms.mjs`, and `tests/test_server.mjs` fuzzes three clients making
+conflicting edits to check that they always end up with the same grid.
+
+## Making puzzles
+
+The archive's **Custom** tab lists puzzles people made here. **New puzzle**
+picks a size (Mini 5×5 to Sunday 21×21, or anything from 3×3 to 25×25) and
+a symmetry, and opens the builder (`builder.html`). **Upload a .puz** turns
+a puzzle made in another program (Crossfire, Phil, Crosshare…) into a
+draft. The tab marks puzzles you haven't opened yet as new.
+
+- **Building.** Type letters as you would solving. `.` toggles a black square
+  (and its symmetric partner); in Blocks mode, clicking does. `*` circles a
+  square, Esc or Insert enters a rebus, Enter writes the current entry's
+  clue (Tab moves on to the next one), and Ctrl+Z / Ctrl+Shift+Z undo and
+  redo your own changes. Everything saves as you go.
+- **Building together.** Add co-authors from **More ▾ → Authors…**. Everyone
+  in the builder sees each other's letters, black squares, clues and cursors
+  live, like a co-op solve.
+- **Check** lists what has to be fixed before publishing (empty squares,
+  missing clues, squares in no entry) and what's merely unusual (two-letter
+  entries, unchecked squares, repeated answers, broken symmetry, a split
+  grid).
+- **Fill** suggests words for the current entry, keeping only words that
+  leave every crossing something to fit; a click fills the blanks. The words
+  come from every answer in the archive, published custom puzzles, and an
+  optional bigger word list (see `wordList` in DEPLOY.md). Each clue row says
+  how many words fit its entry, and blank squares nothing fits get a red dot.
+- **Publish** asks who can solve it: everyone, or people you choose. Once it's
+  published the black squares stay put (so solves in progress keep fitting),
+  but letters and clues can still change: edit them, then **Update**, and
+  anyone who has it open is asked to reload.
+- **Test solve** (in **More ▾**, or on the puzzle's own page) plays your copy
+  in the real player without saving anything. Authors never solve their own
+  puzzle for real, so its results stay honest.
+- **Download .puz** (in the builder, and in the player's **Solo ▾** menu)
+  saves a file Across Lite and other apps open.
+- When someone finishes your puzzle they can rate it and leave you a note.
+  The puzzle's breakdown page (**Results** on the Custom tab) shows who solved
+  it, the replays and what they said. Everyone sees the average rating; only
+  the authors and people who finished it see the notes.
+- **Delete** removes a draft. A puzzle someone has already opened is
+  withdrawn instead: it disappears from the list for everyone else, while
+  people keep their solves and stats.
+
+Custom puzzles live in the database, not in `puzzles/`, so the nightly
+backups cover them. The stats page has a Custom tab for them.
 
 ## Adding puzzles
 
-Puzzles are plain Across Lite `.puz` files in `puzzles/`, named
-`YYYY-MM-DD.puz` (dated puzzles appear in the calendar; any other name shows
-under "Special puzzles").
+Puzzles are plain Across Lite `.puz` files in `puzzles/`:
 
-**One-shot update** (needs the companion
-[nytxw_puz](https://github.com/Q726kbXuN/nytxw_puz) checkout next to this
-folder, and a browser logged into nytimes.com):
+- Dated puzzles are named `YYYY-MM-DD.puz`, or with a `mini-`, `midi-`, or
+  `bonus-` prefix, and appear in the calendar.
+- Files with any other name are listed under "Special".
 
-```bash
-python tools/update_puzzles.py            # cookies from Firefox (default)
-python tools/update_puzzles.py Chrome     # ...or another browser
-```
+The server keeps the archive current by itself:
 
-This downloads everything from the newest archived puzzle through today
-(tomorrow's puzzle too, once NYT publishes it at ~10pm ET), rebuilds
-`puzzles/index.json`, and commits + pushes. Re-running is cheap — existing
-files are skipped. On Windows, `update.cmd` does the same. Useful flags:
-`--start YYYY-MM-DD` to backfill a range, `--no-git` to only download.
+- **Every day at 23:30** it runs `tools/update_puzzles.py --no-git`. This
+  needs the companion [nytxw_puz](https://github.com/Q726kbXuN/nytxw_puz)
+  checkout next to this folder, and NYT login cookies (see DEPLOY.md).
+- **Old puzzles on demand:** the calendar shows every date NYT has
+  published. Days that haven't been downloaded yet are dashed and marked ↓.
+  Opening one makes the server download it (`tools/fetch_one.py`), which
+  usually takes a few seconds.
 
-Manual equivalent: drop `.puz` files into `puzzles/`, run
-`python tools/build_index.py`, commit and push.
+To add puzzles by hand, drop `.puz` files into `puzzles/` and run
+`python tools/build_index.py`.
 
-To keep the archive current automatically, run `daily_update.bat` from
-Windows Task Scheduler on an always-on machine — see
-[SETUP-SCHEDULED.md](SETUP-SCHEDULED.md). The updater rebases on the remote
-before downloading, so several machines can safely run it.
-
-### Fetching old puzzles on demand
-
-With sync connected, the calendar shows every date NYT has published (back
-to 1993 for the daily), not just what's downloaded. Undownloaded days are
-dashed with a ↓ — open one and it gets fetched for you, typically in a
-couple of minutes.
-
-A browser can't download from NYT itself (no CORS headers, and the session
-cookies are same-site), so it queues `requests/<id>.json` in the data repo
-and the machine running `fetch_watch.bat` does the download. The fetcher
-answers with the `.puz` bytes attached to the request, so the puzzle opens
-straight away rather than waiting ~40 s for GitHub Pages to publish the
-copy it also commits for the archive.
-
-That means **on-demand fetching needs that machine to be switched on** —
-otherwise requests sit queued until it is. Setup is in
-[SETUP-SCHEDULED.md](SETUP-SCHEDULED.md); there's no need to bulk-download
-the archive, since it fills in as people play.
-
-> **Copyright note:** NYT puzzles are copyrighted. A GitHub Pages site is
-> public (private-repo Pages needs GitHub Pro), so keep this to personal use
-> and don't advertise the URL.
-
-## Deploying to GitHub Pages
-
-1. Create a GitHub repo (say `crossword`) and push this folder to it.
-2. Repo → Settings → Pages → Source: *Deploy from a branch* → `main` / root.
-3. The site appears at `https://<you>.github.io/crossword/`. All URLs are
-   relative, so project pages, user pages, and custom domains all work.
-
-## Progress sync + multi-user setup (optional but recommended)
-
-Without any setup the site is fully functional **per browser**: progress,
-stats, and profiles live in localStorage. To sync across devices and compare
-stats between people, add the GitHub backend:
-
-1. **Create a private data repo**, e.g. `crossword-data`, with a README so
-   the `main` branch exists. (Progress writes stay out of the site repo, so
-   saves don't trigger Pages rebuilds.)
-2. **Create a fine-grained personal access token**:
-   GitHub → Settings → Developer settings → Fine-grained tokens →
-   *Generate new token*. Repository access: **only** `crossword-data`.
-   Permissions: **Contents → Read and write**. Max expiration is 1 year —
-   when it expires, paste a new one.
-3. **Configure each device**: on the site, click the sync badge (top right)
-   and enter owner / repo / token → *Test connection* → *Save*.
-4. **Family/friends**: everyone uses the same data repo. Either share one
-   token, or add them as collaborators so they can mint their own. Each
-   person picks their own profile name (top-right chip). Fair warning: one
-   shared repo means anyone with the token can technically edit anyone's
-   files — it's a trust-based model.
-5. Optionally set your GitHub username as the default in `js/config.js` so
-   others only have to paste the token.
-
-The token lives only in each browser's localStorage — never in the site repo.
-
-### How syncing behaves
-
-- localStorage is always the on-device store (autosaved ~1s after changes).
-- GitHub pushes happen on: puzzle completion, pause, tab hide/close, every
-  2 minutes while solving, and via *Sync now* in the sync settings.
-- Opening a puzzle pulls the remote copy in the background and keeps
-  whichever is further along (completed beats in-progress; otherwise newest
-  edit wins, and elapsed time is never lost).
-- Data layout: `users/<name>/progress/<year>/<id>.json` + `users/<name>/stats.json`.
+> **Copyright note:** NYT puzzles are copyrighted. The server only serves
+> puzzle files to signed-in users. Keep the site to friends and family.
 
 ## Pages
 
 | Page | What it does |
 |---|---|
-| `index.html` | Archive: latest-puzzle hero, month calendar with per-day status (◐ in progress, ★ solved, gold ★ = clean solve + time), special puzzles |
-| `puzzle.html?id=…` | The player (also accepts `?file=<url>` for ad-hoc .puz files) |
-| `stats.html` | Solved counts, clean solves, streaks (consecutive puzzle dates), average/best times by weekday; select multiple users for side-by-side bars and head-to-head |
+| `index.html` | Archive: co-op solves in progress, the latest-puzzle hero, and a month calendar with each day's status (◐ in progress, ★ solved, gold ★ clean solve, 👥 co-op); `#custom` opens the Custom tab |
+| `puzzle.html?id=…[&solve=…]` | The player (solo, or a co-op solve); `&test=1` is an author's test solve |
+| `builder.html?id=…` | The puzzle builder, for a custom puzzle's authors |
+| `stats.html` | Statistics for one person or a group in eight sections (see Stats above), with a filter bar and a CSV of everything |
+| `analysis.html?puzzle=…[&solve=…]` | One puzzle broken down: results, the race, a replay, grid heatmaps, entries. Linked from the stats tables and the “Congratulations” dialog |
+| `login.html` | Sign in |
+| `admin.html` | Accounts (admins only): reset passwords, add people |
 
 ## Player reference
 
-- **Typing** fills and advances (skipping filled squares — configurable in ⚙).
-- **Arrows** move; a perpendicular arrow switches direction. **Click** a
-  square twice to switch direction. **Tab/Enter** next clue.
-- **Backspace** clears/walks backward, **Space** clears/steps forward.
+- **Typing** fills the square and advances. Whether it skips filled squares
+  is configurable in ⚙.
+- **Arrows** move, and an arrow perpendicular to the current direction
+  switches direction. **Click** a square twice to switch direction.
+  **Tab/Enter** goes to the next clue.
+- **Backspace** clears and walks backward. **Space** clears and steps forward.
 - **Esc** (or Insert, or the Rebus button) opens multi-letter rebus entry.
-- **Check/Reveal** menus mark wrong squares (red slash) or reveal answers
-  (red corner, square locks). **Autocheck** verifies as you type and locks
-  correct letters. Using any of these forfeits the gold star.
+- **Check** marks wrong squares with a red slash. **Reveal** fills in
+  answers, marks them with a red corner, and locks the square. **Autocheck**
+  verifies letters as you type and locks correct ones. Using any of these
+  forfeits the gold star.
 - **Pencil** mode enters gray "tentative" letters.
-- The timer pauses from the timer button, automatically when the tab hides,
-  and shows the NYT-style overlay. Solved puzzles open read-only.
+- In co-op, other people's cursors appear as colored outlines with name
+  tags, and colored dots mark the clues they are on.
 
 ## Repo layout
 
 ```
-index.html puzzle.html stats.html   the three pages
-css/                                base + per-page styles
-js/                                 ES modules (parser, model, engine, views,
-                                    state, sync, stats, page controllers)
-puzzles/                            .puz files + generated index.json
-tools/puz.py                        vendored puzpy (MIT) — reference parser
-tools/build_index.py                archive index generator
-tests/                              node test runner + Python cross-check
+index.html puzzle.html builder.html stats.html analysis.html login.html   pages
+css/                  base + per-page styles
+js/                   browser ES modules: parser, model, engine, views, net
+                      (live sync), api client, page controllers; stats:
+                      solve-analysis, stats-data/-math/-model, charts,
+                      stats/ (one module per stats section); custom puzzles:
+                      custom-puzzle (the format), builder-page/-engine,
+                      clue-editor, custom-tab, words, puz-write, feedback
+server/               Node server: server.mjs (HTTP + WebSocket), api.mjs,
+                      rooms.mjs (live solves), build-rooms.mjs (live
+                      building), db.mjs (SQLite), auth.mjs, puzzles.mjs,
+                      words.mjs (the builder's word list), admin.mjs,
+                      tools/import-github.mjs,
+                      tools/seed-demo.mjs (made-up solvers for development)
+deploy/               Windows task installer, systemd unit
+puzzles/              .puz files + generated index.json
+tools/                puzzle download/index scripts (Python)
+tests/                node test runner + Python cross-check
 ```
 
-Credits: `.puz` format handling modeled on [puzpy](https://github.com/alexdej/puzpy)
-(MIT, vendored at `tools/puz.py`); puzzle downloads via
-[nytxw_puz](https://github.com/Q726kbXuN/nytxw_puz). The play experience is a
-loving imitation of [NYT Games](https://www.nytimes.com/crosswords) — subscribe
-to the real thing, it's worth it.
+Credits: the `.puz` format handling is modeled on
+[puzpy](https://github.com/alexdej/puzpy) (MIT, vendored at `tools/puz.py`),
+and puzzles are downloaded with
+[nytxw_puz](https://github.com/Q726kbXuN/nytxw_puz). The play experience is
+a loving imitation of [NYT Games](https://www.nytimes.com/crosswords).
+Subscribe to the real thing; it's worth it.

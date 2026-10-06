@@ -128,6 +128,8 @@ export function toast(message, { ms = 3000, error = false } = {}) {
   }
   const node = el('div', { class: 'toast' + (error ? ' toast-error' : '') }, message);
   host.append(node);
+  // a burst (a crowd joining a co-op one by one) keeps only the newest few
+  while (host.children.length > 4) host.firstElementChild.remove();
   setTimeout(() => {
     node.classList.add('toast-out');
     setTimeout(() => node.remove(), 400);

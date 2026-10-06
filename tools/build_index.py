@@ -36,6 +36,24 @@ def classify(stem):
     return 'special', None
 
 
+def features(p):
+    """Grid numbers the stats page correlates solve times with."""
+    blocks = sum(1 for ch in p.solution if puz.is_blacksquare(ch))
+    # numbered from the solution, like js/model.js (a .puz's fill grid can
+    # disagree about black squares)
+    numbering = puz.DefaultClueNumbering(p.solution, p.clues, p.width, p.height)
+    lengths = [e['len'] for e in numbering.across + numbering.down]
+    rebus = len(p.rebus().get_rebus_squares()) if p.has_rebus() else 0
+    circles = sum(1 for b in p.markup().markup if b & 0x80) if p.has_markup() else 0
+    return {
+        'blocks': blocks,
+        'words': len(lengths),
+        'avg_len': round(sum(lengths) / len(lengths), 2) if lengths else 0,
+        'rebus': rebus,
+        'circles': circles,
+    }
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--puzzles-dir', default='puzzles')
@@ -65,6 +83,7 @@ def main():
             'author': (p.author or '').strip(),
             'width': p.width,
             'height': p.height,
+            **features(p),
         })
 
     entries.sort(key=lambda e: (e['date'] or '0000-00-00', e['id']), reverse=True)

@@ -34,7 +34,7 @@ PUZZLES_DIR = os.path.join(SITE, 'puzzles')
 IMAGES_DIR = os.path.join(PUZZLES_DIR, 'images')
 sys.path.insert(0, HERE)
 
-from fetch_requests import classify, find_puzzle_id, PREFIX  # noqa: E402
+from fetch_one import classify, find_puzzle_id, PREFIX  # noqa: E402
 from nyt_clues import FCLU, IMG_SRC_RE, attach_formatted_clues, is_remote  # noqa: E402
 
 
