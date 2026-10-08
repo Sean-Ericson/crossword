@@ -36,6 +36,7 @@ import { pickPeople } from './people-picker.js';
 import { listNames } from './people.js';
 import { makeMenu } from './menus.js';
 import { openRebusInput as rebusPopup } from './rebus-input.js';
+import { ChatPanel } from './chat.js';
 import {
   el,
   qs,
@@ -144,8 +145,13 @@ async function main() {
   const isCoop = () => solve?.kind === 'coop';
 
   // ----- views -----
+  // typing goes to the grid again (the grid's mousedown leaves focus where it was)
+  const leaveFields = () => {
+    if (document.activeElement?.matches?.('input, textarea')) document.activeElement.blur();
+  };
   const gridView = new GridView(qs('#board-wrap'), model, {
     onCellClick: (i) => {
+      leaveFields();
       if (ready && !record.completed && !active) resumeGame();
       engine.clickCell(i);
     },
@@ -155,7 +161,10 @@ async function main() {
     downEl: qs('#down-list'),
     barEl: qs('#clue-bar'),
     model,
-    onSelectWord: (word) => engine.selectWord(word),
+    onSelectWord: (word) => {
+      leaveFields();
+      engine.selectWord(word);
+    },
     onBarNav: (delta) => engine.nextClue(delta),
     onBarTap: () => engine.toggleDirection(),
   });
@@ -216,6 +225,18 @@ async function main() {
   });
   engine.emitSelection();
 
+  // ----- chat (co-op only) -----
+  const chat = testMode
+    ? null
+    : new ChatPanel({
+        channel: live,
+        button: qs('#chat-btn'),
+        me: user,
+        people: () => solve?.members ?? [],
+        entry: (num, dir) => model.wordByNumber(num, dir),
+        onEntry: (word) => engine.selectWord(word),
+      });
+
   // ----- live connection -----
   const liveBadge = qs('#sync-badge');
   liveBadge.hidden = testMode;
@@ -253,6 +274,8 @@ async function main() {
     renderSolveInfo();
     renderPresence();
     drawAllRemote();
+    chat?.load(msg);
+    chat?.setAvailable(isCoop());
     if (firstTime && !testMode) {
       loadSolveList();
       loadDirectory().catch(() => {}); // display names in the solve menu
@@ -310,6 +333,7 @@ async function main() {
     if (solve) solve.members = msg.members;
     renderSolveInfo();
     renderPresence();
+    chat?.refreshPeople();
     if (overlayKind === 'start') showStartOverlay(); // "You're solving with …"
   });
   // a custom puzzle's constructors published a new version

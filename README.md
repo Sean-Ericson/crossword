@@ -83,6 +83,15 @@ before accounts existed.
   the colored chips next to it show who is there; click them for everyone
   in the solve. There are only eight user colors, so people who share one
   get different colors inside a solve.
+- **Chat.** In a co-op solve, the **Chat** button next to the chips opens
+  messages with everyone in the solve. It works before you start and while
+  the game is paused too. New messages pop up for a few seconds, and the
+  button and the tab title count the ones you haven't read. Type an entry's
+  name in a message, like `12A` or `34-Down`, and it becomes a link that
+  jumps to that entry. Messages are saved with the solve, so people who
+  open it later can read what was said. Enter sends and Shift+Enter starts
+  a new line. A message written while the connection is down is sent once
+  it comes back.
 - The co-op timer is shared. It runs while at least one member is actively
   solving. The pause button pauses everyone. Switching tabs only pauses you.
 - Only the server can mark a solve complete, and it checks the grid itself.
@@ -159,7 +168,8 @@ draft. The tab marks puzzles you haven't opened yet as new.
   redo your own changes. Everything saves as you go.
 - **Building together.** Add co-authors from **More ▾ → Authors…**. Everyone
   in the builder sees each other's letters, black squares, clues and cursors
-  live, like a co-op solve.
+  live, like a co-op solve. They can message each other with **Chat** in the
+  toolbar, which works the same way as in a co-op solve.
 - **Check** lists what has to be fixed before publishing (empty squares,
   missing clues, squares in no entry) and what's merely unusual (two-letter
   entries, unchecked squares, repeated answers, broken symmetry, a split
@@ -252,10 +262,12 @@ js/                   browser ES modules: parser, model, engine, views, net
                       solve-analysis, stats-data/-math/-model, charts,
                       stats/ (one module per stats section); custom puzzles:
                       custom-puzzle (the format), builder-page/-engine,
-                      clue-editor, custom-tab, words, puz-write, feedback
+                      clue-editor, custom-tab, words, puz-write, feedback;
+                      chat (messages in co-op solves and builds)
 server/               Node server: server.mjs (HTTP + WebSocket), api.mjs,
                       rooms.mjs (live solves), build-rooms.mjs (live
-                      building), db.mjs (SQLite), auth.mjs, puzzles.mjs,
+                      building), chat.mjs (their messages), db.mjs
+                      (SQLite), auth.mjs, puzzles.mjs,
                       words.mjs (the builder's word list), admin.mjs,
                       tools/import-github.mjs,
                       tools/seed-demo.mjs (made-up solvers for development)

@@ -75,6 +75,9 @@ function builder(hub, user, puzzleId) {
   live.on('error', (msg) => state.errors.push(msg));
   live.on('puzzle-state', (msg) => state.statuses.push(msg));
   live.on('authors', (msg) => state.authors.push(msg));
+  state.chat = [];
+  live.on('snapshot', (msg) => (state.chat = msg.chat.slice()));
+  live.on('chat', (m) => state.chat.push(m));
   return {
     conn,
     live,
@@ -143,7 +146,7 @@ test('custom store: a version 3 database gains custom puzzles and keeps its rows
                  DROP TABLE custom_puzzles; PRAGMA user_version = 3;`);
   store.close();
   store = new Store(file);
-  assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 4);
+  assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 5);
   assert.equal(store.statsDoc(u).solves['2026-01-01'].seconds, 5);
   const p = store.createCustomPuzzle({ id: 'custom-mig00001', createdBy: u.id, doc: emptyDoc({ width: 3, height: 3 }) });
   assert.deepEqual(p.authors.map((a) => a.name), ['sean']);
@@ -289,6 +292,36 @@ test('build: removed co-authors are sent away; a new one is announced', async ()
   // deleting the creator's account: kam carries on
   hub.dropUser(sean.id, () => store.deleteUser(sean.id));
   assert.deepEqual(store.customPuzzle(p.id).authors.map((x) => x.name), ['kam']);
+});
+
+test('build: authors message each other; the conversation goes when the puzzle does', async () => {
+  const { store, hub, users } = setup();
+  const [sean, devon, kam] = users;
+  const p = store.createCustomPuzzle({ id: 'custom-chat0001', createdBy: sean.id, doc: emptyDoc({ width: 3, height: 3 }) });
+  store.addCustomAuthors(p.id, [devon.id]);
+  const a = builder(hub, sean, p.id);
+  const b = builder(hub, devon, p.id);
+  await a.join();
+  await b.join();
+  a.live.sendChat('Can you clue 1A?');
+  await drain([a, b], hub);
+  b.live.sendChat('On it');
+  await drain([a, b], hub);
+  for (const c of [a, b]) assert.deepEqual(c.state.chat.map((m) => `${m.user}: ${m.text}`), ['sean: Can you clue 1A?', 'devon: On it']);
+
+  // a new co-author sees what was said
+  store.addCustomAuthors(p.id, [kam.id]);
+  hub.buildRoom(p.id).refreshAuthors();
+  const k = builder(hub, kam, p.id);
+  await k.join();
+  assert.equal(k.state.chat.length, 2);
+  // nobody else hears it, and it isn't solvers' business
+  assert.ok(!(await solver(hub, users[3], { type: 'chat', cid: 'x1', text: 'hi' })).inbox.some((m) => m.type === 'chat'));
+
+  for (const c of [a, b, k]) hub.disconnect(c.conn);
+  assert.equal(store.chatMessages({ puzzleId: p.id }).length, 2);
+  store.deleteCustomPuzzle(p.id);
+  assert.equal(store.chatMessages({ puzzleId: p.id }).length, 0);
 });
 
 // ---------- solving custom puzzles ----------

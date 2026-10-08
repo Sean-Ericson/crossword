@@ -33,6 +33,7 @@ import { loadMe } from './profiles.js';
 import { initProfileChip } from './profile-ui.js';
 import { showModal, confirmDialog, toast } from './modals.js';
 import { makeMenu } from './menus.js';
+import { ChatPanel } from './chat.js';
 import { openRebusInput } from './rebus-input.js';
 import { pickPeople } from './people-picker.js';
 import { listNames } from './people.js';
@@ -840,6 +841,21 @@ async function main() {
     ];
   });
 
+  // ----- chat between the authors -----
+
+  const chat = new ChatPanel({
+    channel: live,
+    button: qs('#chat-btn'),
+    me: me.name,
+    people: () => info?.authors ?? [],
+    personOf: (name) => directory.get(name), // a former co-author
+    entry: (num, dir) => model?.wordByNumber(num, dir),
+    onEntry: (word) => {
+      leaveFields();
+      engine.selectWord(word);
+    },
+  });
+
   // ----- the live connection -----
 
   const badge = qs('#sync-badge');
@@ -875,7 +891,9 @@ async function main() {
     renderPresence();
     renderSaveState();
     flushClues();
-    if (first) loadDirectory();
+    chat.load(msg);
+    chat.setAvailable(info.authors.length > 1);
+    if (first) loadDirectory().then(() => chat.refreshPeople());
   });
 
   live.on('presence', (msg) => {
@@ -911,6 +929,8 @@ async function main() {
     info.authors = msg.authors;
     if (msg.created_by) info.created_by = msg.created_by;
     renderPresence();
+    chat.setAvailable(info.authors.length > 1);
+    chat.refreshPeople();
     redrawAuthors?.();
   });
 

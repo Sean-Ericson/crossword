@@ -54,6 +54,7 @@ This file covers what you need to change code safely.
 | `js/words.js`, `server/words.mjs` | The builder's word list: per-length bitsets per (position, letter), crossing-aware `suggest`. Built from archive answers, public custom puzzles and `cfg.wordList`; rebuilt after the daily download and on publish |
 | `js/puz-write.js`, `js/cp1252.js` | `.puz` writer with all checksums (its header matches puzpy's byte for byte), and cp1252 both ways (some Node 22 releases decode `windows-1252` as Latin-1) |
 | `js/local-solve.js`, `js/feedback.js` | An author's test solve (`puzzle.html?id=…&test=1`) runs on `LocalSolve`, a no-network `LiveSolve`. `feedback.js` is the stars-and-note form and the notes list |
+| `js/chat.js`, `server/chat.mjs`, `css/chat.css` | Messages between a co-op solve's members or a custom puzzle's authors (not in solo solves). Both room kinds hold a `ChatLog` and send its newest 200 messages in every snapshot. Messages are stored in `chat_messages` as they arrive. `LiveChannel.sendChat` keeps a message in `chatOut` until the server echoes it and resends it after a reconnect; the `cid` keeps it from being stored twice. `ChatPanel` is the toolbar button, the panel, the unread count (read marks in localStorage) and the pop-ups; pages call `load(snapshot)` and `setAvailable`. "12A"/"34-Down" in a message link to the entry. The chat button sits above the player's start/pause veil |
 | `js/menus.js`, `js/rebus-input.js` | Dropdown menus and the rebus box, shared by the player and the builder |
 | `server/admin.mjs`, `admin.html` | Account management from the CLI or the web (admins only) |
 | `server/tools/import-github.mjs` | One-time import from `crossword-data` |
@@ -92,6 +93,10 @@ This file covers what you need to change code safely.
   `store.canSeePuzzle`/`puzzleFilter`; new ones must too. The GitHub sync
   never carries custom puzzles.
 - **Accounts are invite-only.** There is no public sign-up.
+- **Chat stays with the room.** A message goes only to the people in that
+  co-op solve or that puzzle's builder, and only over the room's socket,
+  which checks membership or authorship on join. Any new way to read
+  messages needs the same checks.
 
 ## Commands
 
