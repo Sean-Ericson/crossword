@@ -176,9 +176,23 @@ draft. The tab marks puzzles you haven't opened yet as new.
   grid).
 - **Fill** suggests words for the current entry, keeping only words that
   leave every crossing something to fit; a click fills the blanks. The words
-  come from every answer in the archive, published custom puzzles, and an
-  optional bigger word list (see `wordList` in DEPLOY.md). Each clue row says
-  how many words fit its entry, and blank squares nothing fits get a red dot.
+  come from the site's list (every answer in the archive, published custom
+  puzzles, and an optional bigger list: see `wordList` in DEPLOY.md) and
+  from your own word lists. Each clue row says how many words fit its
+  entry, and blank squares nothing fits get a red dot. The top of the tab
+  switches lists on and off. Right-click a suggestion to score it or hide it,
+  and a full entry offers **Add … to a word list**.
+- **Word lists** (`wordlists.html`, from the Custom tab or the Fill tab) are
+  your own: make one, or upload a list file (`WORD;SCORE` per line, the
+  format of Spread the Wordlist, Peter Broda's list, Crossfire and XWord Info
+  dictionaries; Windows-1252 files work too). Then search it (letters, or a
+  pattern like `C?T` or `*ING`), rescore or remove words, add more typed in
+  or from another file, download it, or delete it. In the lists you have on,
+  a word's score (0 to 100) replaces the site's, and 0 hides the word; you
+  can also turn the site's list off and use only yours. Each person's lists
+  change only their own suggestions and counts, so co-authors each see their
+  own. A person can keep 30 lists and 2,000,000 words in all (1,000,000 in
+  one list).
 - **Publish** asks who can solve it: everyone, or people you choose. Once it's
   published the black squares stay put (so solves in progress keep fitting),
   but letters and clues can still change: edit them, then **Update**, and
@@ -230,6 +244,7 @@ To add puzzles by hand, drop `.puz` files into `puzzles/` and run
 | `index.html` | Archive: co-op solves in progress, the latest-puzzle hero, and a month calendar with each day's status (◐ in progress, ★ solved, gold ★ clean solve, 👥 co-op); `#custom` opens the Custom tab |
 | `puzzle.html?id=…[&solve=…]` | The player (solo, or a co-op solve); `&test=1` is an author's test solve |
 | `builder.html?id=…` | The puzzle builder, for a custom puzzle's authors |
+| `wordlists.html[?list=…]` | Your word lists for the builder's suggestions; `?list=` opens one to edit |
 | `stats.html` | Statistics for one person or a group in eight sections (see Stats above), with a filter bar and a CSV of everything |
 | `analysis.html?puzzle=…[&solve=…]` | One puzzle broken down: results, the race, a replay, grid heatmaps, entries. Linked from the stats tables and the “Congratulations” dialog |
 | `login.html` | Sign in |
@@ -255,20 +270,23 @@ To add puzzles by hand, drop `.puz` files into `puzzles/` and run
 ## Repo layout
 
 ```
-index.html puzzle.html builder.html stats.html analysis.html login.html   pages
+index.html puzzle.html builder.html wordlists.html stats.html analysis.html
+login.html admin.html                                                      pages
 css/                  base + per-page styles
 js/                   browser ES modules: parser, model, engine, views, net
                       (live sync), api client, page controllers; stats:
                       solve-analysis, stats-data/-math/-model, charts,
                       stats/ (one module per stats section); custom puzzles:
                       custom-puzzle (the format), builder-page/-engine,
-                      clue-editor, custom-tab, words, puz-write, feedback;
+                      clue-editor, custom-tab, words, word-lists,
+                      wordlists-page, puz-write, feedback;
                       chat (messages in co-op solves and builds)
 server/               Node server: server.mjs (HTTP + WebSocket), api.mjs,
                       rooms.mjs (live solves), build-rooms.mjs (live
                       building), chat.mjs (their messages), db.mjs
                       (SQLite), auth.mjs, puzzles.mjs,
-                      words.mjs (the builder's word list), admin.mjs,
+                      words.mjs (the builder's word list, as each person
+                      sees it), admin.mjs,
                       tools/import-github.mjs,
                       tools/seed-demo.mjs (made-up solvers for development)
 deploy/               Windows task installer, systemd unit

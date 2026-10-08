@@ -18,6 +18,9 @@
  *
  * chat_messages hold what a co-op solve's members, or a custom puzzle's
  * authors, said to each other (server/chat.mjs).
+ *
+ * word_lists are people's own lists for the builder's suggestions
+ * (server/words.mjs): each person's are theirs alone.
  */
 
 import { DatabaseSync } from 'node:sqlite';
@@ -26,8 +29,9 @@ import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { USER_PALETTE } from '../js/people.js';
 import { CUSTOM_ID_RE } from '../js/util.js';
+import { keepScore } from '../js/words.js';
 
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 export const USER_NAME_RE = /^[a-z0-9-]{1,24}$/;
 
@@ -194,6 +198,30 @@ export class Store {
       );
       CREATE INDEX IF NOT EXISTS chat_solve ON chat_messages(solve_id, id) WHERE solve_id IS NOT NULL;
       CREATE INDEX IF NOT EXISTS chat_puzzle ON chat_messages(puzzle_id, id) WHERE puzzle_id IS NOT NULL;
+      -- a person's own word lists for the builder (wordlists.html): in the
+      -- lists that are on, a word's score replaces the site's, and 0 hides it
+      CREATE TABLE IF NOT EXISTS word_lists (
+        id         INTEGER PRIMARY KEY,
+        owner_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name       TEXT NOT NULL,
+        enabled    INTEGER NOT NULL DEFAULT 1,
+        size       INTEGER NOT NULL DEFAULT 0, -- its words, kept up to date (COUNT is slow for a big list)
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS word_lists_owner ON word_lists(owner_id);
+      -- words are plain A-Z (js/words.js normalizeWord), scores 0-100
+      CREATE TABLE IF NOT EXISTS word_list_entries (
+        list_id INTEGER NOT NULL REFERENCES word_lists(id) ON DELETE CASCADE,
+        word    TEXT NOT NULL,
+        score   INTEGER NOT NULL,
+        PRIMARY KEY (list_id, word)
+      ) WITHOUT ROWID;
+      -- whether the site's own list (archive answers and so on) counts too
+      CREATE TABLE IF NOT EXISTS word_list_prefs (
+        user_id  INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        use_site INTEGER NOT NULL DEFAULT 1
+      );
       PRAGMA user_version = ${SCHEMA_VERSION};
     `);
   }
@@ -728,6 +756,188 @@ export class Store {
       )
       .all(key, limit)
       .reverse();
+  }
+
+  // ---------- word lists ----------
+
+  /** A person's lists, oldest first: [{id, name, enabled, count, created_at, updated_at}]. */
+  wordLists(userId) {
+    return this.db
+      .prepare(
+        `SELECT id, name, enabled, size AS count, created_at, updated_at
+         FROM word_lists WHERE owner_id = ? ORDER BY created_at, id`
+      )
+      .all(userId)
+      .map((r) => ({ ...r, enabled: !!r.enabled }));
+  }
+
+  /** One list with its owner_id and count, or null. */
+  wordList(id) {
+    const row = this.db.prepare('SELECT *, size AS count FROM word_lists WHERE id = ?').get(id);
+    return row ? { ...row, enabled: !!row.enabled } : null;
+  }
+
+  /** A new list (on), holding `words` (plain words -> scores). */
+  createWordList(ownerId, name, words = new Map()) {
+    const now = nowIso();
+    this.db.exec('BEGIN');
+    try {
+      const info = this.db
+        .prepare('INSERT INTO word_lists (owner_id, name, enabled, size, created_at, updated_at) VALUES (?, ?, 1, ?, ?, ?)')
+        .run(ownerId, name, words.size, now, now);
+      const id = Number(info.lastInsertRowid);
+      const add = this.db.prepare('INSERT INTO word_list_entries (list_id, word, score) VALUES (?, ?, ?)');
+      for (const [word, score] of words) add.run(id, word, score);
+      this.db.exec('COMMIT');
+      return this.wordList(id);
+    } catch (err) {
+      this.db.exec('ROLLBACK');
+      throw err;
+    }
+  }
+
+  /** Rename it (which counts as an edit), or turn it on or off. */
+  updateWordList(id, { name, enabled }) {
+    const l = this.wordList(id);
+    const renamed = name != null && name !== l.name;
+    this.db
+      .prepare('UPDATE word_lists SET name = ?, enabled = ?, updated_at = ? WHERE id = ?')
+      .run(renamed ? name : l.name, (enabled ?? l.enabled) ? 1 : 0, renamed ? nowIso() : l.updated_at, id);
+  }
+
+  deleteWordList(id) {
+    this.db.prepare('DELETE FROM word_lists WHERE id = ?').run(id);
+  }
+
+  /**
+   * Add or rescore words (plain words -> scores), then remove others. If
+   * the list would end up with more than `maxSize` words, nothing changes.
+   * @returns {{added: number, removed: number, size: number, tooBig: boolean}}
+   */
+  editWordList(id, { set = new Map(), remove = [], maxSize = Infinity } = {}) {
+    this.db.exec('BEGIN');
+    try {
+      const has = this.db.prepare('SELECT 1 FROM word_list_entries WHERE list_id = ? AND word = ?');
+      const put = this.db.prepare(
+        `INSERT INTO word_list_entries (list_id, word, score) VALUES (?, ?, ?)
+         ON CONFLICT (list_id, word) DO UPDATE SET score = excluded.score`
+      );
+      let added = 0;
+      for (const [word, score] of set) {
+        if (!has.get(id, word)) added++;
+        put.run(id, word, score);
+      }
+      const drop = this.db.prepare('DELETE FROM word_list_entries WHERE list_id = ? AND word = ?');
+      let removed = 0;
+      for (const word of remove) removed += Number(drop.run(id, word).changes);
+      const size = this.db.prepare('SELECT size FROM word_lists WHERE id = ?').get(id).size + added - removed;
+      if (size > maxSize) {
+        this.db.exec('ROLLBACK');
+        return { added: 0, removed: 0, size, tooBig: true };
+      }
+      this.db.prepare('UPDATE word_lists SET size = ?, updated_at = ? WHERE id = ?').run(size, nowIso(), id);
+      this.db.exec('COMMIT');
+      return { added, removed, size, tooBig: false };
+    } catch (err) {
+      this.db.exec('ROLLBACK');
+      throw err;
+    }
+  }
+
+  /**
+   * One page of a list: {total, words: [[word, score]]}. `match` is plain
+   * letters (words containing them) or a pattern with ? for one letter and
+   * * for any run; `sort` is 'word', 'best' or 'worst'.
+   */
+  wordListPage(id, { match = '', sort = 'word', offset = 0, limit = 100 } = {}) {
+    const glob = !match ? null : /[?*]/.test(match) ? match : `*${match}*`;
+    const where = `list_id = ?${glob ? ' AND word GLOB ?' : ''}`;
+    const args = glob ? [id, glob] : [id];
+    const order = { best: 'score DESC, word', worst: 'score, word' }[sort] ?? 'word';
+    const total = this.db.prepare(`SELECT COUNT(*) AS n FROM word_list_entries WHERE ${where}`).get(...args).n;
+    const words = this.db
+      .prepare(`SELECT word, score FROM word_list_entries WHERE ${where} ORDER BY ${order} LIMIT ? OFFSET ?`)
+      .all(...args, limit, offset)
+      .map((r) => [r.word, r.score]);
+    return { total, words };
+  }
+
+  /** Every word of a list, A-Z, as [word, score]. */
+  *wordListEntries(id) {
+    for (const r of this.db.prepare('SELECT word, score FROM word_list_entries WHERE list_id = ? ORDER BY word').iterate(id)) {
+      yield [r.word, r.score];
+    }
+  }
+
+  /**
+   * The words of a person's lists that are on: word -> score (see
+   * keepScore for a word in two lists). Read as one string, which is
+   * several times faster than a row object per word for a big list.
+   * @returns {Map<string, number>}
+   */
+  ownWords(userId) {
+    const { all } = this.db
+      .prepare(
+        `SELECT group_concat(e.word || ';' || e.score, char(10)) AS "all"
+         FROM word_list_entries AS e JOIN word_lists AS l ON l.id = e.list_id
+         WHERE l.owner_id = ? AND l.enabled = 1`
+      )
+      .get(userId);
+    const words = new Map();
+    for (const line of all ? all.split('\n') : []) {
+      const k = line.indexOf(';');
+      const word = line.slice(0, k);
+      words.set(word, keepScore(words.get(word), Number(line.slice(k + 1))));
+    }
+    return words;
+  }
+
+  /**
+   * What some words score in a person's lists that are on now: word ->
+   * score, or null for a word none of them has.
+   * @returns {Map<string, number|null>}
+   */
+  ownScores(userId, words) {
+    const out = new Map(words.map((w) => [w, null]));
+    const rows = this.db
+      .prepare(
+        `SELECT e.word, e.score FROM word_list_entries AS e JOIN word_lists AS l ON l.id = e.list_id
+         WHERE l.owner_id = ? AND l.enabled = 1 AND e.word IN (SELECT value FROM json_each(?))`
+      )
+      .all(userId, JSON.stringify(words));
+    for (const r of rows) out.set(r.word, keepScore(out.get(r.word) ?? undefined, r.score));
+    return out;
+  }
+
+  /** How many words a person's lists hold in all, on or off. */
+  ownWordCount(userId) {
+    return this.db.prepare('SELECT COALESCE(SUM(size), 0) AS n FROM word_lists WHERE owner_id = ?').get(userId).n;
+  }
+
+  /** Which of a person's lists have a word: [{id, name, enabled, score}]. */
+  wordInLists(userId, word) {
+    return this.db
+      .prepare(
+        `SELECT l.id, l.name, l.enabled, e.score FROM word_list_entries AS e JOIN word_lists AS l ON l.id = e.list_id
+         WHERE l.owner_id = ? AND e.word = ? ORDER BY l.created_at, l.id`
+      )
+      .all(userId, word)
+      .map((r) => ({ ...r, enabled: !!r.enabled }));
+  }
+
+  /** {use_site}: whether the site's own list counts for this person. */
+  wordListPrefs(userId) {
+    const row = this.db.prepare('SELECT use_site FROM word_list_prefs WHERE user_id = ?').get(userId);
+    return { use_site: row ? !!row.use_site : true };
+  }
+
+  setWordListPrefs(userId, { use_site }) {
+    this.db
+      .prepare(
+        `INSERT INTO word_list_prefs (user_id, use_site) VALUES (?, ?)
+         ON CONFLICT (user_id) DO UPDATE SET use_site = excluded.use_site`
+      )
+      .run(userId, use_site ? 1 : 0);
   }
 
   // ---------- GitHub data repo sync state ----------

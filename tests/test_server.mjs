@@ -562,7 +562,7 @@ test('store: a version 2 database gains the solve log and keeps its rows', () =>
   store.db.exec('DROP TABLE solve_events; DROP TABLE solve_summaries; PRAGMA user_version = 2;');
   store.close();
   store = new Store(file);
-  assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 5);
+  assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 6);
   assert.equal(store.statsDoc(u).solves[PUZZLE].seconds, 5);
   assert.equal(store.maxEventSeq('nope'), 0);
   store.close();

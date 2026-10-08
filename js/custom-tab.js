@@ -62,6 +62,7 @@ export function renderCustomTab(host, ctx) {
         'Upload a .puz',
         el('input', { type: 'file', accept: '.puz', class: 'visually-hidden', onchange: (e) => uploadPuz(e.target.files[0]) }),
       ]),
+      el('a', { class: 'btn', href: './wordlists.html', title: 'Your own words for the builder’s suggestions' }, 'Word lists'),
       el('p', { class: 'custom-intro' }, 'Make a crossword alone or with friends, live, and share it here.'),
     ])
   );

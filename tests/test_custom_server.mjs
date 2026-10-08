@@ -146,7 +146,7 @@ test('custom store: a version 3 database gains custom puzzles and keeps its rows
                  DROP TABLE custom_puzzles; PRAGMA user_version = 3;`);
   store.close();
   store = new Store(file);
-  assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 5);
+  assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 6);
   assert.equal(store.statsDoc(u).solves['2026-01-01'].seconds, 5);
   const p = store.createCustomPuzzle({ id: 'custom-mig00001', createdBy: u.id, doc: emptyDoc({ width: 3, height: 3 }) });
   assert.deepEqual(p.authors.map((a) => a.name), ['sean']);
@@ -582,4 +582,166 @@ test('words api: the archive’s answers, published puzzles’ and a list file',
     server.close();
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('word lists api: upload, edit, search, download; each person sees their own', async () => {
+  const { createServer } = await import('../server/server.mjs');
+  const { store, hub, puzzles, users } = setup();
+  for (const u of users) store.setPassword(u.id, hashPassword(`${u.name}-pass-1`));
+  const dir = mkdtempSync(path.join(tmpdir(), 'xw-lists-'));
+  writeFileSync(path.join(dir, 'list.txt'), 'CRANE;90\nCRATE;40\n');
+  const cfg = {
+    puzzlesDir: path.join(here, 'fixtures'), wordList: path.join(dir, 'list.txt'), sessionDays: 30,
+    trustProxy: false, clientIpHeader: null, secureCookies: false, publicUrl: null,
+  };
+  const { server, words } = createServer(cfg, { store, puzzles, hub });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}/api/`;
+  const call = async (method, p, body, cookie) => {
+    const r = await fetch(base + p, {
+      method,
+      headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(cookie ? { Cookie: cookie } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const text = await r.text();
+    return { status: r.status, headers: r.headers, text, json: r.headers.get('content-type')?.includes('json') ? JSON.parse(text) : null };
+  };
+  const login = async (name) => {
+    const r = await fetch(base + 'login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, password: `${name}-pass-1` }),
+    });
+    return r.headers.get('set-cookie').split(';')[0];
+  };
+  const suggest = async (pattern, cookie) => (await call('POST', 'words/suggest', { pattern }, cookie)).json.words;
+  try {
+    const [sean, devon] = [await login('sean'), await login('devon')];
+    await words.build();
+    assert.deepEqual(await suggest('CRA?E', sean), [['CRANE', 90], ['CRATE', 40]]);
+    const empty = (await call('GET', 'word-lists', null, sean)).json;
+    assert.deepEqual(empty, { use_site: true, site: { size: words.current().size }, lists: [] });
+
+    // an upload: odd lines are skipped, scores kept to 0-100, a 0 hides a word
+    const made = await call('POST', 'word-lists', { name: '  Broda  list ', text: 'crate;95\nCRANE;0\nR2D2;50\nplate\nzebra crossing;150\n' }, sean);
+    assert.equal(made.status, 201);
+    assert.deepEqual([made.json.list.name, made.json.list.count, made.json.added, made.json.skipped], ['Broda list', 4, 4, 1]);
+    const id = made.json.list.id;
+    assert.deepEqual(await suggest('CRA?E', sean), [['CRATE', 95]], 'their score replaces the site’s; CRANE is hidden');
+    assert.deepEqual(await suggest('CRA?E', devon), [['CRANE', 90], ['CRATE', 40]], 'nobody else’s suggestions change');
+    assert.deepEqual(await suggest('?LATE', sean), [['PLATE', 50]]);
+    const counts = await call('POST', 'words/counts', { patterns: ['CRA?E', 'ZEBRACROSSIN?'] }, sean);
+    assert.deepEqual(counts.json.counts, [1, 1]);
+
+    // someone else's list is nowhere to be found
+    for (const [method, p, body] of [
+      ['GET', `word-lists/${id}/words`], ['POST', `word-lists/${id}`, { enabled: false }],
+      ['POST', `word-lists/${id}/words`, { set: [['EVIL', 99]] }], ['GET', `word-lists/${id}/file`], ['DELETE', `word-lists/${id}`],
+    ]) {
+      assert.equal((await call(method, p, body, devon)).status, 404, `${method} ${p}`);
+    }
+    assert.deepEqual((await call('GET', 'word-lists', null, devon)).json.lists, []);
+    assert.equal((await call('GET', `word-lists/${id}/words`, null, null)).status, 401);
+
+    // editing: add, rescore, remove; typed lines take the default score
+    const edit = await call('POST', `word-lists/${id}/words`, { text: 'Ice-cream\nplate;70', score: 65, set: [['CRANE', 80]], remove: ['zebra crossing', 'NOPE'] }, sean);
+    assert.equal(edit.status, 200);
+    assert.deepEqual([edit.json.added, edit.json.updated, edit.json.removed, edit.json.list.count], [1, 2, 1, 4]);
+    assert.deepEqual(await suggest('CRA?E', sean), [['CRATE', 95], ['CRANE', 80]]);
+    assert.deepEqual(await suggest('ICECREA?', sean), [['ICECREAM', 65]]);
+
+    // pages: plain letters find words containing them; ? and * are patterns
+    const page = async (q) => (await call('GET', `word-lists/${id}/words?${q}`, null, sean)).json;
+    assert.deepEqual((await page('')).words, [['CRANE', 80], ['CRATE', 95], ['ICECREAM', 65], ['PLATE', 70]]);
+    assert.deepEqual((await page('match=ra')).words.map(([w]) => w), ['CRANE', 'CRATE']);
+    assert.deepEqual((await page('match=%3FLATE')).words, [['PLATE', 70]]);
+    assert.deepEqual((await page('match=C*E')).words.map(([w]) => w), ['CRANE', 'CRATE']);
+    const best = await page('sort=best&limit=2&offset=1');
+    assert.deepEqual([best.total, best.words], [4, [['CRANE', 80], ['PLATE', 70]]]);
+
+    // the file other programs read
+    const file = await call('GET', `word-lists/${id}/file`, null, sean);
+    assert.equal(file.text, 'CRANE;80\nCRATE;95\nICECREAM;65\nPLATE;70\n');
+    assert.match(file.headers.get('content-disposition'), /attachment; filename="Broda list.txt"/);
+
+    // one word, everywhere it is
+    const look = (await call('GET', 'word-lists/lookup?word=crate', null, sean)).json;
+    assert.deepEqual([look.word, look.score, look.site, look.lists.map((l) => [l.name, l.score])], ['CRATE', 95, 40, [['Broda list', 95]]]);
+    assert.equal((await call('GET', 'word-lists/lookup?word=x', null, sean)).status, 400);
+
+    // turned off, the list stops counting; renaming keeps it
+    const off = await call('POST', `word-lists/${id}`, { enabled: false, name: 'Broda' }, sean);
+    assert.deepEqual([off.json.list.enabled, off.json.list.name], [false, 'Broda']);
+    assert.deepEqual(await suggest('CRA?E', sean), [['CRANE', 90], ['CRATE', 40]]);
+    await call('POST', `word-lists/${id}`, { enabled: true }, sean);
+
+    // without the site's list: only their own words
+    assert.equal((await call('POST', 'word-lists/prefs', { use_site: 'no' }, sean)).status, 400);
+    assert.deepEqual((await call('POST', 'word-lists/prefs', { use_site: false }, sean)).json, { use_site: false });
+    assert.deepEqual(await suggest('????E', sean), [['CRATE', 95], ['CRANE', 80], ['PLATE', 70]]);
+    assert.equal((await call('POST', 'words/counts', { patterns: ['DKRY'] }, sean)).json.counts[0], 0, 'the fixtures’ answers are gone');
+    await call('POST', 'word-lists/prefs', { use_site: true }, sean);
+    assert.equal((await call('POST', 'words/counts', { patterns: ['DKRY'] }, sean)).json.counts[0], 1);
+
+    // a second list hides what the first scores; deleting it brings it back
+    const second = await call('POST', 'word-lists', { name: 'Nope', set: ['plate', ['crane', 0]], score: 0 }, sean);
+    assert.equal(second.json.list.count, 2);
+    assert.deepEqual(await suggest('CRA?E', sean), [['CRATE', 95]]);
+    assert.deepEqual(await suggest('?LATE', sean), []);
+    assert.equal((await call('POST', 'word-lists', { name: ' ', text: '' }, sean)).json.list.name, 'My words', 'a name by default');
+    assert.equal((await call('POST', `word-lists/${id}`, { name: '   ' }, sean)).status, 400);
+    assert.deepEqual((await call('DELETE', `word-lists/${second.json.list.id}`, null, sean)).json, { deleted: true });
+    assert.deepEqual(await suggest('CRA?E', sean), [['CRATE', 95], ['CRANE', 80]]);
+    assert.deepEqual(await suggest('?LATE', sean), [['PLATE', 70]]);
+    assert.deepEqual((await call('GET', 'word-lists', null, sean)).json.lists.map((l) => [l.name, l.count]), [['Broda', 4], ['My words', 0]]);
+
+    // a big file (more lines than a function call takes arguments)
+    const letters = (k) => [...k.toString(26)].map((c) => String.fromCharCode(65 + parseInt(c, 26))).join('');
+    const big = Array.from({ length: 200_000 }, (_, k) => `QZX${letters(k)};${k % 61}`);
+    const bigList = await call('POST', 'word-lists', { name: 'Big', text: big.join('\n') }, devon);
+    assert.equal(bigList.status, 201);
+    assert.equal(bigList.json.list.count, 200_000);
+    assert.equal((await call('POST', 'words/counts', { patterns: ['QZXBAAA'] }, devon)).json.counts[0], 1);
+
+    // a site list rebuilt under them keeps their words on top
+    await words.build();
+    assert.deepEqual(await suggest('CRA?E', sean), [['CRATE', 95], ['CRANE', 80]]);
+
+    // after all those edits patched into sean's view, it's what a fresh build gives
+    const patterns = ['?????', '????', '???', 'C????', '?????E?', 'ICECREAM', 'ZEBRACROSSIN?'];
+    const before = await Promise.all(patterns.map((p) => call('POST', 'words/suggest', { pattern: p, limit: 200 }, sean)));
+    assert.ok(store.wordLists(users[0].id).length && words.views.get(users[0].id).index.patch.size, 'the view was patched');
+    words.wordsChanged(users[0].id, null);
+    const after = await Promise.all(patterns.map((p) => call('POST', 'words/suggest', { pattern: p, limit: 200 }, sean)));
+    assert.equal(words.views.get(users[0].id).index.patch.size, 0, 'and now built afresh');
+    assert.deepEqual(after.map((r) => r.json), before.map((r) => r.json));
+    // the sizes kept with each list are the real counts
+    for (const l of store.db.prepare('SELECT id, size FROM word_lists').all()) {
+      assert.equal(l.size, store.db.prepare('SELECT COUNT(*) AS n FROM word_list_entries WHERE list_id = ?').get(l.id).n);
+    }
+  } finally {
+    server.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('word lists store: sizes stay exact, and an edit past the limit changes nothing', () => {
+  const { store, users } = setup();
+  const list = store.createWordList(users[0].id, 'Mine', new Map([['CAT', 50], ['DOG', 0]]));
+  assert.equal(list.count, 2);
+  const r = store.editWordList(list.id, { set: new Map([['CAT', 70], ['EMU', 10], ['GNU', 20]]), remove: ['DOG', 'YAK'] });
+  assert.deepEqual(r, { added: 2, removed: 1, size: 3, tooBig: false });
+  const before = store.wordList(list.id);
+  const over = store.editWordList(list.id, { set: new Map([['OWL', 5], ['CAT', 1]]), maxSize: 3 });
+  assert.equal(over.tooBig, true);
+  assert.equal(over.size, 4);
+  assert.deepEqual(store.wordList(list.id), before, 'rolled back, edit time and all');
+  assert.deepEqual([...store.wordListEntries(list.id)], [['CAT', 70], ['EMU', 10], ['GNU', 20]]);
+  // a rescore at the limit is fine: it adds nothing
+  assert.equal(store.editWordList(list.id, { set: new Map([['CAT', 1]]), maxSize: 3 }).tooBig, false);
+  assert.equal(store.ownWordCount(users[0].id), 3);
+  store.createWordList(users[0].id, 'Off', new Map([['CAT', 0], ['OWL', 9]]));
+  store.updateWordList(store.wordLists(users[0].id)[1].id, { enabled: false });
+  assert.equal(store.ownWordCount(users[0].id), 5, 'lists that are off count toward the limit too');
+  assert.deepEqual([...store.ownWords(users[0].id)], [['CAT', 1], ['EMU', 10], ['GNU', 20]], 'but not toward suggestions');
+  assert.deepEqual([...store.ownScores(users[0].id, ['CAT', 'OWL', 'ZZZ'])], [['CAT', 1], ['OWL', null], ['ZZZ', null]]);
+  assert.deepEqual([...store.ownWords(users[1].id)], [], 'nobody else’s');
 });

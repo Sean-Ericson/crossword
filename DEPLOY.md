@@ -113,6 +113,13 @@ Lines look like `WORD;SCORE`, and higher scores are better. A line with no
 score counts as 50. Restart the server after changing the setting. At
 startup the log shows `word list: N words from M puzzles and K listed`.
 
+This list is the same for everyone. People can also upload their own lists
+on the Word lists page (`wordlists.html`); those live in the database (so
+the nightly backups cover them) and change only their owner's suggestions.
+Someone with a very big list of their own (half a million words) costs the
+server about 60 MB of memory while they use the builder. Uploading it, or
+switching it on, pauses the server for a second or three.
+
 Create the accounts. Each command prints a temporary password to give to
 that person.
 

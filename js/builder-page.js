@@ -43,6 +43,7 @@ import {
   applyChange, valueAt, modelOf, docToPuz, problems, partnerOf, clueKey, entryName, isCustomId, SYMMETRIES,
 } from './custom-puzzle.js';
 import { downloadPuz, puzFileName } from './puz-write.js';
+import { describeLists, formatCount, openWordDialog } from './word-lists.js';
 
 const params = new URLSearchParams(location.search);
 const SYMMETRY_LABELS = { rotational: 'Rotational (standard)', mirror: 'Left–right mirror', none: 'None' };
@@ -619,6 +620,7 @@ async function main() {
   // ----- words: what fits each entry, and suggestions in the Fill tab -----
 
   const fillPanel = qs('#fill-panel');
+  const fillBody = qs('#fill-body');
   let noFit = []; // entries with blanks that nothing in the list fits
   let countsTimer = null;
   let countsSeq = 0;
@@ -670,7 +672,7 @@ async function main() {
     const word = engine.currentWord();
     const note = (text) => el('p', { class: 'fill-note' }, text);
     if (!word) {
-      fillPanel.replaceChildren(note('Pick an entry to see the words that fit it.'));
+      fillBody.replaceChildren(note('Pick an entry to see the words that fit it.'));
       return;
     }
     const pattern = patternOf(word);
@@ -679,11 +681,15 @@ async function main() {
       el('span', { class: 'fill-pattern' }, word.cells.map((i) => doc.grid[i] || '·').join(' ')),
     ]);
     if (!pattern) {
-      fillPanel.replaceChildren(head, note('Suggestions are for plain letters; this entry has a rebus or a digit in it.'));
+      fillBody.replaceChildren(head, note('Suggestions are for plain letters; this entry has a rebus or a digit in it.'));
       return;
     }
     if (!pattern.includes('?')) {
-      fillPanel.replaceChildren(head, note('This entry is full. Clear some squares (or pick another entry) to see what else fits.'));
+      fillBody.replaceChildren(
+        head,
+        note('This entry is full. Clear some squares (or pick another entry) to see what else fits.'),
+        el('button', { class: 'btn btn-quiet fill-add', type: 'button', onclick: () => scoreWord(pattern) }, `Add ${pattern} to a word list…`)
+      );
       return;
     }
     const cross = word.cells.map((i) => {
@@ -697,7 +703,7 @@ async function main() {
     try {
       res = await api.post('words/suggest', { pattern, cross: onlyFits ? cross : [], limit: 150 });
     } catch (err) {
-      if (seq === fillSeq) fillPanel.replaceChildren(head, note(err.message));
+      if (seq === fillSeq) fillBody.replaceChildren(head, note(err.message));
       return;
     }
     if (seq !== fillSeq) return;
@@ -721,6 +727,8 @@ async function main() {
         note(
           onlyFits && res.loose
             ? `${res.loose} word${res.loose === 1 ? ' fits' : 's fit'} here, but none leaves every crossing a word. Try changing a crossing entry.`
+            : wordLists && !describeLists(wordLists)
+            ? 'None of your word lists are on. Turn one on above.'
             : 'Nothing in the word list fits. That’s fine if it’s your own word; the list doesn’t know everything.'
         )
       );
@@ -732,7 +740,16 @@ async function main() {
           res.words.map(([w, score]) =>
             el(
               'button',
-              { class: 'fill-word', type: 'button', title: `Fill in ${w}`, onclick: () => useWord(word, w) },
+              {
+                class: 'fill-word',
+                type: 'button',
+                title: `Fill in ${w}. Right-click to score or hide it`,
+                onclick: () => useWord(word, w),
+                oncontextmenu: (e) => {
+                  e.preventDefault();
+                  scoreWord(w);
+                },
+              },
               [
                 el('span', {}, [...w].map((ch, k) => (pattern[k] === '?' ? el('span', { class: 'fw-new' }, ch) : ch))),
                 el('span', { class: 'fw-score', style: `--s:${Math.max(0, Math.min(100, score))}`, title: `score ${score}` }),
@@ -743,11 +760,66 @@ async function main() {
         el(
           'p',
           { class: 'fill-total' },
-          `${res.total} word${res.total === 1 ? '' : 's'}${onlyFits && res.loose > res.total ? ` (of ${res.loose} that fit the entry alone)` : ''}${res.total > res.words.length ? `; the best ${res.words.length} shown` : ''}.`
+          `${res.total} word${res.total === 1 ? '' : 's'}${onlyFits && res.loose > res.total ? ` (of ${res.loose} that fit the entry alone)` : ''}${res.total > res.words.length ? `; the best ${res.words.length} shown` : ''}.${document.body.classList.contains('touch') ? '' : ' Right-click a word to score or hide it.'}`
         )
       );
     }
-    fillPanel.replaceChildren(...parts);
+    fillBody.replaceChildren(...parts);
+  }
+
+  // ----- your word lists: which count here, and scoring one word -----
+
+  let wordLists = null; // {use_site, site, lists} from /api/word-lists
+  const listsBody = qs('#fill-lists-body');
+
+  async function loadWordLists() {
+    try {
+      wordLists = await api.get('word-lists');
+    } catch {
+      return;
+    }
+    renderWordLists();
+  }
+
+  function renderWordLists() {
+    const using = describeLists(wordLists);
+    const summary = qs('#fill-lists-summary');
+    summary.textContent = using ? `Words from ${using}` : 'No word lists are on';
+    summary.classList.toggle('none-on', !using);
+    const row = (label, count, checked, onchange) =>
+      el('label', { class: 'fill-list' }, [
+        el('input', { type: 'checkbox', ...(checked ? { checked: true } : {}), onchange }),
+        el('span', { class: 'fill-list-name' }, label),
+        count == null ? null : el('span', { class: 'fill-list-count' }, formatCount(count)),
+      ]);
+    listsBody.replaceChildren(
+      row('The site’s list', wordLists.site?.size, wordLists.use_site, (e) => switchList('prefs', { use_site: e.target.checked })),
+      ...wordLists.lists.map((l) => row(l.name, l.count, l.enabled, (e) => switchList(l.id, { enabled: e.target.checked }))),
+      el('p', { class: 'fill-lists-note' }, [
+        wordLists.lists.length ? 'Your lists’ scores replace the site’s; 0 hides a word. ' : 'Add your own words, or a whole list, and they’re suggested here. ',
+        el('a', { href: './wordlists.html', target: '_blank' }, wordLists.lists.length ? 'Edit your word lists' : 'Make a word list'),
+      ])
+    );
+  }
+
+  async function switchList(which, body) {
+    try {
+      await api.post(`word-lists/${which}`, body);
+    } catch (err) {
+      toast(err.message, { error: true });
+    }
+    wordListsChanged();
+  }
+
+  /** Your lists changed (here or in another tab): fresh counts and suggestions. */
+  function wordListsChanged() {
+    loadWordLists();
+    scheduleCounts();
+    renderFill();
+  }
+
+  function scoreWord(w) {
+    openWordDialog(w, { onSaved: wordListsChanged });
   }
 
   /** Fill an entry's blanks with a word (one undoable step). */
@@ -1240,12 +1312,16 @@ async function main() {
   });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) flushClues();
-    else live.nudge();
+    else {
+      live.nudge();
+      if (ready) wordListsChanged(); // edited on the Word lists page, maybe
+    }
   });
   window.addEventListener('online', () => live.nudge());
   matchMedia('(max-width: 600px)').addEventListener('change', () => ready && renderPresence());
 
   renderUndo();
+  loadWordLists();
   live.connect();
 }
 
