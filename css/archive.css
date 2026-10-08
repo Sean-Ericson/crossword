@@ -369,6 +369,11 @@
   margin-bottom: 26px;
 }
 
+/* Word lists: a link that looks like its neighbors */
+.custom-actions a.btn {
+  text-decoration: none;
+}
+
 .custom-intro {
   margin: 0;
   font-size: 14px;

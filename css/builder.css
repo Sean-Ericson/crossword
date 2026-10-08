@@ -426,6 +426,126 @@
   color: var(--color-text-muted);
 }
 
+.fill-add {
+  margin-left: -10px;
+  color: var(--color-link);
+}
+
+/* which word lists count (js/word-lists.js); stays put while the words below change */
+.fill-lists {
+  margin: 2px 0 10px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 8px;
+}
+
+.fill-lists summary {
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+.fill-lists summary:hover {
+  color: var(--color-text);
+}
+
+.fill-lists summary.none-on {
+  color: var(--color-error);
+}
+
+.fill-lists-body {
+  padding: 6px 0 0 4px;
+}
+
+.fill-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  cursor: pointer;
+}
+
+.fill-list input {
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.fill-list-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fill-list-count {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.fill-lists-note {
+  margin: 6px 0 0;
+  color: var(--color-text-muted);
+}
+
+.fill-lists-note a {
+  color: var(--color-link);
+}
+
+/* score or hide one word (js/word-lists.js openWordDialog) */
+.modal .wd-now {
+  margin-bottom: 14px;
+}
+
+.wd-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 14px;
+}
+
+.wd-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+}
+
+.wd-score,
+.wd-list {
+  padding: 6px 8px;
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.wd-score {
+  width: 72px;
+}
+
+.wd-list {
+  max-width: 220px;
+}
+
+.modal .wd-hint,
+.modal .wd-note {
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+
+.modal .wd-note:empty {
+  display: none;
+}
+
+.modal .wd-hint:last-child {
+  margin-bottom: 18px;
+}
+
+.wd-hint a {
+  color: var(--color-link);
+}
+
 /* an empty square in an entry nothing in the word list fits */
 .builder-page .cell.dead::after {
   content: '';

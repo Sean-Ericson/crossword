@@ -1,0 +1,408 @@
+/* wordlists.css — your word lists for the builder (wordlists.html). */
+
+.wl-main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+
+.wl-main h1 {
+  font-size: 26px;
+  margin: 0 0 6px;
+}
+
+.wl-main h2 {
+  font-size: 18px;
+  margin: 30px 0 10px;
+}
+
+.wl-intro,
+.wl-hint,
+.wl-empty,
+.wl-error {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.wl-intro {
+  margin: 0 0 18px;
+}
+
+.wl-hint {
+  font-size: 13px;
+  margin: 10px 0 0;
+}
+
+.wl-hint code {
+  font-family: ui-monospace, Consolas, monospace;
+  background: var(--color-bg-muted);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.wl-error {
+  color: var(--color-error);
+}
+
+.wl-back {
+  margin: 0 0 14px;
+  font-size: 14px;
+}
+
+.wl-back a {
+  color: var(--color-link);
+  text-decoration: none;
+}
+
+/* ---------- on/off switch ---------- */
+
+.wl-switch {
+  appearance: none;
+  flex: 0 0 auto;
+  position: relative;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border-radius: 10px;
+  background: var(--color-border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.wl-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s;
+}
+
+.wl-switch:checked {
+  background: var(--color-accent);
+}
+
+.wl-switch:checked::after {
+  transform: translateX(16px);
+}
+
+.wl-switch:focus-visible {
+  outline: 2px solid var(--color-link);
+  outline-offset: 2px;
+}
+
+.wl-switch:disabled {
+  opacity: 0.6;
+}
+
+/* ---------- all your lists ---------- */
+
+.wl-lists {
+  border-top: 1px solid var(--color-border);
+}
+
+.wl-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.wl-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.wl-row-main:hover .wl-row-name {
+  color: var(--color-link);
+}
+
+.wl-row-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wl-row-meta {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.wl-row-actions {
+  display: flex;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.wl-row-actions .btn,
+.wl-meta .btn {
+  color: var(--color-link);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.wl-lists .wl-empty {
+  margin: 12px 4px;
+}
+
+.wl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  margin-top: 18px;
+}
+
+.btn.busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ---------- one list ---------- */
+
+.wl-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+}
+
+.wl-title {
+  flex: 1 1 260px;
+  min-width: 0;
+  font: inherit;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-text);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  padding: 2px 0;
+}
+
+.wl-title:hover {
+  border-bottom-color: var(--color-border);
+}
+
+.wl-title:focus {
+  outline: none;
+  border-bottom-color: var(--color-text);
+}
+
+.wl-switch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.wl-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.wl-meta-text {
+  margin-right: 6px;
+}
+
+.wl-meta .wl-danger {
+  color: var(--color-error);
+}
+
+.wl-meta .wl-danger:hover {
+  background: var(--color-error-bg);
+}
+
+.wl-input {
+  font: inherit;
+  font-size: 15px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  box-sizing: border-box;
+}
+
+.modal .wl-input {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.wl-area {
+  display: block;
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  font-family: ui-monospace, Consolas, monospace;
+  text-transform: uppercase;
+}
+
+.wl-area::placeholder {
+  text-transform: none;
+}
+
+.wl-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-top: 10px;
+}
+
+.wl-add-row .spacer {
+  flex: 1;
+}
+
+.wl-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.wl-num {
+  width: 76px;
+  padding: 5px 8px;
+}
+
+.wl-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.wl-search {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.wl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.wl-table th {
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--color-text-muted);
+  border-bottom: 2px solid var(--color-text);
+  padding: 6px 8px;
+}
+
+.wl-table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 4px 8px;
+  vertical-align: middle;
+}
+
+.wl-word {
+  font-family: var(--font-grid);
+  letter-spacing: 1px;
+  word-break: break-all;
+}
+
+.wl-tag {
+  margin-left: 8px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0;
+  color: var(--color-text-muted);
+  background: var(--color-bg-muted);
+  border-radius: 8px;
+  padding: 1px 7px;
+}
+
+.wl-tag:empty {
+  display: none;
+}
+
+.wl-score-col {
+  width: 90px;
+}
+
+.wl-remove-col {
+  width: 60px;
+  text-align: right;
+}
+
+.wl-remove {
+  min-width: 36px;
+  padding: 4px 8px;
+  color: var(--color-text-muted);
+}
+
+.wl-table tr.removed .wl-word {
+  color: var(--color-text-faint);
+  text-decoration: line-through;
+}
+
+.wl-table tr.removed .wl-remove {
+  color: var(--color-link);
+}
+
+.wl-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.wl-count {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-pager[hidden],
+.wl-table[hidden],
+.wl-empty[hidden] {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .wl-row {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .wl-row-main {
+    flex-basis: calc(100% - 56px);
+  }
+
+  .wl-row-actions {
+    margin-left: 46px;
+  }
+
+  .wl-title {
+    font-size: 22px;
+  }
+
+  .wl-table td {
+    padding: 4px;
+  }
+}

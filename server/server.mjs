@@ -45,6 +45,7 @@ const MIME = {
 const PUBLIC_PAGES = new Set(['/login.html']);
 const PAGES = new Set([
   '/index.html', '/puzzle.html', '/stats.html', '/analysis.html', '/login.html', '/admin.html', '/builder.html',
+  '/wordlists.html',
 ]);
 const PUBLIC_DIRS = ['/css/', '/js/'];
 const PRIVATE_DIRS = ['/puzzles/']; // NYT content: members only

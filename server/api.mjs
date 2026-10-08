@@ -35,9 +35,15 @@ import {
   puzzleFeatures,
   sameShape,
 } from '../js/custom-puzzle.js';
+import { normalizeWord, parseWordList, cleanEntries, clampScore } from '../js/words.js';
+import { MAX_PATCH } from './words.mjs';
 
 const MAX_DRAFTS = 50; // per person
 const PATTERN_RE = /^[A-Z?]{2,25}$/; // a word's squares: letters, ? for blanks
+const MAX_WORD_LISTS = 30; // per person
+const MAX_LIST_WORDS = 1_000_000; // per list (Peter Broda's list is about 600,000)
+const MAX_OWN_WORDS = 2_000_000; // per person, all their lists together
+const MAX_LIST_UPLOAD = 32_000_000; // bytes of JSON carrying a list file
 
 class HttpError extends Error {
   constructor(status, message) {
@@ -227,6 +233,58 @@ export function makeApi(ctx) {
     }
     const blind = people.filter((u) => !store.canSeePuzzle(u.id, puzzleId));
     if (blind.length) throw new HttpError(403, `This puzzle isn’t shared with ${listNames(blind.map(displayOf))}.`);
+  };
+
+  // ----- word lists -----
+
+  /** One of this person's own lists (nobody else's, not even an admin's). */
+  const ownList = (id, user) => {
+    const l = store.wordList(Number(id));
+    if (!l || l.owner_id !== user.id) throw new HttpError(404, 'No such word list.');
+    return l;
+  };
+
+  const listView = (l) => ({
+    id: l.id,
+    name: l.name,
+    enabled: l.enabled,
+    count: l.count,
+    created_at: l.created_at,
+    updated_at: l.updated_at,
+  });
+
+  const listName = (raw, fallback = null) => {
+    const name = String(raw ?? '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    if (!name && !fallback) throw new HttpError(400, 'Give the list a name.');
+    return name || fallback;
+  };
+
+  /** A list's words, to patch its owner's view with; null when there are too many to bother. */
+  const wordsOf = (l) => (l.count <= MAX_PATCH ? [...store.wordListEntries(l.id)].map(([w]) => w) : null);
+
+  const tooMany = (held) =>
+    new HttpError(
+      413,
+      `That would make ${held.toLocaleString('en-US')} words in your lists, and ${MAX_OWN_WORDS.toLocaleString('en-US')} is the most one person can keep. Delete a list you don’t use first.`
+    );
+
+  /**
+   * Words sent to add to a list: {text} (a list file, or lines typed in;
+   * `score` for lines without one) and/or {set: [[word, score], ...]}.
+   * @returns {{words: Map<string, number>, skipped: number}}
+   */
+  const entriesFrom = (body) => {
+    const fallback = clampScore(body.score);
+    // (no push(...list): a big file is more arguments than a call can take)
+    const raw = body.text != null ? parseWordList(String(body.text), { defaultScore: fallback }) : [];
+    if (Array.isArray(body.set)) {
+      for (const e of body.set) raw.push(Array.isArray(e) ? [e[0], e[1] ?? fallback] : [e, fallback]);
+    }
+    const out = cleanEntries(raw);
+    if (out.words.size > MAX_LIST_WORDS) {
+      throw new HttpError(413, `That’s ${out.words.size.toLocaleString('en-US')} words; a list holds up to ${MAX_LIST_WORDS.toLocaleString('en-US')}.`);
+    }
+    return out;
   };
 
   const solveSummary = (s) => ({
@@ -420,12 +478,13 @@ export function makeApi(ctx) {
       send(res, 200, result);
     }],
 
-    // ----- the builder's word list (server/words.mjs) -----
+    // ----- the builder's word list (server/words.mjs), as each person sees
+    // it: the site's with their own lists over it -----
 
     // Words that fit an entry, best first, keeping only those that leave
     // every crossing something to fit: {pattern: 'C?T', cross: [{pattern,
     // at} | null per square], limit}. ready is false until the list is built.
-    ['POST', /^\/api\/words\/suggest$/, async (req, res) => {
+    ['POST', /^\/api\/words\/suggest$/, async (req, res, _p, user) => {
       const body = await readJson(req, 50_000);
       const pattern = String(body.pattern ?? '').toUpperCase();
       if (!PATTERN_RE.test(pattern)) throw new HttpError(400, 'A pattern is 2-25 letters, with ? for blanks.');
@@ -433,7 +492,7 @@ export function makeApi(ctx) {
         const p = String(c?.pattern ?? '').toUpperCase();
         return PATTERN_RE.test(p) && Number.isInteger(c.at) && c.at >= 0 && c.at < p.length ? { pattern: p, at: c.at } : null;
       });
-      const index = words?.current();
+      const index = words?.forUser(user.id);
       if (!index) {
         send(res, 200, { ready: false, words: [], total: 0, loose: 0 });
         return;
@@ -443,15 +502,148 @@ export function makeApi(ctx) {
     }],
 
     // How many words fit each pattern ({patterns: [...]}; null where it isn't one).
-    ['POST', /^\/api\/words\/counts$/, async (req, res) => {
+    ['POST', /^\/api\/words\/counts$/, async (req, res, _p, user) => {
       const body = await readJson(req, 100_000);
       const patterns = (Array.isArray(body.patterns) ? body.patterns : []).slice(0, 1000).map((p) => String(p ?? '').toUpperCase());
-      const index = words?.current();
+      const index = words?.forUser(user.id);
       if (!index) {
         send(res, 200, { ready: false, counts: patterns.map(() => null) });
         return;
       }
       send(res, 200, { ready: true, size: index.size, counts: patterns.map((p) => (PATTERN_RE.test(p) ? index.count(p) : null)) });
+    }],
+
+    // ----- people's own word lists (wordlists.html). Each person's lists
+    // are theirs alone: every route below checks the owner. -----
+
+    // Your lists, and whether the site's list counts for you (site: its
+    // size, null while it builds).
+    ['GET', /^\/api\/word-lists$/, async (req, res, _p, user) => {
+      const site = words?.current();
+      send(res, 200, {
+        use_site: store.wordListPrefs(user.id).use_site,
+        site: site ? { size: site.size } : null,
+        lists: store.wordLists(user.id).map(listView),
+      });
+    }],
+
+    // A new list: {name, text?, score?, set?} (see entriesFrom).
+    ['POST', /^\/api\/word-lists$/, async (req, res, _p, user) => {
+      const body = await readJson(req, MAX_LIST_UPLOAD);
+      if (store.wordLists(user.id).length >= MAX_WORD_LISTS) {
+        throw new HttpError(400, `You have ${MAX_WORD_LISTS} word lists already. Delete one first.`);
+      }
+      const name = listName(body.name, 'My words');
+      const { words: entries, skipped } = entriesFrom(body);
+      const held = store.ownWordCount(user.id) + entries.size;
+      if (held > MAX_OWN_WORDS) throw tooMany(held);
+      const list = store.createWordList(user.id, name, entries);
+      words?.wordsChanged(user.id, entries.size <= MAX_PATCH ? [...entries.keys()] : null);
+      ctx.log.info?.(`${user.name} made word list ${list.id} (${entries.size} words)`);
+      send(res, 201, { list: listView(list), added: entries.size, skipped });
+    }],
+
+    // Whether the site's own list counts for you: {use_site}.
+    ['POST', /^\/api\/word-lists\/prefs$/, async (req, res, _p, user) => {
+      const body = await readJson(req, 10_000);
+      if (typeof body.use_site !== 'boolean') throw new HttpError(400, 'use_site must be true or false.');
+      store.setWordListPrefs(user.id, { use_site: body.use_site }); // forUser lays their words over it (or not)
+      send(res, 200, store.wordListPrefs(user.id));
+    }],
+
+    // One word: the score your suggestions give it (null: left out), the
+    // site's, and your lists that have it. ?word=
+    ['GET', /^\/api\/word-lists\/lookup$/, async (req, res, _p, user, url) => {
+      const word = normalizeWord(url.searchParams.get('word'));
+      if (!word) throw new HttpError(400, 'A word is 2-25 letters.');
+      const index = words?.forUser(user.id);
+      send(res, 200, {
+        word,
+        ready: !!index,
+        score: index?.scoreOf(word) ?? null,
+        site: words?.current()?.scoreOf(word) ?? null,
+        use_site: store.wordListPrefs(user.id).use_site,
+        lists: store.wordInLists(user.id, word),
+      });
+    }],
+
+    // Rename it or turn it on or off: {name?, enabled?}.
+    ['POST', /^\/api\/word-lists\/(\d+)$/, async (req, res, [id], user) => {
+      const l = ownList(id, user);
+      const body = await readJson(req, 10_000);
+      if (body.enabled != null && typeof body.enabled !== 'boolean') throw new HttpError(400, 'enabled must be true or false.');
+      store.updateWordList(l.id, { name: body.name == null ? null : listName(body.name), enabled: body.enabled });
+      if (body.enabled != null && body.enabled !== l.enabled) words?.wordsChanged(user.id, wordsOf(l));
+      send(res, 200, { list: listView(store.wordList(l.id)) });
+    }],
+
+    ['DELETE', /^\/api\/word-lists\/(\d+)$/, async (req, res, [id], user) => {
+      const l = ownList(id, user);
+      const gone = l.enabled ? wordsOf(l) : [];
+      store.deleteWordList(l.id);
+      words?.wordsChanged(user.id, gone);
+      ctx.log.info?.(`${user.name} deleted word list ${l.id} (${l.count} words)`);
+      send(res, 200, { deleted: true });
+    }],
+
+    // A page of its words: ?match= (letters it contains, or a pattern with
+    // ? for one letter and * for any run) &sort=word|best|worst &offset= &limit=
+    ['GET', /^\/api\/word-lists\/(\d+)\/words$/, async (req, res, [id], user, url) => {
+      const l = ownList(id, user);
+      const q = url.searchParams;
+      const match = String(q.get('match') ?? '').toUpperCase().replace(/[^A-Z?*]/g, '').slice(0, 40);
+      const page = store.wordListPage(l.id, {
+        match,
+        sort: q.get('sort'),
+        offset: Math.max(0, Math.floor(Number(q.get('offset')) || 0)),
+        limit: Math.min(500, Math.max(1, Math.floor(Number(q.get('limit')) || 100))),
+      });
+      send(res, 200, { list: listView(l), match, ...page });
+    }],
+
+    // Add or rescore words, and remove others: {text?, score?, set?,
+    // remove?: [words]} (see entriesFrom). A word's new score replaces its old.
+    ['POST', /^\/api\/word-lists\/(\d+)\/words$/, async (req, res, [id], user) => {
+      const l = ownList(id, user);
+      const body = await readJson(req, MAX_LIST_UPLOAD);
+      const { words: entries, skipped } = entriesFrom(body);
+      const remove = (Array.isArray(body.remove) ? body.remove : []).map(normalizeWord).filter(Boolean);
+      if (!entries.size && !remove.length) {
+        send(res, 200, { list: listView(l), added: 0, updated: 0, removed: 0, skipped });
+        return;
+      }
+      const others = store.ownWordCount(user.id) - l.count; // in their other lists
+      const maxSize = Math.min(MAX_LIST_WORDS, MAX_OWN_WORDS - others);
+      const { added, removed, size, tooBig } = store.editWordList(l.id, { set: entries, remove, maxSize });
+      if (tooBig && size > MAX_LIST_WORDS) {
+        throw new HttpError(413, `A list holds up to ${MAX_LIST_WORDS.toLocaleString('en-US')} words. Start another list for these.`);
+      }
+      if (tooBig) throw tooMany(others + size);
+      if (l.enabled) {
+        const changed = entries.size + remove.length;
+        words?.wordsChanged(user.id, changed <= MAX_PATCH ? [...entries.keys(), ...remove] : null);
+      }
+      send(res, 200, { list: listView(store.wordList(l.id)), added, updated: entries.size - added, removed, skipped });
+    }],
+
+    // The whole list as a file other programs read: WORD;SCORE, A-Z.
+    ['GET', /^\/api\/word-lists\/(\d+)\/file$/, async (req, res, [id], user) => {
+      const l = ownList(id, user);
+      const file = `${l.name}.txt`;
+      res.writeHead(200, {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'Content-Disposition': `attachment; filename="${file.replace(/[^\w .-]/g, '_')}"; filename*=UTF-8''${encodeURIComponent(file)}`,
+      });
+      let lines = [];
+      for (const [word, score] of store.wordListEntries(l.id)) {
+        lines.push(`${word};${score}\n`);
+        if (lines.length === 10_000) {
+          res.write(lines.join(''));
+          lines = [];
+        }
+      }
+      res.end(lines.join(''));
     }],
 
     // ----- custom puzzles (js/custom-puzzle.js; editing is live, in
