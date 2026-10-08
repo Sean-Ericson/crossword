@@ -1,0 +1,341 @@
+/* chat.css — messages between the people in a co-op solve or a puzzle's
+   authors (js/chat.js): the toolbar button, the panel, and the previews
+   that pop up while it's closed. Builds on player.css. */
+
+.chat-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* the start and pause screens veil the puzzle, but people can still talk */
+body:not(.builder-page) .chat-btn {
+  z-index: 101;
+}
+
+.chat-icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+.chat-unread {
+  position: absolute;
+  top: 0;
+  left: 18px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--color-chat-badge);
+  color: var(--color-chat-badge-text);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* ---------- the panel ---------- */
+
+.chat-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 110; /* over the start and pause screens too */
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  height: min(480px, calc(100vh - 140px));
+  height: min(480px, calc(100dvh - 140px));
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+}
+
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 6px 8px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chat-head-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.chat-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.chat-who {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.chat-close {
+  border: none;
+  background: none;
+  padding: 2px 9px 4px;
+  border-radius: var(--radius);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--color-text-muted);
+}
+
+.chat-close:hover {
+  background: var(--color-bg-muted);
+  color: var(--color-text);
+}
+
+.chat-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 12px 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.chat-empty {
+  margin: auto 12px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.chat-day {
+  align-self: center;
+  margin: 12px 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 85%;
+  margin-top: 10px;
+}
+
+.chat-msg.grouped {
+  margin-top: 3px;
+}
+
+.chat-msg.mine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.chat-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 6px 3px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.chat-name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.chat-text {
+  padding: 7px 12px;
+  border-radius: 16px;
+  background: var(--color-chat-theirs);
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chat-msg.mine .chat-text {
+  background: var(--color-chat-mine);
+}
+
+/* not back from the server yet */
+.chat-pending {
+  display: contents;
+}
+
+.chat-msg.pending .chat-text {
+  opacity: 0.6;
+}
+
+.chat-status {
+  margin: 3px 6px 0;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* "12A" in a message: selects that entry */
+.chat-ref {
+  display: inline;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--color-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.chat-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.chat-input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 19px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  resize: none;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.chat-send {
+  flex: 0 0 auto;
+  height: 38px;
+  padding: 0 16px;
+  font-weight: 600;
+}
+
+/* ---------- new messages while the panel is closed ---------- */
+
+.chat-peeks {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 105;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.chat-peek {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  max-width: 320px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-modal);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: left;
+  pointer-events: auto;
+  animation: chat-peek-in 0.2s ease-out;
+  transition: opacity 0.35s;
+}
+
+.chat-peek .user-dot {
+  flex: 0 0 auto;
+  margin-top: 6px;
+}
+
+.chat-peek-body {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.chat-peek.out {
+  opacity: 0;
+}
+
+@keyframes chat-peek-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* ---------- phones: a sheet from the bottom, over the keyboard dock ---------- */
+
+@media (max-width: 600px) {
+  /* with the presence chips, at the end of the toolbar's second line */
+  .chat-btn {
+    order: 1;
+  }
+
+  .chat-panel {
+    left: 0;
+    right: 0;
+    bottom: var(--kb-inset, 0px);
+    width: auto;
+    height: min(70vh, calc(var(--vv-height, 100vh) - 48px));
+    height: min(70dvh, calc(var(--vv-height, 100dvh) - 48px));
+    border-width: 1px 0 0;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .chat-form {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+
+  /* 16px keeps iOS from zooming in on it */
+  .chat-input {
+    font-size: 16px;
+  }
+
+  .chat-peeks {
+    left: 12px;
+    right: 12px;
+    align-items: stretch;
+  }
+
+  .chat-peek {
+    max-width: none;
+  }
+}
+
+/* touch: the keyboard dock is at the bottom, so previews drop from the top */
+body.touch .chat-peeks {
+  top: calc(var(--header-height) + 12px);
+  bottom: auto;
+}

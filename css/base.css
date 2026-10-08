@@ -47,6 +47,10 @@
   --color-kb-key: #fff;
   --color-kb-key-wide: #d5d8dc;
   --color-kb-key-down: #c4c8cd;
+  --color-chat-mine: #e0ecf7;       /* your messages (css/chat.css) */
+  --color-chat-theirs: #f0f0f0;     /* everyone else's */
+  --color-chat-badge: #d93025;      /* unread count on the chat button */
+  --color-chat-badge-text: #fff;
 
   /* charts (js/charts.js). Sequential = one blue, light to dark; diverging =
      blue (faster) to red (slower) through a gray middle. Steps from the
@@ -123,6 +127,10 @@
   --color-kb-key: #3a3a3a;
   --color-kb-key-wide: #2a2a2a;
   --color-kb-key-down: #555;
+  --color-chat-mine: #22374b;
+  --color-chat-theirs: #2c2c2c;
+  --color-chat-badge: #e5534b;
+  --color-chat-badge-text: #fff;
 
   /* charts: the ramps flip so the faint end sits near the dark surface */
   --color-chart-grid: #262626;

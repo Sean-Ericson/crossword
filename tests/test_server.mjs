@@ -12,9 +12,11 @@ import { PuzzleModel } from '../js/model.js';
 import { SolveEngine } from '../js/engine.js';
 import { newProgress } from '../js/state.js';
 import { LiveSolve } from '../js/net.js';
+import { chatSegments } from '../js/chat.js';
 import { Store } from '../server/db.mjs';
 import { hashPassword, verifyPassword, hashToken, LoginLimiter, parseCookies } from '../server/auth.mjs';
 import { Hub } from '../server/rooms.mjs';
+import { cleanChatText, CHAT_MAX_LEN } from '../server/chat.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const model = new PuzzleModel(parsePuz(readFileSync(path.join(here, 'fixtures', 'fixture15.puz'))));
@@ -59,6 +61,13 @@ function client(hub, user) {
   engine.on('cells', (indexes, meta) => {
     if (!meta.remote) live.sendCells(indexes.map((i) => ({ i, fill: record.fill[i], marks: record.marks[i] })));
   });
+  const chat = { messages: [], errors: [], failed: [] };
+  live.on('snapshot', (msg) => {
+    if (msg.chat) chat.messages = msg.chat.slice();
+  });
+  live.on('chat', (m) => chat.messages.push(m));
+  live.on('error', (msg) => chat.errors.push(msg));
+  live.on('chat-failed', (out) => chat.failed.push(out));
   return {
     conn,
     live,
@@ -66,6 +75,7 @@ function client(hub, user) {
     record,
     inbox,
     outbox,
+    chat,
     /** deliver one server->client message */
     recv() {
       if (inbox.length) live.receive(inbox.shift());
@@ -103,6 +113,14 @@ function rng(seed) {
 }
 
 const open = model.cells.filter((c) => !c.isBlack).map((c) => c.index);
+
+/** Hang up on a client and join again on a fresh connection. */
+async function reconnect(c, hub, joinMsg) {
+  hub.disconnect(c.conn);
+  c.live.connId = null;
+  c.conn = hub.connect(c.conn.user, (m) => c.inbox.push(structuredClone(m)));
+  await hub.handle(c.conn, joinMsg);
+}
 
 // ---------- auth ----------
 
@@ -544,11 +562,154 @@ test('store: a version 2 database gains the solve log and keeps its rows', () =>
   store.db.exec('DROP TABLE solve_events; DROP TABLE solve_summaries; PRAGMA user_version = 2;');
   store.close();
   store = new Store(file);
-  assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 4);
+  assert.equal(store.db.prepare('PRAGMA user_version').get().user_version, 5);
   assert.equal(store.statsDoc(u).solves[PUZZLE].seconds, 5);
   assert.equal(store.maxEventSeq('nope'), 0);
   store.close();
   rmSync(dir, { recursive: true, force: true });
+});
+
+// ---------- chat ----------
+
+function coopOf(store, users) {
+  return store.createSolve({
+    puzzleId: PUZZLE, kind: 'coop', createdBy: users[0].id,
+    memberIds: users.map((u) => u.id), record: newProgress(model, PUZZLE, 'coop'),
+  });
+}
+
+test('chat: co-op members message each other; the conversation comes with every snapshot', async () => {
+  const { store, hub, users, tick } = setup();
+  const coop = coopOf(store, users.slice(0, 2));
+  const a = client(hub, users[0]);
+  const b = client(hub, users[1]);
+  for (const c of [a, b]) {
+    await hub.handle(c.conn, { type: 'join', solve: coop.id });
+    c.recv();
+    assert.deepEqual(c.chat.messages, [], 'a co-op snapshot carries the (empty) conversation');
+  }
+  a.live.sendChat('is 12A right?');
+  assert.equal(a.live.chatOut.length, 1, 'waiting for the echo');
+  await drain([a, b], hub);
+  tick(5000);
+  b.live.sendChat('  yes!\n\n\n\nnice  ');
+  await drain([a, b], hub);
+  assert.equal(a.live.chatOut.length, 0, 'the echo is the ack');
+  for (const c of [a, b]) {
+    assert.deepEqual(c.chat.messages.map((m) => [m.user, m.text]), [['sean', 'is 12A right?'], ['devon', 'yes!\n\nnice']]);
+  }
+  assert.equal(b.chat.messages[1].at - b.chat.messages[0].at, 5000, 'stamped by the server clock');
+
+  // it's in the database: a later visit, after the room closed, sees it
+  hub.disconnect(a.conn);
+  hub.disconnect(b.conn);
+  assert.equal(hub.rooms.size, 0);
+  const again = client(hub, users[1]);
+  await hub.handle(again.conn, { type: 'join', solve: coop.id });
+  again.recv();
+  assert.deepEqual(again.chat.messages.map((m) => m.text), ['is 12A right?', 'yes!\n\nnice']);
+  assert.deepEqual(store.chatMessages({ solveId: coop.id }).map((m) => m.user), ['sean', 'devon']);
+});
+
+test('chat: solo solves have none; empty and runaway messages are refused, nothing lost', async () => {
+  const { store, hub, users, tick } = setup();
+  const solo = client(hub, users[0]);
+  await hub.handle(solo.conn, { type: 'join', puzzle: PUZZLE });
+  solo.recv();
+  assert.ok(!('chat' in hub.rooms.values().next().value.snapshot(solo.conn)), 'no conversation in a solo snapshot');
+  solo.live.sendChat('anyone?');
+  await drain([solo], hub);
+  assert.equal(solo.chat.errors.at(-1).code, 'no-chat');
+  assert.deepEqual(solo.chat.failed.map((m) => m.text), ['anyone?'], 'handed back to the page');
+  assert.equal(solo.live.chatOut.length, 0);
+
+  const coop = coopOf(store, users.slice(0, 2));
+  const a = client(hub, users[0]);
+  await hub.handle(a.conn, { type: 'join', solve: coop.id });
+  a.recv();
+  a.live.sendChat(' \u0007 ');
+  await drain([a], hub);
+  assert.equal(a.chat.errors.at(-1).code, 'bad-chat');
+  await hub.handle(a.conn, { type: 'chat', text: 'no id' });
+  assert.equal(a.inbox.at(-1).code, 'bad-chat');
+  a.inbox.length = 0;
+
+  a.live.sendChat('x'.repeat(5000));
+  await drain([a], hub);
+  assert.equal(a.chat.messages.at(-1).text.length, CHAT_MAX_LEN, 'cut to the limit');
+
+  for (let k = 0; k < 25; k++) a.live.sendChat(`spam ${k}`);
+  await drain([a], hub);
+  const refused = a.chat.errors.filter((e) => e.code === 'chat-flood');
+  assert.ok(refused.length >= 5, 'a burst is cut off');
+  assert.equal(a.chat.failed.length, refused.length + 1, 'each handed back (and the blank one)');
+  assert.equal(a.live.chatOut.length, 0);
+  tick(10_000);
+  a.live.sendChat('calm now');
+  await drain([a], hub);
+  assert.equal(a.chat.messages.at(-1).text, 'calm now', 'and it lets up');
+  assert.equal(store.chatMessages({ solveId: coop.id }).length, a.chat.messages.length);
+});
+
+test('chat: a message from a dropped connection arrives exactly once', async () => {
+  const { store, hub, users } = setup();
+  const coop = coopOf(store, users.slice(0, 2));
+  const join = { type: 'join', solve: coop.id };
+  const a = client(hub, users[0]);
+  const b = client(hub, users[1]);
+  for (const c of [a, b]) {
+    await hub.handle(c.conn, join);
+    c.recv();
+  }
+
+  // typed while offline: waits, then goes out after the next snapshot
+  hub.disconnect(a.conn);
+  a.live.connId = null;
+  a.live.sendChat('back in a sec');
+  assert.equal(a.outbox.length, 0);
+  await reconnect(a, hub, join);
+  a.recv();
+  await drain([a, b], hub);
+  assert.deepEqual(b.chat.messages.map((m) => m.text), ['back in a sec']);
+
+  // the server got it, but the connection dropped before the echo came back
+  a.live.sendChat('did you get this?');
+  await a.sendOne();
+  a.inbox.length = 0;
+  await reconnect(a, hub, join);
+  a.recv(); // the snapshot has it, so it isn't sent again
+  assert.equal(a.live.chatOut.length, 0);
+  assert.equal(a.outbox.length, 0);
+  // a resend anyway (it left before the snapshot arrived) is not stored twice
+  const cid = a.chat.messages.at(-1).cid;
+  await hub.handle(a.conn, { type: 'chat', cid, text: 'did you get this?' });
+  await drain([a, b], hub);
+  assert.deepEqual(store.chatMessages({ solveId: coop.id }).map((m) => m.text), ['back in a sec', 'did you get this?']);
+  assert.deepEqual(b.chat.messages.map((m) => m.text), ['back in a sec', 'did you get this?']);
+});
+
+test('chat: a deleted account’s messages stay, unattributed', async () => {
+  const { store, hub, users } = setup();
+  const coop = coopOf(store, users);
+  const a = client(hub, users[1]);
+  await hub.handle(a.conn, { type: 'join', solve: coop.id });
+  a.live.connId = a.inbox[0].you;
+  await hub.handle(a.conn, { type: 'chat', cid: 'c1', text: 'bye all' });
+  hub.dropUser(users[1].id, () => store.deleteUser(users[1].id));
+  const [m] = store.chatMessages({ solveId: coop.id });
+  assert.equal(m.user, null);
+  assert.equal(m.text, 'bye all');
+});
+
+test('chat: text is tidied; entry names become references', () => {
+  assert.equal(cleanChatText(' a\r\nb\t c\u0000 \n\n\n\nd '), 'a\nb  c\n\nd');
+  assert.equal(cleanChatText(42), '');
+  assert.equal(cleanChatText('😀'.repeat(CHAT_MAX_LEN)).length, CHAT_MAX_LEN, 'never half an emoji');
+  assert.deepEqual(chatSegments('is 12a right? 3 Down, 17-Across, 4D.'), [
+    'is ', { num: 12, dir: 'A', text: '12a' }, ' right? ', { num: 3, dir: 'D', text: '3 Down' }, ', ',
+    { num: 17, dir: 'A', text: '17-Across' }, ', ', { num: 4, dir: 'D', text: '4D' }, '.',
+  ]);
+  assert.deepEqual(chatSegments('at 12am, 2 a day, a12a'), ['at 12am, 2 a day, a12a'], 'not every number and letter');
 });
 
 test('engine: remote cells leave the cursor alone and are tagged remote', () => {

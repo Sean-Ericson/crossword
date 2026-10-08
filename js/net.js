@@ -64,6 +64,28 @@
  *   deleted   {by}                          the puzzle is gone
  *   error     {code, message, re}
  *
+ * ----- Chat (co-op solves and builds) -----
+ *
+ * The people in a co-op solve, or a puzzle's authors, can message each
+ * other (server/chat.mjs; js/chat.js is the panel). A solo solve has no chat.
+ *
+ * Client -> server:
+ *   {type:'chat', cid, text}                cid: the sender's id for it
+ *
+ * Server -> client:
+ *   snapshot  {..., chat:[message]}         the newest 200, oldest first
+ *                                           (co-op solves and builds only)
+ *   chat      {message:{id, user, cid, at, text}}
+ *                                           to everyone, the sender too;
+ *                                           `at` is ms, `user` null for a
+ *                                           deleted account
+ *   error     {code, message, re:'chat', cid}  that one wasn't sent
+ *
+ * Messages wait in `chatOut` until they come back. One typed while offline
+ * goes out after the next snapshot, unless the snapshot has it already.
+ * Events: 'chat' (message), 'chat-out' (chatOut changed), 'chat-failed'
+ * ({cid, text}, after the error event).
+ *
  * ----- Both -----
  *
  * Edits are applied locally first and kept in `pending` until the server
@@ -99,6 +121,7 @@ class LiveChannel {
     this.retryTimer = null;
     this.closed = false;
     this.lastCursor = null;
+    this.chatOut = []; // [{cid, text}] chat messages the server hasn't echoed yet
   }
 
   /** The message that joins the room, sent on every (re)connect. */
@@ -196,6 +219,15 @@ class LiveChannel {
     this.emit('pending', this.pending.length);
   }
 
+  /** Send a chat message; it stays in `chatOut` until the server echoes it. */
+  sendChat(text) {
+    const out = { cid: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`, text };
+    this.chatOut.push(out);
+    this.send({ type: 'chat', ...out });
+    this.emit('chat-out', this.chatOut);
+    return out;
+  }
+
   /** Forget unsent edits (the room is starting over). */
   dropPending() {
     this.pending = [];
@@ -210,10 +242,29 @@ class LiveChannel {
       // sent again (the server never saw them, or saw them and the
       // snapshot already includes them - re-applying is harmless)
       const overlay = this.pending.flatMap((op) => op.changes);
+      // chat messages the server already has came back in the snapshot
+      const had = this.chatOut.length;
+      const arrived = new Set((msg.chat ?? []).map((m) => m.cid));
+      this.chatOut = this.chatOut.filter((m) => !arrived.has(m.cid));
       this.setStatus('live');
       this.emit('snapshot', msg, overlay);
       for (const op of this.pending) this.send({ type: this.opType, ...op });
+      for (const m of this.chatOut) this.send({ type: 'chat', ...m });
+      if (had) this.emit('chat-out', this.chatOut);
       this.resume();
+      return;
+    }
+    if (msg.type === 'chat') {
+      const i = this.chatOut.findIndex((m) => m.cid === msg.message?.cid);
+      if (i >= 0) this.chatOut.splice(i, 1);
+      this.emit('chat', msg.message);
+      return;
+    }
+    if (msg.type === 'error' && msg.re === 'chat' && msg.cid) {
+      const i = this.chatOut.findIndex((m) => m.cid === msg.cid);
+      const [failed] = i >= 0 ? this.chatOut.splice(i, 1) : [];
+      this.emit('error', msg);
+      if (failed) this.emit('chat-failed', failed);
       return;
     }
     if (msg.type === this.opType) {

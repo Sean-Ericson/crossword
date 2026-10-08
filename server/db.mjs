@@ -15,6 +15,9 @@
  * the working copy its authors edit live (server/build-rooms.mjs) and the
  * copy solvers get, which changes only when an author publishes. Solves
  * of one use its id as their puzzle_id, like any other puzzle.
+ *
+ * chat_messages hold what a co-op solve's members, or a custom puzzle's
+ * authors, said to each other (server/chat.mjs).
  */
 
 import { DatabaseSync } from 'node:sqlite';
@@ -24,7 +27,7 @@ import { randomBytes } from 'node:crypto';
 import { USER_PALETTE } from '../js/people.js';
 import { CUSTOM_ID_RE } from '../js/util.js';
 
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 export const USER_NAME_RE = /^[a-z0-9-]{1,24}$/;
 
@@ -175,6 +178,22 @@ export class Store {
         updated_at TEXT NOT NULL,
         PRIMARY KEY (puzzle_id, user_id)
       );
+      -- what the people in a co-op solve, or a custom puzzle's authors, say
+      -- to each other (server/chat.mjs): exactly one of solve_id and
+      -- puzzle_id is set. cid is the sender's own id for the message, so a
+      -- resend after a dropped connection isn't stored twice; at is in ms
+      CREATE TABLE IF NOT EXISTS chat_messages (
+        id        INTEGER PRIMARY KEY,
+        solve_id  TEXT REFERENCES solves(id) ON DELETE CASCADE,
+        puzzle_id TEXT REFERENCES custom_puzzles(id) ON DELETE CASCADE,
+        user_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        cid       TEXT,
+        at        INTEGER NOT NULL,
+        text      TEXT NOT NULL,
+        CHECK ((solve_id IS NULL) <> (puzzle_id IS NULL))
+      );
+      CREATE INDEX IF NOT EXISTS chat_solve ON chat_messages(solve_id, id) WHERE solve_id IS NOT NULL;
+      CREATE INDEX IF NOT EXISTS chat_puzzle ON chat_messages(puzzle_id, id) WHERE puzzle_id IS NOT NULL;
       PRAGMA user_version = ${SCHEMA_VERSION};
     `);
   }
@@ -679,6 +698,36 @@ export class Store {
            AND EXISTS (SELECT 1 FROM solve_events AS e WHERE e.solve_id = solves.id)`
       )
       .all(v);
+  }
+
+  // ---------- chat ----------
+
+  /**
+   * Store one message in a co-op solve's ({solveId}) or a custom puzzle's
+   * ({puzzleId}) conversation. Returns its id.
+   */
+  addChatMessage({ solveId = null, puzzleId = null }, { userId, cid = null, at, text }) {
+    const info = this.db
+      .prepare('INSERT INTO chat_messages (solve_id, puzzle_id, user_id, cid, at, text) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(solveId, puzzleId, userId, cid, at, text);
+    return Number(info.lastInsertRowid);
+  }
+
+  /**
+   * The newest `limit` messages of a conversation, oldest first, with user
+   * names (null for deleted accounts).
+   * @returns {Array<{id:number, user:string|null, cid:string|null, at:number, text:string}>}
+   */
+  chatMessages({ solveId = null, puzzleId = null }, limit = 200) {
+    const [col, key] = solveId != null ? ['solve_id', solveId] : ['puzzle_id', puzzleId];
+    return this.db
+      .prepare(
+        `SELECT m.id, users.name AS user, m.cid, m.at, m.text
+         FROM chat_messages AS m LEFT JOIN users ON users.id = m.user_id
+         WHERE m.${col} = ? ORDER BY m.id DESC LIMIT ?`
+      )
+      .all(key, limit)
+      .reverse();
   }
 
   // ---------- GitHub data repo sync state ----------

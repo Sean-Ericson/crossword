@@ -12,6 +12,8 @@
  * solve of the puzzle keeps fitting it. Solvers get the working copy only
  * when an author publishes it again (POST /api/custom-puzzles/:id/publish).
  *
+ * The authors can message each other here too (ChatLog in chat.mjs).
+ *
  * Wire messages are documented in js/net.js; the change keys in
  * js/custom-puzzle.js (applyChange).
  */
@@ -19,6 +21,7 @@
 import { applyChange, publishedCopy } from '../js/custom-puzzle.js';
 import { distinctColors } from '../js/people.js';
 import { publicUser } from './auth.mjs';
+import { ChatLog } from './chat.mjs';
 import { nowIso } from './db.mjs';
 import { RoomError } from './room-error.mjs';
 
@@ -46,6 +49,7 @@ export class BuildRoom {
     this.dirty = false;
     this.updatedAt = puzzle.updated_at;
     this.changed = this.differsFromPublished();
+    this.chat = new ChatLog(this, { puzzleId: this.id });
   }
 
   get shapeLocked() {
@@ -100,6 +104,7 @@ export class BuildRoom {
       doc: this.doc,
       version: this.version,
       presence: this.presence(),
+      chat: this.chat.recent(),
     };
   }
 
@@ -131,6 +136,9 @@ export class BuildRoom {
         break;
       case 'cursor':
         this.setCursor(conn, msg);
+        break;
+      case 'chat':
+        this.chat.post(conn, msg);
         break;
       case 'ping':
         conn.send({ type: 'pong', t: msg.t });

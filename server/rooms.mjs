@@ -21,6 +21,9 @@
  * in js/solve-analysis.js. When a solve completes its log is summarized
  * into solve_summaries.
  *
+ * Chat: a co-op solve's members can message each other (ChatLog in
+ * chat.mjs); solo solves have no chat.
+ *
  * Custom puzzles being built have rooms of their own (BuildRoom in
  * build-rooms.mjs) on the same connections; the Hub routes to both.
  *
@@ -36,6 +39,7 @@ import { newId, nowIso } from './db.mjs';
 import { publicUser } from './auth.mjs';
 import { RoomError } from './room-error.mjs';
 import { BuildRoom } from './build-rooms.mjs';
+import { ChatLog } from './chat.mjs';
 
 const MAX_FILL_LEN = 12;
 const FILL_RE = /^[^\s.]*$/u;
@@ -72,6 +76,7 @@ class Room {
     this.dirty = false;
     this.seq = hub.store.maxEventSeq(this.id);
     this.eventBuf = []; // logged, not yet written
+    this.chat = this.kind === 'coop' ? new ChatLog(this, { solveId: this.id }) : null;
     this.noteBaseline();
   }
 
@@ -176,6 +181,7 @@ class Room {
       version: this.version,
       presence: this.presence(),
       timer: this.timerState(),
+      ...(this.chat ? { chat: this.chat.recent() } : {}),
     };
   }
 
@@ -297,6 +303,12 @@ class Room {
       clean: rec.clean,
     });
     this.markDirty();
+  }
+
+  /** A message for everyone in the solve (co-op only). */
+  postChat(conn, msg) {
+    if (!this.chat) throw new RoomError('no-chat', 'There’s nobody to message in a solo solve.', { cid: msg.cid });
+    this.chat.post(conn, msg);
   }
 
   /** An assist (check, reveal, autocheck) only goes in the log. */
@@ -657,6 +669,9 @@ export class Hub {
         case 'reset':
           room.reset(conn);
           break;
+        case 'chat':
+          room.postChat(conn, msg);
+          break;
         case 'ping':
           conn.send({ type: 'pong', t: msg.t });
           break;
@@ -665,7 +680,7 @@ export class Hub {
       }
     } catch (err) {
       if (!(err instanceof RoomError)) this.log.error?.(err);
-      conn.send({ type: 'error', code: err.code || 'internal', message: err.message, re: msg?.type });
+      conn.send({ type: 'error', code: err.code || 'internal', message: err.message, re: msg?.type, ...err.extra });
     }
   }
 
