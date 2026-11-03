@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-03T16:13:35Z",
+  "generated_at": "2026-11-03T18:59:37Z",
   "puzzles": [
     {
       "id": "mini-2026-11-03",
@@ -4749,6 +4749,46 @@
       "date": "2016-12-01",
       "title": "NY Times, Thursday, December 1, 2016 NATIONAL COOKIE DAY",
       "author": "Fred Piscop",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2016-11-29",
+      "file": "puzzles/2016-11-29.puz",
+      "type": "daily",
+      "date": "2016-11-29",
+      "title": "NY Times, Tuesday, November 29, 2016",
+      "author": "Jacob Stulberg / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2016-11-22",
+      "file": "puzzles/2016-11-22.puz",
+      "type": "daily",
+      "date": "2016-11-22",
+      "title": "NY Times, Tuesday, November 22, 2016",
+      "author": "Andrew Zhou / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2016-11-15",
+      "file": "puzzles/2016-11-15.puz",
+      "type": "daily",
+      "date": "2016-11-15",
+      "title": "NY Times, Tuesday, November 15, 2016",
+      "author": "David J. Kahn / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2016-11-08",
+      "file": "puzzles/2016-11-08.puz",
+      "type": "daily",
+      "date": "2016-11-08",
+      "title": "NY Times, Tuesday, November 8, 2016",
+      "author": "Michael J. Doran / Will Shortz",
       "width": 15,
       "height": 15
     },
