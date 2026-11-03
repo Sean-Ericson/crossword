@@ -30,6 +30,7 @@ import json
 import os
 import re
 import shutil
+import ssl
 import subprocess
 import sys
 import time
@@ -167,6 +168,25 @@ def find_token():
     return None
 
 
+def ssl_context():
+    """
+    certifi's CA bundle when it's installed. Python only sees the root
+    certificates Windows has already downloaded, which can leave out
+    GitHub's, and then every call fails certificate verification.
+    """
+    try:
+        import certifi  # noqa: PLC0415 - optional
+    except ImportError:
+        return None
+    return ssl.create_default_context(cafile=certifi.where())
+
+
+# GETs are conditional: a 304 doesn't count against the API rate limit
+# (shared with everyone using the site's token), and the watcher re-reads
+# the queue every few seconds. url -> (ETag, parsed body)
+_ETAGS = {}
+
+
 def gh_api(path, method='GET', payload=None, repo=None):
     """
     Call the GitHub contents API. Uses a token directly when one is
@@ -177,23 +197,36 @@ def gh_api(path, method='GET', payload=None, repo=None):
         import urllib.error  # noqa: PLC0415 - only needed on this path
         import urllib.request
 
+        url = f'https://api.github.com/repos/{repo}/{path}'
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Accept': 'application/vnd.github+json',
+            'X-GitHub-Api-Version': '2022-11-28',
+            'Content-Type': 'application/json',
+            'User-Agent': 'crossword-site-fetcher',
+        }
+        cached = _ETAGS.get(url) if method == 'GET' else None
+        if cached:
+            headers['If-None-Match'] = cached[0]
         request = urllib.request.Request(
-            f'https://api.github.com/repos/{repo}/{path}',
+            url,
             method=method,
             data=json.dumps(payload).encode('utf-8') if payload is not None else None,
-            headers={
-                'Authorization': f'Bearer {token}',
-                'Accept': 'application/vnd.github+json',
-                'X-GitHub-Api-Version': '2022-11-28',
-                'Content-Type': 'application/json',
-                'User-Agent': 'crossword-site-fetcher',
-            },
+            headers=headers,
         )
+        if 'ssl' not in TOOLS:
+            TOOLS['ssl'] = ssl_context()
         try:
-            with urllib.request.urlopen(request, timeout=30) as response:
+            with urllib.request.urlopen(request, timeout=30, context=TOOLS['ssl']) as response:
                 body = response.read().decode('utf-8')
-            return json.loads(body) if body.strip() else None
+                etag = response.headers.get('ETag')
+            result = json.loads(body) if body.strip() else None
+            if method == 'GET' and etag:
+                _ETAGS[url] = (etag, result)
+            return result
         except urllib.error.HTTPError as exc:
+            if exc.code == 304 and cached:
+                return cached[1]
             if exc.code == 404:
                 return None
             detail = exc.read().decode('utf-8', 'replace')[:200]

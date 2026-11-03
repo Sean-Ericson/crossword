@@ -31,6 +31,8 @@ set "PY="
 if defined XWORD_PYTHON if exist "%XWORD_PYTHON%" set "PY=%XWORD_PYTHON%"
 if not defined PY if exist "%USERPROFILE%\miniconda3\python.exe" set "PY=%USERPROFILE%\miniconda3\python.exe"
 if not defined PY if exist "%USERPROFILE%\anaconda3\python.exe" set "PY=%USERPROFILE%\anaconda3\python.exe"
+if not defined PY if exist "%LOCALAPPDATA%\Programs\Python\Python313\python.exe" set "PY=%LOCALAPPDATA%\Programs\Python\Python313\python.exe"
+if not defined PY if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" set "PY=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
 if not defined PY where /q py.exe && set "PY=py"
 if not defined PY set "PY=python"
 
