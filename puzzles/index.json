@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-04T00:04:12Z",
+  "generated_at": "2026-11-04T01:12:37Z",
   "puzzles": [
     {
       "id": "mini-2026-11-03",
@@ -4789,6 +4789,16 @@
       "date": "2016-11-22",
       "title": "NY Times, Tuesday, November 22, 2016",
       "author": "Andrew Zhou / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2016-11-18",
+      "file": "puzzles/2016-11-18.puz",
+      "type": "daily",
+      "date": "2016-11-18",
+      "title": "NY Times, Friday, November 18, 2016",
+      "author": "Peter Wentz / Will Shortz",
       "width": 15,
       "height": 15
     },
