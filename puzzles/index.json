@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-03T18:59:37Z",
+  "generated_at": "2026-11-04T00:04:12Z",
   "puzzles": [
     {
       "id": "mini-2026-11-03",
@@ -4753,12 +4753,32 @@
       "height": 15
     },
     {
+      "id": "2016-11-30",
+      "file": "puzzles/2016-11-30.puz",
+      "type": "daily",
+      "date": "2016-11-30",
+      "title": "NY Times, Wednesday, November 30, 2016",
+      "author": "Molly Young / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
       "id": "2016-11-29",
       "file": "puzzles/2016-11-29.puz",
       "type": "daily",
       "date": "2016-11-29",
       "title": "NY Times, Tuesday, November 29, 2016",
       "author": "Jacob Stulberg / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2016-11-23",
+      "file": "puzzles/2016-11-23.puz",
+      "type": "daily",
+      "date": "2016-11-23",
+      "title": "NY Times, Wednesday, November 23, 2016",
+      "author": "David Steinberg / Will Shortz",
       "width": 15,
       "height": 15
     },
@@ -4773,6 +4793,16 @@
       "height": 15
     },
     {
+      "id": "2016-11-16",
+      "file": "puzzles/2016-11-16.puz",
+      "type": "daily",
+      "date": "2016-11-16",
+      "title": "NY Times, Wednesday, November 16, 2016",
+      "author": "Jim Peredo / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
       "id": "2016-11-15",
       "file": "puzzles/2016-11-15.puz",
       "type": "daily",
@@ -4783,12 +4813,32 @@
       "height": 15
     },
     {
+      "id": "2016-11-09",
+      "file": "puzzles/2016-11-09.puz",
+      "type": "daily",
+      "date": "2016-11-09",
+      "title": "NY Times, Wednesday, November 9, 2016",
+      "author": "John Lieb / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
       "id": "2016-11-08",
       "file": "puzzles/2016-11-08.puz",
       "type": "daily",
       "date": "2016-11-08",
       "title": "NY Times, Tuesday, November 8, 2016",
       "author": "Michael J. Doran / Will Shortz",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2016-11-02",
+      "file": "puzzles/2016-11-02.puz",
+      "type": "daily",
+      "date": "2016-11-02",
+      "title": "NY Times, Wednesday, November 2, 2016",
+      "author": "Andrew Kingsley / Will Shortz",
       "width": 15,
       "height": 15
     },
