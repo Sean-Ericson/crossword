@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generated_at": "2026-11-04T01:12:37Z",
+  "generated_at": "2026-11-04T02:49:07Z",
   "puzzles": [
     {
       "id": "mini-2026-11-03",
@@ -4979,6 +4979,16 @@
       "date": "2016-01-01",
       "title": "NY Times, Friday, January 1, 2016 SWEET '16",
       "author": "Fred Piscop",
+      "width": 15,
+      "height": 15
+    },
+    {
+      "id": "2015-11-12",
+      "file": "puzzles/2015-11-12.puz",
+      "type": "daily",
+      "date": "2015-11-12",
+      "title": "NY Times, Thursday, November 12, 2015",
+      "author": "David Kwong / Will Shortz",
       "width": 15,
       "height": 15
     },
